@@ -23,8 +23,8 @@ export const scrapeRecipe = async (url: string): Promise<ScrapeResponse> => {
   return response.data;
 };
 
-export const scrapeWithAi = async (url: string, settings: GroqSettings): Promise<ScrapeResponse> => {
-    const response = await api.post('/scrape-with-ai', { url, settings });
+export const scrapeWithAi = async (url: string): Promise<ScrapeResponse> => {
+    const response = await api.post('/scrape-ai', { url });
     return response.data;
 };
 
@@ -32,8 +32,8 @@ export const deleteRecipe = async (id: number): Promise<void> => {
     await api.delete(`/recipes/${id}`);
 };
 
-export const updateRecipeWithAi = async (id: number, settings: GroqSettings): Promise<Recipe> => {
-    const response = await api.put(`/recipes/${id}/scrape-with-ai`, settings);
+export const updateRecipeWithAi = async (id: number): Promise<Recipe> => {
+    const response = await api.put(`/recipes/${id}/scrape-ai`);
     return response.data;
 };
 
@@ -71,4 +71,15 @@ export const deleteMealPlanEntry = async (id: number): Promise<void> => {
 export const getShoppingList = async (startDate: string, endDate: string): Promise<string[]> => {
     const response = await api.get('/shopping-list', { params: { start_date: startDate, end_date: endDate } });
     return response.data;
+};
+
+// Settings Endpoints
+export const getSettings = async (): Promise<Settings> => {
+  const response = await api.get('/settings');
+  return response.data;
+};
+
+export const updateSettings = async (settings: Partial<Settings>): Promise<Settings> => {
+  const response = await api.post('/settings', settings);
+  return response.data;
 };

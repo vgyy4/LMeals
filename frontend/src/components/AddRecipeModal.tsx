@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
 import { scrapeRecipe, scrapeWithAi } from '../lib/api';
-import { ScrapeResponse, GroqSettings } from '../lib/types';
+import { X } from 'lucide-react';
 
 interface AddRecipeModalProps {
   onClose: () => void;
@@ -10,93 +9,104 @@ interface AddRecipeModalProps {
 
 const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
   const [url, setUrl] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [scrapeResult, setScrapeResult] = useState<ScrapeResponse | null>(null);
+  const [needsAiConfirmation, setNeedsAiConfirmation] = useState(false);
 
-  // For now, we'll get settings from local storage or prompt the user.
-  // A better solution would be to use a global state management library.
-  const getGroqSettings = (): GroqSettings | null => {
-      const apiKey = localStorage.getItem('groq_api_key');
-      const model = localStorage.getItem('groq_model') || 'llama3-70b';
-      if (apiKey) {
-          return { api_key: apiKey, model };
-      }
-      return null;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleInitialScrape = async () => {
+    setIsLoading(true);
     setError(null);
+    setNeedsAiConfirmation(false);
     try {
-      const result = await scrapeRecipe(url);
-      setScrapeResult(result);
-      if (result.status === 'success' || result.status === 'exists') {
+      const response = await scrapeRecipe(url);
+      if (response.status === 'success' || response.status === 'exists') {
         onRecipeAdded();
         onClose();
+      } else if (response.status === 'ai_required') {
+        setNeedsAiConfirmation(true);
+      } else {
+        setError(response.message || 'An unknown error occurred.');
       }
     } catch (err) {
-      setError('Failed to scrape the recipe. Please check the URL and try again.');
+      setError('Failed to scrape the URL. Please check the console for details.');
+      console.error(err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleAiSubmit = async () => {
-    const settings = getGroqSettings();
-    if (!settings) {
-        setError("Groq API key not found. Please set it in the settings page.");
-        return;
-    }
-
-    setLoading(true);
+  const handleAiScrape = async () => {
+    setIsLoading(true);
     setError(null);
     try {
-        const result = await scrapeWithAi(url, settings);
-        if (result.status === 'success') {
-            onRecipeAdded();
-            onClose();
-        } else {
-            setError(result.message || "AI scraping failed.");
-        }
-    } catch (err: any) {
-        setError(err.response?.data?.detail || "An unexpected error occurred during AI scraping.");
+      const response = await scrapeWithAi(url);
+      if (response.status === 'success') {
+        onRecipeAdded();
+        onClose();
+      } else {
+        setError(response.message || 'The AI scraper failed to import the recipe.');
+      }
+    } catch (err) {
+      setError('An error occurred with the AI scraper. Your API key may be invalid or you may have hit a rate limit.');
+      console.error(err);
     } finally {
-        setLoading(false);
+      setIsLoading(false);
+      setNeedsAiConfirmation(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-lg">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-lg w-full">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Add a New Recipe</h2>
-          <button onClick={onClose}><X /></button>
+          <h2 className="text-2xl font-bold text-gray-800">Add a New Recipe</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
+            <X size={24} />
+          </button>
         </div>
-        
-        {!scrapeResult || scrapeResult.status === 'failed' ? (
-          <form onSubmit={handleSubmit}>
+
+        {error && <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4">{error}</div>}
+
+        {!needsAiConfirmation ? (
+          <div>
+            <p className="mb-4 text-gray-600">Enter the URL of the recipe you want to import.</p>
             <input
-              type="url"
+              type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="Enter recipe URL"
-              className="w-full p-2 border rounded-md"
-              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              placeholder="https://example.com/recipe"
+              disabled={isLoading}
             />
-            <button type="submit" disabled={loading} className="w-full mt-4 bg-soft-rose p-2 rounded-md">
-              {loading ? 'Scraping...' : 'Scrape Recipe'}
+            <button
+              onClick={handleInitialScrape}
+              className="w-full mt-4 bg-sage-green text-white font-semibold py-2 rounded-lg hover:bg-opacity-90 transition-colors"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Importing...' : 'Import Recipe'}
             </button>
-            {error && <p className="text-red-500 mt-2">{error}</p>}
-          </form>
+          </div>
         ) : (
           <div>
-            <p className="mb-4">{scrapeResult.message}</p>
-            <button onClick={handleAiSubmit} disabled={loading} className="w-full mt-4 bg-periwinkle-blue text-white p-2 rounded-md">
-              {loading ? 'Processing with AI...' : 'Try with Advanced AI Import'}
-            </button>
-            {error && <p className="text-red-500 mt-2">{error}</p>}
+            <p className="mb-4 text-gray-600">
+              The standard import failed for this URL. Would you like to try our advanced AI importer?
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setNeedsAiConfirmation(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAiScrape}
+                className="px-4 py-2 bg-soft-rose text-white font-semibold rounded-lg hover:bg-opacity-90"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Processing...' : 'Use AI Importer'}
+              </button>
+            </div>
           </div>
         )}
       </div>

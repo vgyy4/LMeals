@@ -1,17 +1,20 @@
 from groq import Groq
 import json
-import os
+from sqlalchemy.orm import Session
+import crud
 
-def extract_with_groq(html: str, api_key: str, model: str):
+def extract_with_groq(html: str, db: Session):
     """
-    Uses the Groq API to extract recipe data from HTML.
+    Uses the Groq API to extract recipe data from HTML using credentials from user settings.
     Returns a dictionary of recipe data or None if extraction fails.
     """
+    settings = crud.get_settings(db)
+    api_key = settings.groq_api_key
+    model = settings.groq_model
+
     if not api_key:
-        api_key = os.environ.get("GROQ_API_KEY")
-    
-    if not api_key:
-        raise ValueError("Groq API key is not set.")
+        print("Groq API key is not configured in settings.")
+        return None
 
     client = Groq(api_key=api_key)
 
@@ -38,6 +41,18 @@ def extract_with_groq(html: str, api_key: str, model: str):
         )
         response_text = chat_completion.choices[0].message.content
         recipe_data = json.loads(response_text)
+
+        # Basic validation of the returned data structure
+        required_keys = ["title", "ingredients", "instructions"]
+        if not all(key in recipe_data for key in required_keys):
+            print("Groq response was missing one or more required keys.")
+            return None
+
+        # Ensure ingredients and instructions are lists
+        if not isinstance(recipe_data.get("ingredients"), list) or not isinstance(recipe_data.get("instructions"), list):
+            print("Groq response 'ingredients' or 'instructions' is not a list.")
+            return None
+
         return recipe_data
     except json.JSONDecodeError as e:
         print(f"Failed to parse JSON response from Groq: {e}")

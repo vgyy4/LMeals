@@ -43,3 +43,10 @@ class MealPlanEntry(Base):
     recipe_id = Column(Integer, ForeignKey("recipes.id"), nullable=False)
 
     recipe = relationship("Recipe")
+
+class Setting(Base):
+    __tablename__ = "settings"
+
+    id = Column(Integer, primary_key=True, default=1) # Singleton: only one row in this table
+    groq_api_key = Column(String, nullable=True)
+    groq_model = Column(String, nullable=True, default="llama3-70b-8192")

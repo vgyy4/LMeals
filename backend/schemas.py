@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl
 from typing import List, Optional
 from datetime import datetime
 
@@ -12,6 +12,25 @@ class IngredientCreate(IngredientBase):
 class Ingredient(IngredientBase):
     id: int
     recipe_id: int
+
+    class Config:
+        orm_mode = True
+
+# ==============================================================================
+# Settings Schemas
+# ==============================================================================
+class SettingBase(BaseModel):
+    groq_api_key: Optional[str] = None
+    groq_model: Optional[str] = Field(default="llama3-70b-8192", description="Default Groq model")
+
+class SettingCreate(SettingBase):
+    pass
+
+class SettingUpdate(SettingBase):
+    pass
+
+class Setting(SettingBase):
+    id: int
 
     class Config:
         orm_mode = True

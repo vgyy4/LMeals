@@ -1,135 +1,150 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, ShieldAlert } from 'lucide-react';
-import { getRecipe, getAllergens, updateRecipeWithAi } from '../lib/api';
-import { Recipe, Allergen, Ingredient, GroqSettings } from '../lib/types';
-import { franc } from 'franc';
+import { getRecipe } from '../lib/api';
+import { Recipe } from '../lib/types';
+import { CheckSquare, Square, Clock, Users, ArrowLeft, RefreshCw, AlertTriangle } from 'lucide-react';
+import { updateRecipeWithAi, getAllergens } from '../lib/api';
+import { isRtlLang } from '../lib/utils';
+import { Allergen } from '../lib/types';
 
-const RecipeDetail = () => {
+const RecipeDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
-  const [allergens, setAllergens] = useState<Allergen[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isRecreating, setIsRecreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [checkedIngredients, setCheckedIngredients] = useState<number[]>([]);
+  const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
+  const [allergens, setAllergens] = useState<Allergen[]>([]);
+  const [hasAllergens, setHasAllergens] = useState(false);
 
-  const fetchRecipeData = useCallback(async () => {
-    if (id) {
-      setLoading(true);
+  useEffect(() => {
+    const fetchRecipeAndAllergens = async () => {
+      if (!id) return;
       try {
-        const [recipeData, allergensData] = await Promise.all([getRecipe(parseInt(id)), getAllergens()]);
+        setLoading(true);
+        const [recipeData, allergensData] = await Promise.all([
+          getRecipe(Number(id)),
+          getAllergens(),
+        ]);
         setRecipe(recipeData);
         setAllergens(allergensData);
-      } catch (error) {
-        console.error(`Failed to fetch data for recipe ${id}:`, error);
-        setError("Failed to load recipe data.");
+
+        const recipeIngredients = recipeData.ingredients.map(i => i.text.toLowerCase());
+        const doesHaveAllergens = allergensData.some(allergen =>
+            recipeIngredients.some(ingredient => ingredient.includes(allergen.name.toLowerCase()))
+        );
+        setHasAllergens(doesHaveAllergens);
+
+      } catch (err) {
+        setError('Failed to load recipe.');
+        console.error(err);
       } finally {
         setLoading(false);
       }
-    }
+    };
+    fetchRecipeAndAllergens();
   }, [id]);
 
-  useEffect(() => {
-    fetchRecipeData();
-  }, [fetchRecipeData]);
-
-  const handleRecreateWithAi = async () => {
-    const apiKey = localStorage.getItem('groq_api_key');
-    const model = localStorage.getItem('groq_model') || 'llama3-70b';
-
-    if (!apiKey) {
-      setError("Groq API key not found. Please set it in the settings page.");
-      return;
+  const handleIngredientToggle = (ingredientId: number) => {
+    const newCheckedIngredients = new Set(checkedIngredients);
+    if (newCheckedIngredients.has(ingredientId)) {
+      newCheckedIngredients.delete(ingredientId);
+    } else {
+      newCheckedIngredients.add(ingredientId);
     }
+    setCheckedIngredients(newCheckedIngredients);
+  };
+
+  const handleUpdateWithAi = async () => {
     if (!id) return;
-
-    setIsRecreating(true);
-    setError(null);
     try {
-      const settings: GroqSettings = { api_key: apiKey, model };
-      const updatedRecipe = await updateRecipeWithAi(parseInt(id), settings);
+      setLoading(true);
+      const updatedRecipe = await updateRecipeWithAi(Number(id));
       setRecipe(updatedRecipe);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "An unexpected error occurred during AI re-creation.");
+    } catch (err) {
+      setError('Failed to update recipe with AI.');
+      console.error(err);
     } finally {
-      setIsRecreating(false);
+      setLoading(false);
     }
   };
 
-  const handleCheckboxChange = (ingredientId: number) => {
-    setCheckedIngredients(prev =>
-      prev.includes(ingredientId) ? prev.filter(id => id !== ingredientId) : [...prev, ingredientId]
-    );
-  };
-  
-  const getMatchedAllergens = (): string[] => {
-    if (!recipe || !allergens.length) return [];
-    const recipeIngredients = recipe.ingredients.map(i => i.text.toLowerCase());
-    return allergens
-      .filter(allergen => recipeIngredients.some(ing => ing.includes(allergen.name.toLowerCase())))
-      .map(a => a.name);
-  };
-  
-  const isAllergenic = (ingredient: Ingredient): boolean => {
-      if (!allergens.length) return false;
-      return allergens.some(allergen => ingredient.text.toLowerCase().includes(allergen.name.toLowerCase()));
-  };
+  if (loading) {
+    return <div className="text-center p-8">Loading recipe...</div>;
+  }
 
-  const matchedAllergens = getMatchedAllergens();
+  if (error) {
+    return <div className="text-center p-8 text-red-500">{error}</div>;
+  }
 
-  const textDirection = useMemo(() => {
-    if (!recipe) return 'ltr';
-    const textSample = `${recipe.title} ${recipe.instructions.join(' ')}`;
-    const langCode = franc(textSample);
-    const rtlLanguages = ['heb', 'ara', 'fas', 'urd'];
-    return rtlLanguages.includes(langCode) ? 'rtl' : 'ltr';
-  }, [recipe]);
+  if (!recipe) {
+    return <div className="text-center p-8">Recipe not found.</div>;
+  }
 
-  if (loading) return <div>Loading recipe...</div>;
-  if (error && !recipe) return <div>Error: {error}</div>;
-  if (!recipe) return <div>Recipe not found.</div>;
+  const totalTime = (parseInt(recipe.prep_time || '0') || 0) + (parseInt(recipe.cook_time || '0') || 0);
+  const isRtl = isRtlLang(recipe.title);
 
   return (
-    <div className="max-w-4xl mx-auto" dir={textDirection}>
-      <div className="mb-6"><Link to="/" className="flex items-center"><ArrowLeft className="me-2" />Back to Dashboard</Link></div>
-      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">{error}</div>}
-      {matchedAllergens.length > 0 && (
-        <div className="bg-soft-rose border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6 flex items-center">
-          <ShieldAlert className="h-6 w-6 me-3" />
-          <div><strong>Allergen Warning:</strong> This recipe may contain {matchedAllergens.join(', ')}.</div>
-        </div>
-      )}
+    <div className="max-w-5xl mx-auto p-4 md:p-8" dir={isRtl ? 'rtl' : 'ltr'}>
+      <Link to="/" className="flex items-center gap-2 text-sage-green font-semibold mb-6 hover:underline">
+        <ArrowLeft size={20} />
+        Back to Dashboard
+      </Link>
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <img src={recipe.image_url || 'https://via.placeholder.com/600x400'} alt={recipe.title} className="w-full h-64 object-cover" />
-        <div className="p-8">
+        {recipe.image_url && (
+          <img src={recipe.image_url} alt={recipe.title} className="w-full h-64 object-cover" />
+        )}
+        <div className="p-6 md:p-8">
           <div className="flex justify-between items-start">
-            <h2 className="text-4xl font-bold">{recipe.title}</h2>
-            <button onClick={handleRecreateWithAi} disabled={isRecreating} className="flex items-center bg-periwinkle-blue text-white py-2 px-4 rounded-lg disabled:bg-gray-400">
-              <RefreshCw className={`me-2 ${isRecreating ? 'animate-spin' : ''}`} />
-              {isRecreating ? 'Re-creating...' : 'Re-create with AI'}
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">{recipe.title}</h1>
+            <button
+              onClick={handleUpdateWithAi}
+              className="flex items-center gap-2 px-4 py-2 bg-periwinkle-blue text-gray-800 font-semibold rounded-lg hover:bg-opacity-80 transition-colors"
+            >
+              <RefreshCw size={20} />
+              Re-create with AI
             </button>
           </div>
-          <div className="flex space-x-6 my-4">
-            {recipe.prep_time && <span><strong>Prep:</strong> {recipe.prep_time}</span>}
-            {recipe.cook_time && <span><strong>Cook:</strong> {recipe.cook_time}</span>}
-            {recipe.servings && <span><strong>Servings:</strong> {recipe.servings}</span>}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-gray-600 mb-6">
+            {totalTime > 0 && (
+                <div className="flex items-center gap-2">
+                    <Clock size={20} />
+                    <span>{totalTime} minutes</span>
+                </div>
+            )}
+            {recipe.servings && (
+                <div className="flex items-center gap-2">
+                    <Users size={20} />
+                    <span>{recipe.servings}</span>
+                </div>
+            )}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-            <div>
-              <h3 className="text-2xl font-semibold mb-4">Ingredients</h3>
-              <ul className="space-y-2">
-                {recipe.ingredients.map(ing => (
-                  <li key={ing.id} className={`flex items-center p-2 rounded-lg ${isAllergenic(ing) ? 'bg-soft-rose' : ''}`}>
-                    <input type="checkbox" id={`ing-${ing.id}`} checked={checkedIngredients.includes(ing.id)} onChange={() => handleCheckboxChange(ing.id)} className="h-5 w-5 rounded"/>
-                    <label htmlFor={`ing-${ing.id}`} className={`ms-3 ${checkedIngredients.includes(ing.id) ? 'line-through' : ''}`}>{ing.text}</label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="md:col-span-1">
+              <h2 className="text-2xl font-semibold text-gray-700 mb-4 border-b-2 border-soft-rose pb-2">Ingredients</h2>
+              <ul className="space-y-3">
+                {recipe.ingredients.map((ingredient) => (
+                  <li
+                    key={ingredient.id}
+                    className="flex items-center gap-3 cursor-pointer"
+                    onClick={() => handleIngredientToggle(ingredient.id)}
+                  >
+                    {checkedIngredients.has(ingredient.id) ? <CheckSquare className="text-sage-green" /> : <Square className="text-gray-400" />}
+                    <span className={`text-gray-800 ${checkedIngredients.has(ingredient.id) ? 'line-through text-gray-500' : ''}`}>
+                      {ingredient.text}
+                    </span>
                   </li>
                 ))}
               </ul>
             </div>
-            <div>
-              <h3 className="text-2xl font-semibold mb-4">Instructions</h3>
-              <ol className="list-decimal list-inside space-y-3">{recipe.instructions.map((inst, i) => <li key={i}>{inst}</li>)}</ol>
+            <div className="md:col-span-2">
+              <h2 className="text-2xl font-semibold text-gray-700 mb-4 border-b-2 border-periwinkle-blue pb-2">Instructions</h2>
+              <ol className="space-y-4 list-decimal list-inside">
+                {recipe.instructions.map((instruction, index) => (
+                  <li key={index} className="text-gray-800 leading-relaxed">
+                    {instruction}
+                  </li>
+                ))}
+              </ol>
             </div>
           </div>
         </div>
@@ -138,4 +153,4 @@ const RecipeDetail = () => {
   );
 };
 
-export default RecipeDetail;
+export default RecipeDetailPage;

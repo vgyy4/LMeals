@@ -2,15 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-import crud
-import schemas
-import scraper as scraper_service
-import llm
+import crud, schemas, scraper, llm
 from database import SessionLocal
 
 router = APIRouter()
 
-# Dependency to get the database session
+# Dependency
 def get_db():
     db = SessionLocal()
     try:
@@ -21,65 +18,56 @@ def get_db():
 @router.post("/scrape", response_model=schemas.ScrapeResponse)
 def scrape_recipe(scrape_request: schemas.ScrapeRequest, db: Session = Depends(get_db)):
     """
-    Scrapes a recipe from a URL. First attempts to use a standard library,
-    if that fails, it returns the raw HTML for the client to decide on using AI.
+    Scrapes a recipe from a URL.
+    1. Checks if the recipe already exists.
+    2. Tries to scrape using the recipe-scrapers library.
+    3. If that fails, returns a status indicating AI is required.
     """
-    # Check if the recipe already exists
-    existing_recipe = crud.get_recipe_by_source_url(db, source_url=str(scrape_request.url))
+    existing_recipe = crud.get_recipe_by_source_url(db, source_url=scrape_request.url)
     if existing_recipe:
         return {"status": "exists", "recipe": existing_recipe}
 
-    # Attempt to scrape with the library
-    recipe_data = scraper_service.scrape_with_library(str(scrape_request.url))
+    recipe_data = scraper.scrape_with_library(scrape_request.url)
     if recipe_data:
-        recipe_create = schemas.RecipeCreate(**recipe_data, source_url=scrape_request.url)
-        new_recipe = crud.create_recipe(db, recipe_create)
+        recipe_create = schemas.RecipeCreate(**recipe_data)
+        new_recipe = crud.create_recipe(db, recipe=recipe_create)
         return {"status": "success", "recipe": new_recipe}
-
-    # If the library fails, get the HTML and let the user decide
-    html = scraper_service.get_html(str(scrape_request.url))
-    if html:
-        return {"status": "ai_required", "html": html, "message": "Standard import failed. Try with advanced AI import?"}
     
-    return {"status": "failed", "message": "Could not retrieve content from the URL."}
+    # If library scraping fails, signal to the frontend that AI is an option
+    return {"status": "ai_required", "message": "Standard scraping failed. Would you like to try with AI?"}
 
 
-@router.post("/scrape-with-ai", response_model=schemas.ScrapeResponse)
-def scrape_with_ai(request: schemas.ScrapeRequest, settings: schemas.GroqSettings, db: Session = Depends(get_db)):
+@router.post("/scrape-ai", response_model=schemas.ScrapeResponse)
+def scrape_ai(scrape_request: schemas.ScrapeRequest, db: Session = Depends(get_db)):
     """
-    Uses the Groq API to extract recipe data from HTML and creates a new recipe.
+    Scrapes a recipe from a URL using the Groq AI, after user confirmation.
     """
-    html = scraper_service.get_html(str(request.url))
+    html = scraper.get_html(scrape_request.url)
     if not html:
-        raise HTTPException(status_code=400, detail="Could not fetch HTML from the provided URL.")
+        raise HTTPException(status_code=400, detail="Could not fetch HTML from the URL.")
 
     try:
-        recipe_data = llm.extract_with_groq(html, api_key=settings.api_key, model=settings.model)
-        if recipe_data:
-            # Add the source_url to the data before creating the recipe
-            recipe_data['source_url'] = str(request.url)
-            
-            # The ingredients from the LLM are a list of strings, need to convert them
-            ingredients_list = recipe_data.get("ingredients", [])
-            recipe_data["ingredients"] = [{"text": i} for i in ingredients_list]
-
-            recipe_create = schemas.RecipeCreate(**recipe_data)
-            new_recipe = crud.create_recipe(db, recipe_create)
-            return {"status": "success", "recipe": new_recipe}
-        
-        raise HTTPException(status_code=500, detail="Failed to extract recipe data using the AI.")
-
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        recipe_data = llm.extract_with_groq(html, db)
+        if not recipe_data:
+            raise HTTPException(status_code=500, detail="AI failed to extract recipe data.")
     except Exception as e:
-        # Catch potential rate limit errors etc.
         error_message = str(e)
         status_code = 500
         if "rate limit" in error_message.lower():
-            status_code = 429 # Too Many Requests
-            error_message = "Groq API rate limit exceeded. Please check your account and try again in a few minutes."
-        
+            status_code = 429
+            error_message = "Groq API rate limit exceeded."
         raise HTTPException(status_code=status_code, detail=error_message)
+
+    # The data from the LLM needs to be shaped into our RecipeCreate schema
+    recipe_data['source_url'] = scrape_request.url
+
+    # Ingredients from LLM are a list of strings, but our schema expects a list of objects
+    ingredients_list = recipe_data.get("ingredients", [])
+    recipe_data["ingredients"] = [{"text": i} for i in ingredients_list]
+
+    recipe_create = schemas.RecipeCreate(**recipe_data)
+    new_recipe = crud.create_recipe(db, recipe=recipe_create)
+    return {"status": "success", "recipe": new_recipe}
 
 
 @router.get("/recipes", response_model=List[schemas.Recipe])
@@ -94,8 +82,8 @@ def read_recipe(recipe_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Recipe not found")
     return db_recipe
 
-@router.put("/recipes/{recipe_id}/scrape-with-ai", response_model=schemas.Recipe)
-def update_recipe_with_ai(recipe_id: int, settings: schemas.GroqSettings, db: Session = Depends(get_db)):
+@router.put("/recipes/{recipe_id}/scrape-ai", response_model=schemas.Recipe)
+def update_recipe_with_ai(recipe_id: int, db: Session = Depends(get_db)):
     """
     Re-scrapes a recipe's source URL using the Groq API and updates the existing recipe.
     """
@@ -103,38 +91,26 @@ def update_recipe_with_ai(recipe_id: int, settings: schemas.GroqSettings, db: Se
     if not db_recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
 
-    html = scraper_service.get_html(db_recipe.source_url)
+    html = scraper.get_html(db_recipe.source_url)
     if not html:
         raise HTTPException(status_code=400, detail="Could not fetch HTML from the recipe's source URL.")
 
-    try:
-        recipe_data = llm.extract_with_groq(html, api_key=settings.api_key, model=settings.model)
-        if recipe_data:
-            recipe_data['source_url'] = db_recipe.source_url
-            ingredients_list = recipe_data.get("ingredients", [])
-            recipe_data["ingredients"] = [{"text": i} for i in ingredients_list]
+    recipe_data = llm.extract_with_groq(html, db)
+    if not recipe_data:
+        raise HTTPException(status_code=500, detail="AI failed to extract recipe data.")
 
-            recipe_update = schemas.RecipeCreate(**recipe_data)
-            updated_recipe = crud.update_recipe(db, recipe_id=recipe_id, recipe=recipe_update)
-            return updated_recipe
+    recipe_data['source_url'] = db_recipe.source_url
+    ingredients_list = recipe_data.get("ingredients", [])
+    recipe_data["ingredients"] = [{"text": i} for i in ingredients_list]
 
-        raise HTTPException(status_code=500, detail="Failed to extract recipe data using the AI.")
+    recipe_update = schemas.RecipeCreate(**recipe_data)
+    updated_recipe = crud.update_recipe(db, recipe_id=recipe_id, recipe=recipe_update)
+    return updated_recipe
 
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        error_message = str(e)
-        status_code = 500
-        if "rate limit" in error_message.lower():
-            status_code = 429
-            error_message = "Groq API rate limit exceeded."
-
-        raise HTTPException(status_code=status_code, detail=error_message)
-
-
-@router.delete("/recipes/{recipe_id}", response_model=schemas.Recipe)
-def delete_recipe(recipe_id: int, db: Session = Depends(get_db)):
-    db_recipe = crud.delete_recipe(db, recipe_id=recipe_id)
+@router.delete("/recipes/{recipe_id}", status_code=204)
+def delete_recipe_endpoint(recipe_id: int, db: Session = Depends(get_db)):
+    db_recipe = crud.get_recipe(db, recipe_id)
     if db_recipe is None:
         raise HTTPException(status_code=404, detail="Recipe not found")
-    return db_recipe
+    crud.delete_recipe(db, recipe_id=recipe_id)
+    return
