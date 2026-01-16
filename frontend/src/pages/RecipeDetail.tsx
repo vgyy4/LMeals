@@ -1,32 +1,61 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, ShieldAlert } from 'lucide-react';
-import { getRecipe, getAllergens } from '../lib/api';
-import { Recipe, Allergen, Ingredient } from '../lib/types';
+import { getRecipe, getAllergens, updateRecipeWithAi } from '../lib/api';
+import { Recipe, Allergen, Ingredient, GroqSettings } from '../lib/types';
+import { franc } from 'franc';
 
 const RecipeDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [allergens, setAllergens] = useState<Allergen[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRecreating, setIsRecreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [checkedIngredients, setCheckedIngredients] = useState<number[]>([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (id) {
-        try {
-          const [recipeData, allergensData] = await Promise.all([getRecipe(parseInt(id)), getAllergens()]);
-          setRecipe(recipeData);
-          setAllergens(allergensData);
-        } catch (error) {
-          console.error(`Failed to fetch data for recipe ${id}:`, error);
-        } finally {
-          setLoading(false);
-        }
+  const fetchRecipeData = useCallback(async () => {
+    if (id) {
+      setLoading(true);
+      try {
+        const [recipeData, allergensData] = await Promise.all([getRecipe(parseInt(id)), getAllergens()]);
+        setRecipe(recipeData);
+        setAllergens(allergensData);
+      } catch (error) {
+        console.error(`Failed to fetch data for recipe ${id}:`, error);
+        setError("Failed to load recipe data.");
+      } finally {
+        setLoading(false);
       }
-    };
-    fetchData();
+    }
   }, [id]);
+
+  useEffect(() => {
+    fetchRecipeData();
+  }, [fetchRecipeData]);
+
+  const handleRecreateWithAi = async () => {
+    const apiKey = localStorage.getItem('groq_api_key');
+    const model = localStorage.getItem('groq_model') || 'llama3-70b';
+
+    if (!apiKey) {
+      setError("Groq API key not found. Please set it in the settings page.");
+      return;
+    }
+    if (!id) return;
+
+    setIsRecreating(true);
+    setError(null);
+    try {
+      const settings: GroqSettings = { api_key: apiKey, model };
+      const updatedRecipe = await updateRecipeWithAi(parseInt(id), settings);
+      setRecipe(updatedRecipe);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "An unexpected error occurred during AI re-creation.");
+    } finally {
+      setIsRecreating(false);
+    }
+  };
 
   const handleCheckboxChange = (ingredientId: number) => {
     setCheckedIngredients(prev =>
@@ -49,12 +78,22 @@ const RecipeDetail = () => {
 
   const matchedAllergens = getMatchedAllergens();
 
+  const textDirection = useMemo(() => {
+    if (!recipe) return 'ltr';
+    const textSample = `${recipe.title} ${recipe.instructions.join(' ')}`;
+    const langCode = franc(textSample);
+    const rtlLanguages = ['heb', 'ara', 'fas', 'urd'];
+    return rtlLanguages.includes(langCode) ? 'rtl' : 'ltr';
+  }, [recipe]);
+
   if (loading) return <div>Loading recipe...</div>;
+  if (error && !recipe) return <div>Error: {error}</div>;
   if (!recipe) return <div>Recipe not found.</div>;
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto" dir={textDirection}>
       <div className="mb-6"><Link to="/" className="flex items-center"><ArrowLeft className="me-2" />Back to Dashboard</Link></div>
+      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">{error}</div>}
       {matchedAllergens.length > 0 && (
         <div className="bg-soft-rose border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6 flex items-center">
           <ShieldAlert className="h-6 w-6 me-3" />
@@ -66,7 +105,10 @@ const RecipeDetail = () => {
         <div className="p-8">
           <div className="flex justify-between items-start">
             <h2 className="text-4xl font-bold">{recipe.title}</h2>
-            <button className="flex items-center bg-periwinkle-blue text-white py-2 px-4 rounded-lg"><RefreshCw className="me-2" />Re-create with AI</button>
+            <button onClick={handleRecreateWithAi} disabled={isRecreating} className="flex items-center bg-periwinkle-blue text-white py-2 px-4 rounded-lg disabled:bg-gray-400">
+              <RefreshCw className={`me-2 ${isRecreating ? 'animate-spin' : ''}`} />
+              {isRecreating ? 'Re-creating...' : 'Re-create with AI'}
+            </button>
           </div>
           <div className="flex space-x-6 my-4">
             {recipe.prep_time && <span><strong>Prep:</strong> {recipe.prep_time}</span>}

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Recipe, ScrapeRequest, ScrapeResponse, Allergen, GroqSettings } from './types';
+import { Recipe, ScrapeRequest, ScrapeResponse, Allergen, GroqSettings, MealPlanEntry } from './types';
 
 const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -32,6 +32,11 @@ export const deleteRecipe = async (id: number): Promise<void> => {
     await api.delete(`/recipes/${id}`);
 };
 
+export const updateRecipeWithAi = async (id: number, settings: GroqSettings): Promise<Recipe> => {
+    const response = await api.put(`/recipes/${id}/scrape-with-ai`, settings);
+    return response.data;
+};
+
 // Allergen Endpoints
 export const getAllergens = async (): Promise<Allergen[]> => {
     const response = await api.get('/allergens');
@@ -45,4 +50,25 @@ export const createAllergen = async (name: string): Promise<Allergen> => {
 
 export const deleteAllergen = async (id: number): Promise<void> => {
     await api.delete(`/allergens/${id}`);
+};
+
+// Meal Plan Endpoints
+export const getMealPlanEntries = async (startDate: string, endDate: string): Promise<any[]> => {
+    const response = await api.get('/meal-plan', { params: { start_date: startDate, end_date: endDate } });
+    return response.data;
+};
+
+export const createMealPlanEntry = async (date: string, recipeId: number): Promise<any> => {
+    const response = await api.post('/meal-plan', { date, recipe_id: recipeId });
+    return response.data;
+};
+
+export const deleteMealPlanEntry = async (id: number): Promise<void> => {
+    await api.delete(`/meal-plan/${id}`);
+};
+
+// Shopping List Endpoints
+export const getShoppingList = async (startDate: string, endDate: string): Promise<string[]> => {
+    const response = await api.get('/shopping-list', { params: { start_date: startDate, end_date: endDate } });
+    return response.data;
 };
