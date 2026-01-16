@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { DndContext, useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { getRecipes, getMealPlanEntries, createMealPlanEntry } from '../lib/api';
+import { getRecipes, getMealPlanEntries, createMealPlanEntry, deleteMealPlanEntry } from '../lib/api';
 import { Recipe, MealPlanEntry } from '../lib/types';
+import { X } from 'lucide-react';
 
 const DraggableRecipe = ({ recipe }: { recipe: Recipe }) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: `recipe-${recipe.id}`, data: recipe });
@@ -76,6 +77,18 @@ const MealPlan = () => {
     }
   };
 
+  const handleDeleteEntry = async (entryId: number, date: string) => {
+    try {
+      await deleteMealPlanEntry(entryId);
+      setMealPlan(prev => ({
+        ...prev,
+        [date]: prev[date].filter(entry => entry.id !== entryId),
+      }));
+    } catch (error) {
+      console.error("Failed to delete meal plan entry:", error);
+    }
+  };
+
   const calendarDays = Array.from({ length: firstDayOfMonth + daysInMonth }, (_, i) => {
     const day = i - firstDayOfMonth + 1;
     return day > 0 ? new Date(currentDate.getFullYear(), currentDate.getMonth(), day) : null;
@@ -102,8 +115,11 @@ const MealPlan = () => {
                   <span className="font-semibold">{date.getDate()}</span>
                   <div className="mt-1 text-sm overflow-y-auto">
                     {(mealPlan[dateString] || []).map(entry => (
-                      <div key={entry.id} className="bg-periwinkle-blue text-white p-1 rounded-md mb-1 text-xs">
-                        {entry.recipe.title}
+                      <div key={entry.id} className="bg-periwinkle-blue text-white p-1 rounded-md mb-1 text-xs flex justify-between items-center">
+                        <span>{entry.recipe.title}</span>
+                        <button onClick={() => handleDeleteEntry(entry.id, dateString)} className="text-white hover:text-red-500">
+                          <X size={12} />
+                        </button>
                       </div>
                     ))}
                   </div>

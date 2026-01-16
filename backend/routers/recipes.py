@@ -82,6 +82,18 @@ def read_recipe(recipe_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Recipe not found")
     return db_recipe
 
+@router.get("/recipes/favorites", response_model=List[schemas.Recipe])
+def read_favorite_recipes(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    recipes = crud.get_favorite_recipes(db, skip=skip, limit=limit)
+    return recipes
+
+@router.put("/recipes/{recipe_id}/favorite", response_model=schemas.Recipe)
+def set_recipe_favorite(recipe_id: int, is_favorite: bool, db: Session = Depends(get_db)):
+    db_recipe = crud.set_favorite_status(db, recipe_id=recipe_id, is_favorite=is_favorite)
+    if db_recipe is None:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    return db_recipe
+
 @router.put("/recipes/{recipe_id}/scrape-ai", response_model=schemas.Recipe)
 def update_recipe_with_ai(recipe_id: int, db: Session = Depends(get_db)):
     """

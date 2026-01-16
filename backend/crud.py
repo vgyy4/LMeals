@@ -48,6 +48,17 @@ def delete_recipe(db: Session, recipe_id: int):
         db.commit()
     return db_recipe
 
+def get_favorite_recipes(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Recipe).filter(models.Recipe.is_favorite == True).offset(skip).limit(limit).all()
+
+def set_favorite_status(db: Session, recipe_id: int, is_favorite: bool):
+    db_recipe = get_recipe(db, recipe_id)
+    if db_recipe:
+        db_recipe.is_favorite = is_favorite
+        db.commit()
+        db.refresh(db_recipe)
+    return db_recipe
+
 # Allergen CRUD operations
 def get_allergen(db: Session, allergen_id: int):
     return db.query(models.Allergen).filter(models.Allergen.id == allergen_id).first()

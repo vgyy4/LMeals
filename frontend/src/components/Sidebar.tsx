@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Calendar, ShoppingCart, Settings } from 'lucide-react';
+import { LayoutDashboard, Calendar, ShoppingCart, Settings, Heart } from 'lucide-react';
 
 const Sidebar = () => {
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
@@ -24,6 +24,10 @@ const Sidebar = () => {
         <NavLink to="/shopping-list" className={navLinkClasses}>
           <ShoppingCart className="me-3" />
           Shopping List
+        </NavLink>
+        <NavLink to="/favorites" className={navLinkClasses}>
+          <Heart className="me-3" />
+          Favorites
         </NavLink>
         <NavLink to="/settings" className={navLinkClasses}>
           <Settings className="me-3" />

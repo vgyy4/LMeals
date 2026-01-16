@@ -45,6 +45,7 @@ class RecipeBase(BaseModel):
     image_url: Optional[HttpUrl] = None
     source_url: HttpUrl
     notes: Optional[str] = None
+    is_favorite: bool = False
 
 class RecipeCreate(RecipeBase):
     ingredients: List[IngredientCreate]
