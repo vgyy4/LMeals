@@ -94,6 +94,44 @@ def read_recipe(recipe_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Recipe not found")
     return db_recipe
 
+@router.put("/recipes/{recipe_id}/scrape-with-ai", response_model=schemas.Recipe)
+def update_recipe_with_ai(recipe_id: int, settings: schemas.GroqSettings, db: Session = Depends(get_db)):
+    """
+    Re-scrapes a recipe's source URL using the Groq API and updates the existing recipe.
+    """
+    db_recipe = crud.get_recipe(db, recipe_id=recipe_id)
+    if not db_recipe:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+
+    html = scraper_service.get_html(db_recipe.source_url)
+    if not html:
+        raise HTTPException(status_code=400, detail="Could not fetch HTML from the recipe's source URL.")
+
+    try:
+        recipe_data = llm.extract_with_groq(html, api_key=settings.api_key, model=settings.model)
+        if recipe_data:
+            recipe_data['source_url'] = db_recipe.source_url
+            ingredients_list = recipe_data.get("ingredients", [])
+            recipe_data["ingredients"] = [{"text": i} for i in ingredients_list]
+
+            recipe_update = schemas.RecipeCreate(**recipe_data)
+            updated_recipe = crud.update_recipe(db, recipe_id=recipe_id, recipe=recipe_update)
+            return updated_recipe
+
+        raise HTTPException(status_code=500, detail="Failed to extract recipe data using the AI.")
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        error_message = str(e)
+        status_code = 500
+        if "rate limit" in error_message.lower():
+            status_code = 429
+            error_message = "Groq API rate limit exceeded."
+
+        raise HTTPException(status_code=status_code, detail=error_message)
+
+
 @router.delete("/recipes/{recipe_id}", response_model=schemas.Recipe)
 def delete_recipe(recipe_id: int, db: Session = Depends(get_db)):
     db_recipe = crud.delete_recipe(db, recipe_id=recipe_id)

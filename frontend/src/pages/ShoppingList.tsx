@@ -1,13 +1,36 @@
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { getShoppingList } from '../lib/api';
+
+interface ShoppingListItem {
+  id: number;
+  text: string;
+  checked: boolean;
+}
 
 const ShoppingList = () => {
-  const [items, setItems] = useState([
-    { id: 1, text: '1 lb Ground Beef', checked: false },
-    { id: 2, text: '1 Onion, chopped', checked: true },
-    { id: 3, text: '2 cloves Garlic, minced', checked: false },
-  ]);
+  const [items, setItems] = useState<ShoppingListItem[]>([]);
   const [newItem, setNewItem] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleGenerateList = async () => {
+    setIsLoading(true);
+    try {
+      // For simplicity, we'll fetch for the current month.
+      // A more advanced implementation would let the user select a date range.
+      const today = new Date();
+      const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+      const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+
+      const generatedItems = await getShoppingList(startDate, endDate);
+      const formattedItems = generatedItems.map((text, index) => ({ id: Date.now() + index, text, checked: false }));
+      setItems(formattedItems);
+    } catch (error) {
+      console.error("Failed to generate shopping list:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAddItem = () => {
     if (newItem.trim()) {
@@ -34,9 +57,9 @@ const ShoppingList = () => {
       
       <div className="bg-white p-6 rounded-2xl shadow-md max-w-2xl mx-auto">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold">Generated List</h3>
-          <button className="bg-sage-green text-white font-semibold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors">
-            Generate from Meal Plan
+          <h3 className="text-xl font-semibold">Your List</h3>
+          <button onClick={handleGenerateList} disabled={isLoading} className="bg-sage-green text-white font-semibold py-2 px-4 rounded-lg hover:bg-opacity-80 transition-colors disabled:bg-gray-400">
+            {isLoading ? 'Generating...' : 'Generate from This Month\'s Meal Plan'}
           </button>
         </div>
 
@@ -46,7 +69,7 @@ const ShoppingList = () => {
             value={newItem}
             onChange={(e) => setNewItem(e.target.value)}
             className="block w-full rounded-md border-gray-300 focus:border-sage-green focus:ring-sage-green sm:text-sm"
-            placeholder="Add a new item..."
+            placeholder="Add a manual item..."
           />
           <button onClick={handleAddItem} className="bg-soft-rose text-gray-800 p-2 rounded-lg hover:bg-opacity-80 transition-colors">
             <Plus />

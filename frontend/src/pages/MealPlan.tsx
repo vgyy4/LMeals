@@ -1,84 +1,115 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DndContext, useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import { getRecipes, getMealPlanEntries, createMealPlanEntry } from '../lib/api';
+import { Recipe, MealPlanEntry } from '../lib/types';
 
-// Sample Data
-const sampleRecipes = [
-  { id: 'recipe-1', title: 'Spaghetti Bolognese' },
-  { id: 'recipe-2', title: 'Chicken Curry' },
-  { id: 'recipe-3', title: 'Chocolate Cake' },
-];
-
-// Draggable Recipe Component
-const DraggableRecipe = ({ id, title }: { id: string, title: string }) => {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
-  const style = {
-    transform: CSS.Translate.toString(transform),
-  };
+const DraggableRecipe = ({ recipe }: { recipe: Recipe }) => {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: `recipe-${recipe.id}`, data: recipe });
+  const style = { transform: CSS.Translate.toString(transform) };
   return (
     <div ref={setNodeRef} style={style} {...listeners} {...attributes} className="p-2 bg-soft-rose rounded-lg cursor-grab mb-2">
-      {title}
+      {recipe.title}
     </div>
   );
 };
 
-// Droppable Calendar Day Component
-const DroppableDay = ({ id, children }: { id: string, children: React.ReactNode }) => {
-  const { isOver, setNodeRef } = useDroppable({ id });
-  const style = {
-    backgroundColor: isOver ? '#b2d2a4' : undefined,
-  };
+const DroppableDay = ({ date, children }: { date: string, children: React.ReactNode }) => {
+  const { isOver, setNodeRef } = useDroppable({ id: date });
   return (
-    <div ref={setNodeRef} style={style} className="border rounded-lg p-2 h-24">
+    <div ref={setNodeRef} className={`border rounded-lg p-2 h-32 flex flex-col ${isOver ? 'bg-sage-green' : ''}`}>
       {children}
     </div>
   );
 };
 
-
 const MealPlan = () => {
-  const [plannedRecipes, setPlannedRecipes] = useState<Record<string, string[]>>({});
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [mealPlan, setMealPlan] = useState<Record<string, MealPlanEntry[]>>({});
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  const handleDragEnd = (event: any) => {
+  const { firstDayOfMonth, daysInMonth } = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    return {
+      firstDayOfMonth: new Date(year, month, 1).getDay(),
+      daysInMonth: new Date(year, month + 1, 0).getDate(),
+    };
+  }, [currentDate]);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const startDate = new Date(year, month, 1).toISOString().split('T')[0];
+      const endDate = new Date(year, month, daysInMonth).toISOString().split('T')[0];
+
+      const [recipesData, mealPlanData] = await Promise.all([getRecipes(), getMealPlanEntries(startDate, endDate)]);
+      setRecipes(recipesData);
+
+      const plan = mealPlanData.reduce((acc, entry) => {
+        const date = entry.date.split('T')[0];
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(entry);
+        return acc;
+      }, {} as Record<string, MealPlanEntry[]>);
+      setMealPlan(plan);
+    };
+    fetchInitialData();
+  }, [currentDate, daysInMonth]);
+
+  const handleDragEnd = async (event: any) => {
     const { over, active } = event;
-    if (over) {
-      setPlannedRecipes(prev => {
-        const currentRecipes = prev[over.id] || [];
-        const recipeTitle = sampleRecipes.find(r => r.id === active.id)?.title;
-        if (recipeTitle && !currentRecipes.includes(recipeTitle)) {
-           return { ...prev, [over.id]: [...currentRecipes, recipeTitle] };
-        }
-        return prev;
-      });
+    if (over && active.data.current) {
+      const recipe = active.data.current as Recipe;
+      const date = over.id;
+
+      try {
+        const newEntry = await createMealPlanEntry(date, recipe.id);
+        setMealPlan(prev => ({
+          ...prev,
+          [date]: [...(prev[date] || []), newEntry],
+        }));
+      } catch (error) {
+        console.error("Failed to add meal plan entry:", error);
+      }
     }
   };
 
-  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const calendarDays = Array.from({ length: 35 }, (_, i) => i + 1 - 4);
+  const calendarDays = Array.from({ length: firstDayOfMonth + daysInMonth }, (_, i) => {
+    const day = i - firstDayOfMonth + 1;
+    return day > 0 ? new Date(currentDate.getFullYear(), currentDate.getMonth(), day) : null;
+  });
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
       <div className="flex gap-8">
         <div className="w-1/4 bg-white p-4 rounded-2xl shadow-md">
-          <h3 className="text-xl font-bold mb-4">Recipes</h3>
-          {sampleRecipes.map(recipe => (
-            <DraggableRecipe key={recipe.id} id={recipe.id} title={recipe.title} />
-          ))}
+          <h3 className="text-xl font-bold mb-4">Available Recipes</h3>
+          <div className="max-h-[70vh] overflow-y-auto">
+            {recipes.map(recipe => <DraggableRecipe key={recipe.id} recipe={recipe} />)}
+          </div>
         </div>
 
         <div className="w-3/4 bg-white p-6 rounded-2xl shadow-md">
           <div className="grid grid-cols-7 gap-2">
-            {daysOfWeek.map(day => <div key={day} className="text-center font-semibold">{day}</div>)}
-            {calendarDays.map(day => (
-              <DroppableDay key={day} id={`day-${day}`}>
-                <span className="font-semibold">{day > 0 && day <= 31 ? day : ''}</span>
-                <div className="mt-1 text-sm">
-                  {(plannedRecipes[`day-${day}`] || []).map((recipeTitle, i) => (
-                    <div key={i} className="bg-periwinkle-blue text-white p-1 rounded-md mb-1 text-xs">{recipeTitle}</div>
-                  ))}
-                </div>
-              </DroppableDay>
-            ))}
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <div key={day} className="text-center font-semibold">{day}</div>)}
+            {calendarDays.map((date, i) => {
+              if (!date) return <div key={i} className="border rounded-lg p-2 h-32"></div>;
+              const dateString = date.toISOString().split('T')[0];
+              return (
+                <DroppableDay key={dateString} date={dateString}>
+                  <span className="font-semibold">{date.getDate()}</span>
+                  <div className="mt-1 text-sm overflow-y-auto">
+                    {(mealPlan[dateString] || []).map(entry => (
+                      <div key={entry.id} className="bg-periwinkle-blue text-white p-1 rounded-md mb-1 text-xs">
+                        {entry.recipe.title}
+                      </div>
+                    ))}
+                  </div>
+                </DroppableDay>
+              );
+            })}
           </div>
         </div>
       </div>

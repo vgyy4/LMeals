@@ -39,3 +39,10 @@ export interface GroqSettings {
     api_key: string;
     model: string;
 }
+
+export interface MealPlanEntry {
+  id: number;
+  date: string;
+  recipe_id: number;
+  recipe: Recipe;
+}

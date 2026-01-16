@@ -66,3 +66,18 @@ class ScrapeResponse(BaseModel):
 class GroqSettings(BaseModel):
     api_key: str
     model: str
+
+# Meal Plan Schemas
+class MealPlanEntryBase(BaseModel):
+    date: str  # Using string to handle date format
+    recipe_id: int
+
+class MealPlanEntryCreate(MealPlanEntryBase):
+    pass
+
+class MealPlanEntry(MealPlanEntryBase):
+    id: int
+    recipe: Recipe
+
+    class Config:
+        orm_mode = True
