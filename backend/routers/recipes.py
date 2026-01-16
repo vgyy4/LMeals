@@ -47,7 +47,7 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, db: Session = Depends(get_d
         raise HTTPException(status_code=400, detail="Could not fetch HTML from the URL.")
 
     try:
-        recipe_data = llm.extract_with_groq(html, db)
+        recipe_data = llm.extract_with_groq(html)
         if not recipe_data:
             raise HTTPException(status_code=500, detail="AI failed to extract recipe data.")
     except Exception as e:
@@ -107,7 +107,7 @@ def update_recipe_with_ai(recipe_id: int, db: Session = Depends(get_db)):
     if not html:
         raise HTTPException(status_code=400, detail="Could not fetch HTML from the recipe's source URL.")
 
-    recipe_data = llm.extract_with_groq(html, db)
+    recipe_data = llm.extract_with_groq(html)
     if not recipe_data:
         raise HTTPException(status_code=500, detail="AI failed to extract recipe data.")
 

@@ -100,29 +100,3 @@ def delete_meal_plan_entry(db: Session, entry_id: int):
         db.delete(db_entry)
         db.commit()
     return db_entry
-
-# Settings CRUD operations
-def get_settings(db: Session):
-    """
-    Retrieve the settings record. Since it's a singleton, always fetch the first one.
-    If it doesn't exist, create it with default values.
-    """
-    db_settings = db.query(models.Setting).first()
-    if not db_settings:
-        db_settings = models.Setting()
-        db.add(db_settings)
-        db.commit()
-        db.refresh(db_settings)
-    return db_settings
-
-def create_or_update_settings(db: Session, settings: schemas.SettingUpdate):
-    """
-    Update the singleton settings record.
-    """
-    db_settings = get_settings(db)
-    update_data = settings.dict(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_settings, key, value)
-    db.commit()
-    db.refresh(db_settings)
-    return db_settings

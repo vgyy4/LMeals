@@ -1,19 +1,17 @@
 from groq import Groq
 import json
-from sqlalchemy.orm import Session
-import crud
+import os
 
-def extract_with_groq(html: str, db: Session):
+def extract_with_groq(html: str):
     """
-    Uses the Groq API to extract recipe data from HTML using credentials from user settings.
+    Uses the Groq API to extract recipe data from HTML using credentials from environment variables.
     Returns a dictionary of recipe data or None if extraction fails.
     """
-    settings = crud.get_settings(db)
-    api_key = settings.groq_api_key
-    model = settings.groq_model
+    api_key = os.environ.get("GROQ_API_KEY")
+    model = os.environ.get("GROQ_MODEL", "llama3-70b-8192")
 
     if not api_key:
-        print("Groq API key is not configured in settings.")
+        print("GROQ_API_KEY environment variable is not set.")
         return None
 
     client = Groq(api_key=api_key)

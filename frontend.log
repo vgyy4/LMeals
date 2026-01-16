@@ -9,3 +9,7 @@
   ➜  Network: use --host to expose
 7:15:35 PM [vite] (client) ✨ new dependencies optimized: moment
 7:15:35 PM [vite] (client) ✨ optimized dependencies changed. reloading
+8:40:39 PM [vite] (client) hmr update /src/index.css, /src/pages/Dashboard.tsx, /src/pages/Favorites.tsx, /src/pages/RecipeDetail.tsx, /src/pages/MealPlan.tsx, /src/pages/Settings.tsx, /src/components/RecipeCard.tsx, /src/components/AddRecipeModal.tsx, /src/pages/ShoppingList.tsx
+8:40:47 PM [vite] (client) hmr update /src/index.css, /src/pages/Dashboard.tsx, /src/pages/Favorites.tsx, /src/pages/RecipeDetail.tsx, /src/pages/MealPlan.tsx, /src/pages/Settings.tsx, /src/components/RecipeCard.tsx, /src/components/AddRecipeModal.tsx, /src/pages/ShoppingList.tsx
+8:40:55 PM [vite] (client) hmr update /src/pages/Settings.tsx, /src/index.css
+8:41:14 PM [vite] (client) hmr update /src/pages/Settings.tsx, /src/index.css
