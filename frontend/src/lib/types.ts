@@ -40,6 +40,13 @@ export interface GroqSettings {
     model: string;
 }
 
+// Application Settings
+export interface Settings {
+  id: number;
+  groq_api_key: string | null;
+  groq_model: string;
+}
+
 export interface MealPlanEntry {
   id: number;
   date: string;

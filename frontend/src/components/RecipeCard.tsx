@@ -1,26 +1,40 @@
 import { Link } from 'react-router-dom';
-import { ShieldAlert } from 'lucide-react';
+import { AlertTriangle, Clock } from 'lucide-react';
 
 interface RecipeCardProps {
   id: number;
   title: string;
   imageUrl?: string;
-  hasAllergens?: boolean;
+  hasAllergens: boolean;
+  cookTime?: string;
+  prepTime?: string;
 }
 
-const RecipeCard = ({ id, title, imageUrl, hasAllergens }: RecipeCardProps) => {
-  return (
-    <Link to={`/recipe/${id}`} className="block bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300">
+const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime }: RecipeCardProps) => {
+    const totalTime = (parseInt(prepTime || '0') || 0) + (parseInt(cookTime || '0') || 0);
+
+    return (
+    <Link to={`/recipe/${id}`} className="group block rounded-2xl bg-white shadow-md hover:shadow-lg transition-shadow duration-300">
       <div className="relative">
-        <img src={imageUrl || 'https://via.placeholder.com/300'} alt={title} className="w-full h-40 object-cover rounded-t-2xl" />
+        <img
+          src={imageUrl || 'https://placehold.co/600x400/F8E8EE/C9A9A6?text=LMeals'}
+          alt={title}
+          className="w-full h-40 object-cover rounded-t-2xl"
+        />
         {hasAllergens && (
-          <div className="absolute top-2 end-2 bg-soft-rose p-1.5 rounded-full">
-            <ShieldAlert className="text-red-500" />
+          <div className="absolute top-2 end-2 bg-red-500 text-white p-2 rounded-full">
+            <AlertTriangle size={20} />
           </div>
         )}
       </div>
       <div className="p-4">
-        <h3 className="font-semibold text-lg text-gray-800 truncate">{title}</h3>
+        <h3 className="text-lg font-semibold text-gray-800 truncate group-hover:text-soft-rose transition-colors">{title}</h3>
+        {totalTime > 0 && (
+            <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
+                <Clock size={16} />
+                <span>{totalTime} min</span>
+            </div>
+        )}
       </div>
     </Link>
   );
