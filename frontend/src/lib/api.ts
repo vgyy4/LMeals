@@ -37,6 +37,16 @@ export const updateRecipeWithAi = async (id: number): Promise<Recipe> => {
     return response.data;
 };
 
+export const getFavoriteRecipes = async (): Promise<Recipe[]> => {
+    const response = await api.get('/recipes/favorites');
+    return response.data;
+};
+
+export const setFavoriteStatus = async (id: number, isFavorite: boolean): Promise<Recipe> => {
+    const response = await api.put(`/recipes/${id}/favorite?is_favorite=${isFavorite}`);
+    return response.data;
+};
+
 // Allergen Endpoints
 export const getAllergens = async (): Promise<Allergen[]> => {
     const response = await api.get('/allergens');

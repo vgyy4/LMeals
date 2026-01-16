@@ -4,7 +4,8 @@ import Dashboard from './pages/Dashboard';
 import MealPlan from './pages/MealPlan';
 import ShoppingList from './pages/ShoppingList';
 import Settings from './pages/Settings';
-import RecipeDetail from './pages/RecipeDetail'; // I will create this file next
+import RecipeDetail from './pages/RecipeDetail';
+import FavoritesPage from './pages/Favorites';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/meal-plan" element={<MealPlan />} />
           <Route path="/shopping-list" element={<ShoppingList />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
         </Route>
       </Routes>
     </Router>

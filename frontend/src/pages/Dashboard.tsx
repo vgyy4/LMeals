@@ -121,6 +121,7 @@ const Dashboard = () => {
               hasAllergens={checkForAllergens(recipe)}
               cookTime={recipe.cook_time}
               prepTime={recipe.prep_time}
+              isFavorite={recipe.is_favorite}
             />
           ))}
         </div>

@@ -21,9 +21,10 @@ app.add_middleware(
 def read_root():
     return {"message": "Welcome to LMeals API"}
 
-from routers import recipes, allergens, settings, meal_plan
+from routers import recipes, allergens, settings, meal_plan, shopping_list
 
 app.include_router(recipes.router, prefix="/api", tags=["recipes"])
 app.include_router(allergens.router, prefix="/api", tags=["allergens"])
 app.include_router(settings.router, prefix="/api", tags=["settings"])
 app.include_router(meal_plan.router, prefix="/api", tags=["meal_plan"])
+app.include_router(shopping_list.router, prefix="/api", tags=["shopping_list"])

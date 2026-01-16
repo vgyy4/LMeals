@@ -3,17 +3,9 @@
 > vite
 
 
-  VITE v7.3.1  ready in 285 ms
+  VITE v7.3.1  ready in 273 ms
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
-5:31:17 PM [vite] (client) hmr update /src/index.css, /src/pages/Dashboard.tsx, /src/pages/ShoppingList.tsx, /src/pages/Settings.tsx, /src/pages/RecipeDetail.tsx, /src/pages/MealPlan.tsx, /src/components/AddRecipeModal.tsx
-5:31:22 PM [vite] (client) hmr update /src/index.css, /src/pages/Dashboard.tsx, /src/pages/ShoppingList.tsx, /src/pages/Settings.tsx, /src/pages/RecipeDetail.tsx, /src/pages/MealPlan.tsx, /src/components/AddRecipeModal.tsx
-5:31:26 PM [vite] (client) hmr update /src/pages/RecipeDetail.tsx, /src/index.css
-5:31:34 PM [vite] (client) hmr update /src/pages/RecipeDetail.tsx, /src/index.css
-5:31:40 PM [vite] (client) hmr update /src/pages/RecipeDetail.tsx, /src/index.css
-5:32:03 PM [vite] (client) hmr update /src/pages/RecipeDetail.tsx, /src/index.css
-5:32:09 PM [vite] (client) hmr update /src/pages/RecipeDetail.tsx, /src/index.css
-5:32:32 PM [vite] (client) hmr update /src/pages/RecipeDetail.tsx, /src/index.css
-5:32:37 PM [vite] (client) hmr update /src/pages/RecipeDetail.tsx, /src/index.css
-5:32:52 PM [vite] (client) hmr update /src/pages/RecipeDetail.tsx, /src/index.css
+7:15:35 PM [vite] (client) ✨ new dependencies optimized: moment
+7:15:35 PM [vite] (client) ✨ optimized dependencies changed. reloading
