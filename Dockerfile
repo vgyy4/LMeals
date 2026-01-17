@@ -6,19 +6,18 @@ RUN npm install
 COPY frontend/ ./
 RUN npm run build
 
-# Stage 2: Build the backend
-FROM python:3.11-slim AS backend-builder
-WORKDIR /app
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY backend/ .
-# Copy the built frontend to the backend's static directory
-COPY --from=frontend-builder /app/frontend/dist ./static
-
-# Stage 3: Final image
+# Stage 2: Final image
 FROM python:3.11-slim
 WORKDIR /app
-COPY --from=backend-builder /app .
+
+# Install build dependencies if needed (e.g. for some python packages)
+# RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
+
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY backend/ .
+COPY --from=frontend-builder /app/frontend/dist ./static
 EXPOSE 8000
 COPY run.sh .
 RUN chmod +x run.sh
