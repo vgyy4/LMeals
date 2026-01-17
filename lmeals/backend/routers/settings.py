@@ -57,7 +57,7 @@ def verify_groq_key(setting: schemas.SettingCreate):
         return {"status": "error", "message": str(e)}
 
 @router.get("/groq-models")
-def get_groq_models(api_key: str = None, db: Session = Depends(get_db)):
+def get_groq_models(db: Session = Depends(get_db), api_key: str = None):
     """
     Fetches available models from Groq API.
     If api_key is provided, uses it directly. Otherwise, fetches from database.
