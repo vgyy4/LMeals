@@ -57,10 +57,13 @@ const Settings: React.FC = () => {
   };
 
   const fetchModels = async () => {
+    console.log('fetchModels called with apiKey:', apiKey ? 'present' : 'missing');
     try {
       const response = await getGroqModels(apiKey);
+      console.log('Models fetched successfully:', response);
       if (response.status === 'success') {
         setAvailableModels(response.models);
+        console.log('Available models set:', response.models.length, 'models');
       }
     } catch (error) {
       console.error("Failed to fetch models", error);
