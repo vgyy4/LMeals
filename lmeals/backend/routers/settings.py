@@ -16,23 +16,23 @@ def get_db():
     finally:
         db.close()
 
-@router.get("/settings", response_model=List[schemas.Setting])
+@router.get("", response_model=List[schemas.Setting])
 def read_settings(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     settings = crud.get_settings(db, skip=skip, limit=limit)
     return settings
 
-@router.get("/settings/{key}", response_model=schemas.Setting)
+@router.get("/{key}", response_model=schemas.Setting)
 def read_setting(key: str, db: Session = Depends(get_db)):
     db_setting = crud.get_setting(db, key=key)
     if db_setting is None:
         raise HTTPException(status_code=404, detail="Setting not found")
     return db_setting
 
-@router.post("/settings", response_model=schemas.Setting)
+@router.post("", response_model=schemas.Setting)
 def create_or_update_setting(setting: schemas.SettingCreate, db: Session = Depends(get_db)):
     return crud.update_setting(db=db, key=setting.key, value=setting.value)
 
-@router.post("/settings/verify-groq")
+@router.post("/verify-groq")
 def verify_groq_key(setting: schemas.SettingCreate):
     """
     Verifies the Groq API key by attempting to list models.
@@ -56,7 +56,7 @@ def verify_groq_key(setting: schemas.SettingCreate):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@router.get("/settings/groq-models")
+@router.get("/groq-models")
 def get_groq_models(api_key: str = None, db: Session = Depends(get_db)):
     """
     Fetches available models from Groq API.

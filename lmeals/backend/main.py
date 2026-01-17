@@ -23,7 +23,7 @@ app.include_router(meal_plan.router, prefix="/api", tags=["meal_plan"])
 app.include_router(shopping_list.router, prefix="/api", tags=["shopping_list"])
 
 from routers import settings
-app.include_router(settings.router, prefix="/api", tags=["settings"])
+app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
 
 # Serve frontend static files
 app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
