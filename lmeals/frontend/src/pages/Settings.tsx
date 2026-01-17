@@ -70,12 +70,15 @@ const Settings: React.FC = () => {
   const handleSaveSettings = async () => {
     try {
       await saveSetting('GROQ_API_KEY', apiKey);
-      await saveSetting('GROQ_MODEL', model);
+      if (model) {
+        await saveSetting('GROQ_MODEL', model);
+      }
       setMessage('Settings saved successfully!');
       setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving settings:', error);
-      setMessage('Failed to save settings.');
+      setMessage(`Failed to save settings: ${error.message || 'Unknown error'}`);
+      setTimeout(() => setMessage(''), 5000);
     }
   };
 
@@ -164,7 +167,7 @@ const Settings: React.FC = () => {
         {/* Model Section */}
         <div className="mb-6">
           <label className="block text-slate-700 dark:text-slate-300 text-sm font-bold mb-2" htmlFor="model">
-            Groq Model
+            Groq Model {availableModels.length > 0 && <span className="text-green-600 dark:text-green-400 text-xs font-normal">({availableModels.length} models available)</span>}
           </label>
           <div className="relative">
             <input
@@ -172,7 +175,7 @@ const Settings: React.FC = () => {
               id="model"
               type="text"
               list="model-options"
-              placeholder="Select or type a model (e.g. llama3-70b-8192)"
+              placeholder={availableModels.length > 0 ? "Type or click to select a model" : "Enter your API key and click 'Check Key' first"}
               value={model}
               onChange={(e) => setModel(e.target.value)}
             />
@@ -183,8 +186,13 @@ const Settings: React.FC = () => {
             </datalist>
           </div>
           {availableModels.length === 0 && apiKey && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+              ⚠️ No models loaded. Click "Check Key" to load available models.
+            </p>
+          )}
+          {availableModels.length > 0 && (
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Enter a valid API key and click "Check Key" to load available models.
+              💡 Tip: Start typing to filter or click the dropdown arrow to see all models.
             </p>
           )}
         </div>
