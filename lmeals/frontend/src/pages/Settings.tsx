@@ -58,7 +58,7 @@ const Settings: React.FC = () => {
 
   const fetchModels = async () => {
     try {
-      const response = await getGroqModels();
+      const response = await getGroqModels(apiKey);
       if (response.status === 'success') {
         setAvailableModels(response.models);
       }

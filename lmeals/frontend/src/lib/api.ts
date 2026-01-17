@@ -99,7 +99,8 @@ export const verifyGroqKey = async (apiKey: string): Promise<{ status: string; m
     return response.data;
 };
 
-export const getGroqModels = async (): Promise<{ status: string; models: string[] }> => {
-    const response = await api.get('/settings/groq-models');
+export const getGroqModels = async (apiKey?: string): Promise<{ status: string; models: string[] }> => {
+    const params = apiKey ? { api_key: apiKey } : {};
+    const response = await api.get('/settings/groq-models', { params });
     return response.data;
 };

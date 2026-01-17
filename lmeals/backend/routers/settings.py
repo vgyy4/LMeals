@@ -57,18 +57,23 @@ def verify_groq_key(setting: schemas.SettingCreate):
         return {"status": "error", "message": str(e)}
 
 @router.get("/settings/groq-models")
-def get_groq_models(db: Session = Depends(get_db)):
+def get_groq_models(api_key: str = None, db: Session = Depends(get_db)):
     """
-    Fetches available models from Groq API using the stored API key.
+    Fetches available models from Groq API.
+    If api_key is provided, uses it directly. Otherwise, fetches from database.
     """
     import requests
-    api_key_setting = crud.get_setting(db, key="GROQ_API_KEY")
-    if not api_key_setting or not api_key_setting.value:
-        raise HTTPException(status_code=400, detail="Groq API Key not set")
+    
+    # Use provided key or fetch from database
+    if not api_key:
+        api_key_setting = crud.get_setting(db, key="GROQ_API_KEY")
+        if not api_key_setting or not api_key_setting.value:
+            raise HTTPException(status_code=400, detail="Groq API Key not set")
+        api_key = api_key_setting.value
     
     try:
         headers = {
-            "Authorization": f"Bearer {api_key_setting.value}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
         response = requests.get("https://api.groq.com/openai/v1/models", headers=headers)
