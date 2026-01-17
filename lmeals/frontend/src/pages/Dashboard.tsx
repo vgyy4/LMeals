@@ -49,9 +49,9 @@ const Dashboard = () => {
 
     // This is a placeholder for a real tagging system
     if (activeFilter !== 'All') {
-        const totalTime = (parseInt(recipe.prep_time || '0') || 0) + (parseInt(recipe.cook_time || '0') || 0);
-        if (activeFilter === 'Quick & Easy' && totalTime > 30) return false;
-        if (activeFilter === 'Dessert' && !recipe.title.toLowerCase().includes('dessert')) return false; // Simple check
+      const totalTime = (parseInt(recipe.prep_time || '0') || 0) + (parseInt(recipe.cook_time || '0') || 0);
+      if (activeFilter === 'Quick & Easy' && totalTime > 30) return false;
+      if (activeFilter === 'Dessert' && !recipe.title.toLowerCase().includes('dessert')) return false; // Simple check
     }
 
     return matchesSearch;
@@ -74,34 +74,34 @@ const Dashboard = () => {
       {/* Search and Filter */}
       <div className="flex flex-col md:flex-row gap-4 items-center mb-8">
         <div className="relative flex-grow w-full">
-            <Search className="absolute start-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-                type="text"
-                placeholder="Search recipes or ingredients..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full h-14 ps-12 pe-4 rounded-2xl bg-white border-2 border-transparent focus:border-soft-rose focus:ring-0 shadow-sm"
-            />
+          <Search className="absolute start-4 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search recipes or ingredients..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full h-14 ps-12 pe-4 rounded-2xl bg-white border-2 border-transparent focus:border-soft-rose focus:ring-0 shadow-sm"
+          />
         </div>
         <div className="flex gap-2">
-            {['All', 'Quick & Easy', 'Dessert'].map(filter => (
-                <button key={filter} onClick={() => setActiveFilter(filter)} className={`h-10 px-5 rounded-full font-semibold text-sm transition-colors ${activeFilter === filter ? 'bg-sage-green text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100'}`}>
-                    {filter}
-                </button>
-            ))}
+          {['All', 'Quick & Easy', 'Dessert'].map(filter => (
+            <button key={filter} onClick={() => setActiveFilter(filter)} className={`h-10 px-5 rounded-full font-semibold text-sm transition-colors ${activeFilter === filter ? 'bg-sage-green text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100'}`}>
+              {filter}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Recipe of the day */}
       {recipeOfTheDay && (
         <div className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Recipe of the Day</h2>
-            <Link to={`/recipe/${recipeOfTheDay.id}`} className="block relative group overflow-hidden rounded-2xl md:rounded-3xl min-h-[300px] shadow-lg">
-                <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.6), transparent), url(${recipeOfTheDay.image_url})`}}></div>
-                <div className="absolute bottom-0 p-6 md:p-8">
-                    <h3 className="text-white text-3xl md:text-4xl font-bold">{recipeOfTheDay.title}</h3>
-                </div>
-            </Link>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Recipe of the Day</h2>
+          <Link to={`/recipe/${recipeOfTheDay.id}`} className="block relative group overflow-hidden rounded-2xl md:rounded-3xl min-h-[300px] shadow-lg">
+            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.6), transparent), url(${recipeOfTheDay.image_url})` }}></div>
+            <div className="absolute bottom-0 p-6 md:p-8">
+              <h3 className="text-white text-3xl md:text-4xl font-bold">{recipeOfTheDay.title}</h3>
+            </div>
+          </Link>
         </div>
       )}
 
@@ -119,8 +119,8 @@ const Dashboard = () => {
               title={recipe.title}
               imageUrl={recipe.image_url || undefined}
               hasAllergens={checkForAllergens(recipe)}
-              cookTime={recipe.cook_time}
-              prepTime={recipe.prep_time}
+              cookTime={recipe.cook_time || undefined}
+              prepTime={recipe.prep_time || undefined}
               isFavorite={recipe.is_favorite}
             />
           ))}

@@ -17,6 +17,7 @@ export interface Recipe {
   created_at: string;
   updated_at: string | null;
   ingredients: Ingredient[];
+  is_favorite?: boolean;
 }
 
 export interface Allergen {
@@ -36,8 +37,8 @@ export interface ScrapeResponse {
 }
 
 export interface GroqSettings {
-    api_key: string;
-    model: string;
+  api_key: string;
+  model: string;
 }
 
 export interface MealPlanEntry {
