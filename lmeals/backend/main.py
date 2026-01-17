@@ -5,6 +5,15 @@ from fastapi.responses import FileResponse
 
 app = FastAPI()
 
+from fastapi import Request
+
+@app.middleware("http")
+async def strip_double_slashes(request: Request, call_next):
+    if "//" in request.scope["path"]:
+        request.scope["path"] = request.scope["path"].replace("//", "/")
+    response = await call_next(request)
+    return response
+
 from routers import recipes, allergens, meal_plan, shopping_list
 
 app.include_router(recipes.router, prefix="/api", tags=["recipes"])
