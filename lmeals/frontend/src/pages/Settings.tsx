@@ -85,7 +85,11 @@ const Settings: React.FC = () => {
       const response = await verifyGroqKey(apiKey);
       setKeyStatus(response);
       if (response.status === 'success') {
+        // Auto-save the key if verification succeeds
+        await saveSetting('GROQ_API_KEY', apiKey);
         fetchModels();
+        setMessage('API Key verified and saved!');
+        setTimeout(() => setMessage(''), 3000);
       }
     } catch (error: any) {
       setKeyStatus({ status: 'error', message: 'Verification failed' });
@@ -155,30 +159,26 @@ const Settings: React.FC = () => {
           <label className="block text-slate-700 dark:text-slate-300 text-sm font-bold mb-2" htmlFor="model">
             Groq Model
           </label>
-          {availableModels.length > 0 ? (
-            <select
-              className="shadow border rounded w-full py-2 px-3 text-slate-700 dark:text-slate-900 leading-tight focus:outline-none focus:shadow-outline bg-white"
-              id="model"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-            >
-              <option value="" disabled>Select a model</option>
-              {availableModels.map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          ) : (
+          <div className="relative">
             <input
               className="shadow appearance-none border rounded w-full py-2 px-3 text-slate-700 dark:text-slate-900 leading-tight focus:outline-none focus:shadow-outline bg-white"
               id="model"
               type="text"
-              placeholder="llama3-70b-8192"
+              list="model-options"
+              placeholder="Select or type a model (e.g. llama3-70b-8192)"
               value={model}
               onChange={(e) => setModel(e.target.value)}
             />
-          )}
+            <datalist id="model-options">
+              {availableModels.map(m => (
+                <option key={m} value={m} />
+              ))}
+            </datalist>
+          </div>
           {availableModels.length === 0 && apiKey && (
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Enter a valid API key to load available models.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Enter a valid API key and click "Check Key" to load available models.
+            </p>
           )}
         </div>
 
