@@ -9,7 +9,7 @@ const DraggableRecipe = ({ recipe }: { recipe: Recipe }) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: `recipe-${recipe.id}`, data: recipe });
   const style = { transform: CSS.Translate.toString(transform) };
   return (
-    <div ref={setNodeRef} style={style} {...listeners} {...attributes} className="p-2 bg-soft-rose rounded-lg cursor-grab mb-2">
+    <div ref={setNodeRef} style={style} {...listeners} {...attributes} className="p-2 bg-rose-100 dark:bg-rose-900 text-slate-900 dark:text-slate-100 rounded-lg cursor-grab mb-2 shadow-sm hover:shadow-md transition-shadow">
       {recipe.title}
     </div>
   );
@@ -18,7 +18,7 @@ const DraggableRecipe = ({ recipe }: { recipe: Recipe }) => {
 const DroppableDay = ({ date, children }: { date: string, children: React.ReactNode }) => {
   const { isOver, setNodeRef } = useDroppable({ id: date });
   return (
-    <div ref={setNodeRef} className={`border rounded-lg p-2 h-32 flex flex-col ${isOver ? 'bg-sage-green' : ''}`}>
+    <div ref={setNodeRef} className={`border rounded-lg p-2 h-32 flex flex-col transition-colors ${isOver ? 'bg-emerald-100 dark:bg-emerald-900 border-emerald-500' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
       {children}
     </div>
   );
@@ -97,27 +97,27 @@ const MealPlan = () => {
   return (
     <DndContext onDragEnd={handleDragEnd}>
       <div className="flex gap-8">
-        <div className="w-1/4 bg-white p-4 rounded-2xl shadow-md">
-          <h3 className="text-xl font-bold mb-4">Available Recipes</h3>
-          <div className="max-h-[70vh] overflow-y-auto">
+        <div className="w-1/4 bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-md">
+          <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-slate-50">Available Recipes</h3>
+          <div className="max-h-[70vh] overflow-y-auto pr-2">
             {recipes.map(recipe => <DraggableRecipe key={recipe.id} recipe={recipe} />)}
           </div>
         </div>
 
-        <div className="w-3/4 bg-white p-6 rounded-2xl shadow-md">
+        <div className="w-3/4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md">
           <div className="grid grid-cols-7 gap-2">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <div key={day} className="text-center font-semibold">{day}</div>)}
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <div key={day} className="text-center font-semibold text-slate-700 dark:text-slate-300">{day}</div>)}
             {calendarDays.map((date, i) => {
-              if (!date) return <div key={i} className="border rounded-lg p-2 h-32"></div>;
+              if (!date) return <div key={i} className="border border-transparent rounded-lg p-2 h-32"></div>;
               const dateString = date.toISOString().split('T')[0];
               return (
                 <DroppableDay key={dateString} date={dateString}>
-                  <span className="font-semibold">{date.getDate()}</span>
-                  <div className="mt-1 text-sm overflow-y-auto">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">{date.getDate()}</span>
+                  <div className="mt-1 text-sm overflow-y-auto custom-scrollbar">
                     {(mealPlan[dateString] || []).map(entry => (
-                      <div key={entry.id} className="bg-periwinkle-blue text-white p-1 rounded-md mb-1 text-xs flex justify-between items-center">
-                        <span>{entry.recipe.title}</span>
-                        <button onClick={() => handleDeleteEntry(entry.id, dateString)} className="text-white hover:text-red-500">
+                      <div key={entry.id} className="bg-indigo-600 text-white p-1 rounded-md mb-1 text-xs flex justify-between items-center shadow-sm">
+                        <span className="truncate mr-1">{entry.recipe.title}</span>
+                        <button onClick={() => handleDeleteEntry(entry.id, dateString)} className="text-indigo-200 hover:text-white transition-colors">
                           <X size={12} />
                         </button>
                       </div>

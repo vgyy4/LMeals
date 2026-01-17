@@ -14,22 +14,22 @@ interface RecipeCardProps {
 }
 
 const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, isFavorite }: RecipeCardProps) => {
-    const totalTime = (parseInt(prepTime || '0') || 0) + (parseInt(cookTime || '0') || 0);
-    const [isFav, setIsFav] = useState(isFavorite);
+  const totalTime = (parseInt(prepTime || '0') || 0) + (parseInt(cookTime || '0') || 0);
+  const [isFav, setIsFav] = useState(isFavorite);
 
-    const handleFavoriteClick = async (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const newFavStatus = !isFav;
-        setIsFav(newFavStatus);
-        await setFavoriteStatus(id, newFavStatus);
-    };
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newFavStatus = !isFav;
+    setIsFav(newFavStatus);
+    await setFavoriteStatus(id, newFavStatus);
+  };
 
-    return (
-    <Link to={`/recipe/${id}`} className="group block rounded-2xl bg-white shadow-md hover:shadow-lg transition-shadow duration-300">
+  return (
+    <Link to={`/recipe/${id}`} className="group block rounded-2xl bg-white dark:bg-slate-800 shadow-md hover:shadow-lg transition-all duration-300">
       <div className="relative">
-        <button onClick={handleFavoriteClick} className="absolute top-2 start-2 bg-white/70 p-2 rounded-full hover:bg-white transition-colors z-10">
-            <Heart size={20} className={`${isFav ? 'text-red-500 fill-current' : 'text-gray-500'}`} />
+        <button onClick={handleFavoriteClick} className="absolute top-2 start-2 bg-white/70 dark:bg-slate-900/70 p-2 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-colors z-10">
+          <Heart size={20} className={`${isFav ? 'text-red-500 fill-current' : 'text-slate-500 dark:text-slate-400'}`} />
         </button>
         <img
           src={imageUrl || 'https://placehold.co/600x400/F8E8EE/C9A9A6?text=LMeals'}
@@ -43,12 +43,12 @@ const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, isF
         )}
       </div>
       <div className="p-4">
-        <h3 className="text-lg font-semibold text-gray-800 truncate group-hover:text-soft-rose transition-colors">{title}</h3>
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 truncate group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">{title}</h3>
         {totalTime > 0 && (
-            <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
-                <Clock size={16} />
-                <span>{totalTime} min</span>
-            </div>
+          <div className="flex items-center gap-2 mt-2 text-sm text-slate-500 dark:text-slate-400">
+            <Clock size={16} />
+            <span>{totalTime} min</span>
+          </div>
         )}
       </div>
     </Link>
