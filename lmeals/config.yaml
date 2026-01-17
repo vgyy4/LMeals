@@ -3,7 +3,7 @@ name: "LMeals"
 version: "0.1.0"
 slug: "lmeals"
 description: "A self-hosted recipe manager with a powerful AI scraper."
-url: "https://github.com/home-assistant/addons-example" # Placeholder valid URL
+url: "https://github.com/vgyy4/LMeals"
 startup: "application"
 arch:
   - "aarch64"
