@@ -1,4 +1,3 @@
-from datetime import date
 from sqlalchemy.orm import Session, joinedload
 import models, schemas
 
@@ -85,14 +84,11 @@ def delete_allergen(db: Session, allergen_id: int):
     return db_allergen
 
 # Meal Plan CRUD operations
-def get_meal_plan_entries(db: Session, start_date: date, end_date: date):
+def get_meal_plan_entries(db: Session, start_date: str, end_date: str):
     return db.query(models.MealPlanEntry).filter(models.MealPlanEntry.date.between(start_date, end_date)).options(joinedload(models.MealPlanEntry.recipe).joinedload(models.Recipe.ingredients)).all()
 
 def create_meal_plan_entry(db: Session, entry: schemas.MealPlanEntryCreate):
-    db_entry = models.MealPlanEntry(
-        date=entry.date,
-        recipe_id=entry.recipe_id
-    )
+    db_entry = models.MealPlanEntry(**entry.dict())
     db.add(db_entry)
     db.commit()
     db.refresh(db_entry)
