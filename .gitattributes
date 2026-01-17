@@ -1,0 +1,6 @@
+# Force all text files to use LF (Linux) line endings in the repository
+* text=auto eol=lf
+
+# Specifically ensure shell scripts use LF
+*.sh text eol=lf
+

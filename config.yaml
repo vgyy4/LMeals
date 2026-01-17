@@ -21,4 +21,4 @@ schema:
 environment:
   GROQ_API_KEY: "{options.GROQ_API_KEY}"
   GROQ_MODEL: "{options.GROQ_MODEL}"
-image: "ghcr.io/your-username/lmeals-{arch}" # Replace with your container registry image
+

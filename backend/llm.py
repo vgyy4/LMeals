@@ -2,16 +2,35 @@ from groq import Groq
 import json
 import os
 
+from database import SessionLocal
+import crud
+
 def extract_with_groq(html: str):
     """
-    Uses the Groq API to extract recipe data from HTML using credentials from environment variables.
+    Uses the Groq API to extract recipe data from HTML using credentials from environment variables or database settings.
     Returns a dictionary of recipe data or None if extraction fails.
     """
     api_key = os.environ.get("GROQ_API_KEY")
-    model = os.environ.get("GROQ_MODEL", "llama3-70b-8192")
+    model = os.environ.get("GROQ_MODEL")
+
+    if not api_key or not model:
+        db = SessionLocal()
+        try:
+            if not api_key:
+                setting = crud.get_setting(db, "GROQ_API_KEY")
+                if setting:
+                    api_key = setting.value
+            if not model:
+                setting = crud.get_setting(db, "GROQ_MODEL")
+                if setting:
+                    model = setting.value
+                else:
+                    model = "llama3-70b-8192" # Default if not in env or DB
+        finally:
+            db.close()
 
     if not api_key:
-        print("GROQ_API_KEY environment variable is not set.")
+        print("GROQ_API_KEY environment variable is not set and not found in settings.")
         return None
 
     client = Groq(api_key=api_key)

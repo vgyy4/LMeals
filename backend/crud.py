@@ -100,3 +100,30 @@ def delete_meal_plan_entry(db: Session, entry_id: int):
         db.delete(db_entry)
         db.commit()
     return db_entry
+
+# Setting CRUD operations
+def get_setting(db: Session, key: str):
+    return db.query(models.Setting).filter(models.Setting.key == key).first()
+
+def get_settings(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Setting).offset(skip).limit(limit).all()
+
+def create_setting(db: Session, setting: schemas.SettingCreate):
+    db_setting = models.Setting(key=setting.key, value=setting.value)
+    db.add(db_setting)
+    db.commit()
+    db.refresh(db_setting)
+    return db_setting
+
+def update_setting(db: Session, key: str, value: str):
+    db_setting = get_setting(db, key)
+    if db_setting:
+        db_setting.value = value
+        db.commit()
+        db.refresh(db_setting)
+    else:
+        db_setting = models.Setting(key=key, value=value)
+        db.add(db_setting)
+        db.commit()
+        db.refresh(db_setting)
+    return db_setting

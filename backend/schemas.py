@@ -82,3 +82,15 @@ class MealPlanEntry(MealPlanEntryBase):
 
     class Config:
         orm_mode = True
+
+# Setting Schemas
+class SettingBase(BaseModel):
+    key: str
+    value: str
+
+class SettingCreate(SettingBase):
+    pass
+
+class Setting(SettingBase):
+    class Config:
+        orm_mode = True

@@ -44,3 +44,9 @@ class MealPlanEntry(Base):
     recipe_id = Column(Integer, ForeignKey("recipes.id"), nullable=False)
 
     recipe = relationship("Recipe")
+
+class Setting(Base):
+    __tablename__ = "settings"
+
+    key = Column(String, primary_key=True, index=True)
+    value = Column(String, nullable=False)

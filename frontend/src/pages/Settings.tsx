@@ -1,95 +1,177 @@
-import { useState, useEffect } from 'react';
-import { getAllergens, createAllergen, deleteAllergen } from '../lib/api';
-import { Allergen } from '../lib/types';
-import { Trash2, PlusCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 
-const SettingsPage = () => {
+interface Setting {
+  key: string;
+  value: string;
+}
+
+interface Allergen {
+  id: number;
+  name: string;
+}
+
+const Settings: React.FC = () => {
+  const [apiKey, setApiKey] = useState('');
+  const [model, setModel] = useState('');
   const [allergens, setAllergens] = useState<Allergen[]>([]);
   const [newAllergen, setNewAllergen] = useState('');
-  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const allergensData = await getAllergens();
-        setAllergens(allergensData);
-      } catch (error) {
-        console.error('Failed to fetch initial data:', error);
-        setStatusMessage({ type: 'error', message: 'Could not load settings.' });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchInitialData();
+    fetchSettings();
+    fetchAllergens();
   }, []);
 
-  const handleAddAllergen = async () => {
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch('/api/settings');
+      if (response.ok) {
+        const data: Setting[] = await response.json();
+        const keySetting = data.find(s => s.key === 'GROQ_API_KEY');
+        const modelSetting = data.find(s => s.key === 'GROQ_MODEL');
+        if (keySetting) setApiKey(keySetting.value);
+        if (modelSetting) setModel(modelSetting.value);
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAllergens = async () => {
+    try {
+      const response = await fetch('/api/allergens');
+      if (response.ok) {
+        const data = await response.json();
+        setAllergens(data);
+      }
+    } catch (error) {
+      console.error('Error fetching allergens:', error);
+    }
+  };
+
+  const saveSettings = async () => {
+    try {
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'GROQ_API_KEY', value: apiKey }),
+      });
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'GROQ_MODEL', value: model }),
+      });
+      setMessage('Settings saved successfully!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      setMessage('Failed to save settings.');
+    }
+  };
+
+  const addAllergen = async () => {
     if (!newAllergen.trim()) return;
     try {
-      const newAllergenData = await createAllergen(newAllergen.trim());
-      setAllergens([...allergens, newAllergenData]);
-      setNewAllergen('');
+      const response = await fetch('/api/allergens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newAllergen }),
+      });
+      if (response.ok) {
+        setNewAllergen('');
+        fetchAllergens();
+      }
     } catch (error) {
-      console.error('Failed to add allergen:', error);
-      setStatusMessage({ type: 'error', message: 'Failed to add allergen.' });
+      console.error('Error adding allergen:', error);
     }
   };
 
-  const handleDeleteAllergen = async (id: number) => {
+  const deleteAllergen = async (id: number) => {
     try {
-      await deleteAllergen(id);
-      setAllergens(allergens.filter(a => a.id !== id));
+      await fetch(`/api/allergens/${id}`, { method: 'DELETE' });
+      fetchAllergens();
     } catch (error) {
-      console.error('Failed to delete allergen:', error);
-      setStatusMessage({ type: 'error', message: 'Failed to delete allergen.' });
+      console.error('Error deleting allergen:', error);
     }
   };
 
-  if (isLoading) {
-    return <div className="text-center p-8">Loading settings...</div>;
-  }
+  if (loading) return <div className="p-4">Loading...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-lg">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Settings</h1>
+    <div className="container mx-auto p-4 max-w-2xl">
+      <h1 className="text-3xl font-bold mb-6">Settings</h1>
 
-      {statusMessage && (
-        <div className={`p-4 mb-4 rounded-lg ${statusMessage.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-          {statusMessage.message}
-        </div>
-      )}
-
-      {/* Allergens Section */}
-      <div>
-        <h2 className="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2">Global Allergens</h2>
-        <div className="flex gap-2 mb-4">
+      <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-6">
+        <h2 className="text-xl font-bold mb-4">Groq Configuration</h2>
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="apiKey">
+            Groq API Key
+          </label>
           <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="apiKey"
+            type="password"
+            placeholder="Enter your Groq API Key"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+          />
+        </div>
+        <div className="mb-6">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="model">
+            Groq Model
+          </label>
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="model"
             type="text"
+            placeholder="llama3-70b-8192"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="button"
+            onClick={saveSettings}
+          >
+            Save Settings
+          </button>
+          {message && <span className="text-green-500 text-sm">{message}</span>}
+        </div>
+      </div>
+
+      <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-6">
+        <h2 className="text-xl font-bold mb-4">Allergens</h2>
+        <div className="flex mb-4">
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mr-2"
+            type="text"
+            placeholder="Add new allergen"
             value={newAllergen}
             onChange={(e) => setNewAllergen(e.target.value)}
-            className="flex-grow px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-periwinkle-blue focus:border-periwinkle-blue"
-            placeholder="e.g., Peanuts"
+            onKeyPress={(e) => e.key === 'Enter' && addAllergen()}
           />
           <button
-            onClick={handleAddAllergen}
-            className="px-4 py-2 bg-soft-rose text-white font-semibold rounded-lg hover:bg-opacity-90 transition-colors flex items-center gap-2"
+            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="button"
+            onClick={addAllergen}
           >
-            <PlusCircle size={20} /> Add
+            Add
           </button>
         </div>
-        <ul className="space-y-2">
+        <ul>
           {allergens.map((allergen) => (
-            <li
-              key={allergen.id}
-              className="flex justify-between items-center bg-gray-50 p-3 rounded-lg"
-            >
-              <span className="text-gray-800">{allergen.name}</span>
+            <li key={allergen.id} className="flex justify-between items-center bg-gray-100 p-2 mb-2 rounded">
+              <span>{allergen.name}</span>
               <button
-                onClick={() => handleDeleteAllergen(allergen.id)}
-                className="text-red-500 hover:text-red-700 transition-colors"
+                className="text-red-500 hover:text-red-700 font-bold"
+                onClick={() => deleteAllergen(allergen.id)}
               >
-                <Trash2 size={20} />
+                Delete
               </button>
             </li>
           ))}
@@ -99,4 +181,4 @@ const SettingsPage = () => {
   );
 };
 
-export default SettingsPage;
+export default Settings;
