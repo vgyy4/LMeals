@@ -82,14 +82,3 @@ export const getShoppingList = async (startDate: string, endDate: string): Promi
     const response = await api.get('/shopping-list', { params: { start_date: startDate, end_date: endDate } });
     return response.data;
 };
-
-// Settings Endpoints
-export const getSettings = async (): Promise<Settings> => {
-  const response = await api.get('/settings');
-  return response.data;
-};
-
-export const updateSettings = async (settings: Partial<Settings>): Promise<Settings> => {
-  const response = await api.post('/settings', settings);
-  return response.data;
-};

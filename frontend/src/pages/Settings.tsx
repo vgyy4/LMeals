@@ -1,10 +1,9 @@
-import { useState, useEffect, FormEvent } from 'react';
-import { getSettings, updateSettings, getAllergens, createAllergen, deleteAllergen } from '../lib/api';
-import { Settings, Allergen } from '../lib/types';
+import { useState, useEffect } from 'react';
+import { getAllergens, createAllergen, deleteAllergen } from '../lib/api';
+import { Allergen } from '../lib/types';
 import { Trash2, PlusCircle } from 'lucide-react';
 
 const SettingsPage = () => {
-  const [settings, setSettings] = useState<Partial<Settings>>({});
   const [allergens, setAllergens] = useState<Allergen[]>([]);
   const [newAllergen, setNewAllergen] = useState('');
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -13,8 +12,7 @@ const SettingsPage = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const [settingsData, allergensData] = await Promise.all([getSettings(), getAllergens()]);
-        setSettings(settingsData);
+        const allergensData = await getAllergens();
         setAllergens(allergensData);
       } catch (error) {
         console.error('Failed to fetch initial data:', error);
@@ -25,18 +23,6 @@ const SettingsPage = () => {
     };
     fetchInitialData();
   }, []);
-
-  const handleSettingsSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setStatusMessage(null);
-    try {
-      await updateSettings(settings);
-      setStatusMessage({ type: 'success', message: 'Settings saved successfully!' });
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-      setStatusMessage({ type: 'error', message: 'Failed to save settings.' });
-    }
-  };
 
   const handleAddAllergen = async () => {
     if (!newAllergen.trim()) return;
@@ -73,48 +59,6 @@ const SettingsPage = () => {
           {statusMessage.message}
         </div>
       )}
-
-      {/* AI Settings Section */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2">AI Configuration</h2>
-        <form onSubmit={handleSettingsSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="groq_api_key" className="block text-sm font-medium text-gray-600">
-              Groq API Key
-            </label>
-            <input
-              id="groq_api_key"
-              type="password"
-              value={settings.groq_api_key || ''}
-              onChange={(e) => setSettings({ ...settings, groq_api_key: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-periwinkle-blue focus:border-periwinkle-blue"
-              placeholder="Enter your Groq API Key"
-            />
-          </div>
-          <div>
-            <label htmlFor="groq_model" className="block text-sm font-medium text-gray-600">
-              Groq Model
-            </label>
-            <select
-              id="groq_model"
-              value={settings.groq_model || 'llama3-70b-8192'}
-              onChange={(e) => setSettings({ ...settings, groq_model: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-periwinkle-blue focus:border-periwinkle-blue"
-            >
-              <option value="llama3-70b-8192">Llama 3 70b</option>
-              <option value="mixtral-8x7b-32768">Mixtral 8x7b</option>
-            </select>
-          </div>
-          <div className="text-end">
-            <button
-              type="submit"
-              className="px-6 py-2 bg-sage-green text-white font-semibold rounded-lg hover:bg-opacity-90 transition-colors"
-            >
-              Save AI Settings
-            </button>
-          </div>
-        </form>
-      </div>
 
       {/* Allergens Section */}
       <div>

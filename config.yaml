@@ -1,0 +1,24 @@
+# Home Assistant Add-on Configuration for LMeals
+name: "LMeals"
+version: "0.1.0"
+slug: "lmeals"
+description: "A self-hosted recipe manager with a powerful AI scraper."
+url: "https://github.com/your-repo/lmeals" # Replace with your repository URL
+arch:
+  - "aarch64"
+  - "amd64"
+  - "armhf"
+  - "armv7"
+  - "i386"
+boot: "auto"
+webui: "8000/tcp"
+options:
+  GROQ_API_KEY: ""
+  GROQ_MODEL: "llama3-70b-8192"
+schema:
+  GROQ_API_KEY: "password"
+  GROQ_MODEL: "str"
+environment:
+  GROQ_API_KEY: "{options.GROQ_API_KEY}"
+  GROQ_MODEL: "{options.GROQ_MODEL}"
+image: "ghcr.io/your-username/lmeals-{arch}" # Replace with your container registry image

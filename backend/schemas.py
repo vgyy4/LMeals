@@ -16,25 +16,6 @@ class Ingredient(IngredientBase):
     class Config:
         orm_mode = True
 
-# ==============================================================================
-# Settings Schemas
-# ==============================================================================
-class SettingBase(BaseModel):
-    groq_api_key: Optional[str] = None
-    groq_model: Optional[str] = Field(default="llama3-70b-8192", description="Default Groq model")
-
-class SettingCreate(SettingBase):
-    pass
-
-class SettingUpdate(SettingBase):
-    pass
-
-class Setting(SettingBase):
-    id: int
-
-    class Config:
-        orm_mode = True
-
 # Recipe Schemas
 class RecipeBase(BaseModel):
     title: str
