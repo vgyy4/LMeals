@@ -1,6 +1,4 @@
-# Force all text files to use LF (Linux) line endings in the repository
-* text=auto eol=lf
-
-# Specifically ensure shell scripts use LF
+* text=auto
 *.sh text eol=lf
-
+*.yaml text eol=lf
+Dockerfile text eol=lf

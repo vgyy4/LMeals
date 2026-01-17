@@ -3,7 +3,8 @@ name: "LMeals"
 version: "0.1.0"
 slug: "lmeals"
 description: "A self-hosted recipe manager with a powerful AI scraper."
-url: "https://github.com/your-repo/lmeals" # Replace with your repository URL
+url: "https://github.com/home-assistant/addons-example" # Placeholder valid URL
+startup: "application"
 arch:
   - "aarch64"
   - "amd64"
@@ -12,6 +13,8 @@ arch:
   - "i386"
 boot: "auto"
 webui: "8000/tcp"
+ports:
+  8000/tcp: 8000
 options:
   GROQ_API_KEY: ""
   GROQ_MODEL: "llama3-70b-8192"
