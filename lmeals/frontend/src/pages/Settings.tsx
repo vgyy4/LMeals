@@ -86,13 +86,20 @@ const Settings: React.FC = () => {
       setKeyStatus(response);
       if (response.status === 'success') {
         // Auto-save the key if verification succeeds
-        await saveSetting('GROQ_API_KEY', apiKey);
+        try {
+          await saveSetting('GROQ_API_KEY', apiKey);
+          setMessage('API Key verified and saved!');
+          setTimeout(() => setMessage(''), 3000);
+        } catch (saveError) {
+          console.error('Failed to save API key:', saveError);
+          setMessage('Key verified but failed to save. Click "Save Settings" to retry.');
+          setTimeout(() => setMessage(''), 5000);
+        }
         fetchModels();
-        setMessage('API Key verified and saved!');
-        setTimeout(() => setMessage(''), 3000);
       }
     } catch (error: any) {
-      setKeyStatus({ status: 'error', message: 'Verification failed' });
+      console.error('Verification error:', error);
+      setKeyStatus({ status: 'error', message: error.message || 'Verification failed' });
     }
   };
 
