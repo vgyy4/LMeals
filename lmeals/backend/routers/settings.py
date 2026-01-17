@@ -21,13 +21,6 @@ def read_settings(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
     settings = crud.get_settings(db, skip=skip, limit=limit)
     return settings
 
-@router.get("/{key}", response_model=schemas.Setting)
-def read_setting(key: str, db: Session = Depends(get_db)):
-    db_setting = crud.get_setting(db, key=key)
-    if db_setting is None:
-        raise HTTPException(status_code=404, detail="Setting not found")
-    return db_setting
-
 @router.post("", response_model=schemas.Setting)
 def create_or_update_setting(setting: schemas.SettingCreate, db: Session = Depends(get_db)):
     return crud.update_setting(db=db, key=setting.key, value=setting.value)
@@ -85,3 +78,10 @@ def get_groq_models(db: Session = Depends(get_db), api_key: str = None):
              raise HTTPException(status_code=response.status_code, detail="Failed to fetch models from Groq")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{key}", response_model=schemas.Setting)
+def read_setting(key: str, db: Session = Depends(get_db)):
+    db_setting = crud.get_setting(db, key=key)
+    if db_setting is None:
+        raise HTTPException(status_code=404, detail="Setting not found")
+    return db_setting
