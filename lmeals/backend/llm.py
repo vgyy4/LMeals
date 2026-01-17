@@ -49,6 +49,13 @@ def extract_with_groq(html: str):
     for script in soup(["script", "style"]):
         script.decompose()
     
+    # Replace images with text placeholders containing src and alt
+    for img in soup.find_all('img'):
+        src = img.get('src', '')
+        alt = img.get('alt', '')
+        if src:
+            img.replace_with(f" [IMAGE: src='{src}', alt='{alt}'] ")
+    
     # Get text
     text = soup.get_text()
     
