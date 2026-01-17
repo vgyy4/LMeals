@@ -64,8 +64,8 @@ const Dashboard = () => {
       {isModalOpen && <AddRecipeModal onClose={() => setIsModalOpen(false)} onRecipeAdded={fetchRecipesAndAllergens} />}
 
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800">What to cook today?</h1>
-        <button onClick={() => setIsModalOpen(true)} className="bg-soft-rose text-white font-semibold py-2 px-4 rounded-2xl flex items-center gap-2 hover:bg-opacity-90 transition-colors shadow-md">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-slate-50">What to cook today?</h1>
+        <button onClick={() => setIsModalOpen(true)} className="bg-rose-600 text-white font-semibold py-2 px-4 rounded-2xl flex items-center gap-2 hover:bg-rose-700 transition-colors shadow-md">
           <Plus />
           <span>Add Recipe</span>
         </button>
@@ -80,12 +80,12 @@ const Dashboard = () => {
             placeholder="Search recipes or ingredients..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full h-14 ps-12 pe-4 rounded-2xl bg-white border-2 border-transparent focus:border-soft-rose focus:ring-0 shadow-sm"
+            className="w-full h-14 ps-12 pe-4 rounded-2xl bg-white dark:bg-slate-800 border-2 border-transparent focus:border-rose-500 focus:ring-0 shadow-sm text-slate-900 dark:text-slate-100 placeholder-slate-400"
           />
         </div>
         <div className="flex gap-2">
           {['All', 'Quick & Easy', 'Dessert'].map(filter => (
-            <button key={filter} onClick={() => setActiveFilter(filter)} className={`h-10 px-5 rounded-full font-semibold text-sm transition-colors ${activeFilter === filter ? 'bg-sage-green text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100'}`}>
+            <button key={filter} onClick={() => setActiveFilter(filter)} className={`h-10 px-5 rounded-full font-semibold text-sm transition-colors ${activeFilter === filter ? 'bg-emerald-600 text-white shadow-md hover:bg-emerald-700' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
               {filter}
             </button>
           ))}

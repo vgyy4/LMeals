@@ -57,30 +57,30 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-lg w-full">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 max-w-lg w-full">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-800">Add a New Recipe</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Add a New Recipe</h2>
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">
             <X size={24} />
           </button>
         </div>
 
-        {error && <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4">{error}</div>}
+        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">{error}</div>}
 
         {!needsAiConfirmation ? (
           <div>
-            <p className="mb-4 text-gray-600">Enter the URL of the recipe you want to import.</p>
+            <p className="mb-4 text-slate-600 dark:text-slate-300">Enter the URL of the recipe you want to import.</p>
             <input
               type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
               placeholder="https://example.com/recipe"
               disabled={isLoading}
             />
             <button
               onClick={handleInitialScrape}
-              className="w-full mt-4 bg-sage-green text-white font-semibold py-2 rounded-lg hover:bg-opacity-90 transition-colors"
+              className="w-full mt-4 bg-emerald-600 text-white font-semibold py-2 rounded-lg hover:bg-emerald-700 transition-colors"
               disabled={isLoading}
             >
               {isLoading ? 'Importing...' : 'Import Recipe'}
@@ -88,20 +88,20 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
           </div>
         ) : (
           <div>
-            <p className="mb-4 text-gray-600">
+            <p className="mb-4 text-slate-600 dark:text-slate-300">
               The standard import failed for this URL. Would you like to try our advanced AI importer?
             </p>
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setNeedsAiConfirmation(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
                 disabled={isLoading}
               >
                 Cancel
               </button>
               <button
                 onClick={handleAiScrape}
-                className="px-4 py-2 bg-soft-rose text-white font-semibold rounded-lg hover:bg-opacity-90"
+                className="px-4 py-2 bg-rose-600 text-white font-semibold rounded-lg hover:bg-rose-700 transition-colors"
                 disabled={isLoading}
               >
                 {isLoading ? 'Processing...' : 'Use AI Importer'}

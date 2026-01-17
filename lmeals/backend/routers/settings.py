@@ -35,7 +35,8 @@ def create_or_update_setting(setting: schemas.SettingCreate, db: Session = Depen
 @router.post("/settings/verify-groq")
 def verify_groq_key(setting: schemas.SettingCreate):
     """
-    Verifies the Groq API key by making a simple request to the Groq API.
+    Verifies the Groq API key by attempting to list models.
+    This is more reliable than chat completions as it doesn't depend on a specific model name.
     """
     import requests
     try:
@@ -43,16 +44,15 @@ def verify_groq_key(setting: schemas.SettingCreate):
             "Authorization": f"Bearer {setting.value}",
             "Content-Type": "application/json"
         }
-        # Using a lightweight model just to check auth
-        data = {
-            "messages": [{"role": "user", "content": "ping"}],
-            "model": "llama3-8b-8192" 
-        }
-        response = requests.post("https://api.groq.com/openai/v1/chat/completions", json=data, headers=headers)
+        # Listing models is a standard way to check auth for OpenAI-compatible APIs
+        response = requests.get("https://api.groq.com/openai/v1/models", headers=headers)
+        
         if response.status_code == 200:
             return {"status": "success", "message": "API Key is valid!"}
+        elif response.status_code == 401:
+            return {"status": "error", "message": "Invalid API Key (401 Unauthorized)."}
         else:
-            return {"status": "error", "message": f"Invalid API Key. Status: {response.status_code}"}
+            return {"status": "error", "message": f"Verification failed. Status: {response.status_code}"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
