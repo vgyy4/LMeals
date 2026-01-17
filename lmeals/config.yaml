@@ -15,13 +15,5 @@ boot: "auto"
 webui: "http://[HOST]:[PORT:8000]"
 ports:
   8000/tcp: 8000
-options:
-  GROQ_API_KEY: ""
-  GROQ_MODEL: "llama3-70b-8192"
-schema:
-  GROQ_API_KEY: "password"
-  GROQ_MODEL: "str"
-environment:
-  GROQ_API_KEY: "{options.GROQ_API_KEY}"
-  GROQ_MODEL: "{options.GROQ_MODEL}"
+
 
