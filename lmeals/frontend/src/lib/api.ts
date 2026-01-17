@@ -1,26 +1,26 @@
 import axios from 'axios';
 import { Recipe, ScrapeRequest, ScrapeResponse, Allergen, GroqSettings, MealPlanEntry } from './types';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = 'api';
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+    baseURL: API_BASE_URL,
 });
 
 // Recipe Endpoints
 export const getRecipes = async (): Promise<Recipe[]> => {
-  const response = await api.get('/recipes');
-  return response.data;
+    const response = await api.get('/recipes');
+    return response.data;
 };
 
 export const getRecipe = async (id: number): Promise<Recipe> => {
-  const response = await api.get(`/recipes/${id}`);
-  return response.data;
+    const response = await api.get(`/recipes/${id}`);
+    return response.data;
 };
 
 export const scrapeRecipe = async (url: string): Promise<ScrapeResponse> => {
-  const response = await api.post('/scrape', { url });
-  return response.data;
+    const response = await api.post('/scrape', { url });
+    return response.data;
 };
 
 export const scrapeWithAi = async (url: string): Promise<ScrapeResponse> => {
