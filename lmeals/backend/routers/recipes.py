@@ -64,6 +64,10 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, db: Session = Depends(get_d
     # Ingredients from LLM are a list of strings, but our schema expects a list of objects
     ingredients_list = recipe_data.get("ingredients", [])
     recipe_data["ingredients"] = [{"text": i} for i in ingredients_list]
+    
+    # Handle empty image_url (Pydantic HttpUrl doesn't accept empty strings)
+    if not recipe_data.get("image_url"):
+        recipe_data["image_url"] = None
 
     recipe_create = schemas.RecipeCreate(**recipe_data)
     new_recipe = crud.create_recipe(db, recipe=recipe_create)
