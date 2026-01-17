@@ -42,7 +42,7 @@ const FavoritesPage = () => {
               hasAllergens={false} // We don't have allergen info here, so we'll just pass false
               cookTime={recipe.cook_time || undefined}
               prepTime={recipe.prep_time || undefined}
-              isFavorite={recipe.is_favorite}
+              isFavorite={recipe.is_favorite || false}
             />
           ))}
         </div>
