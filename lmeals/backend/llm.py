@@ -41,6 +41,12 @@ def extract_with_groq(html: str):
     Do not include any introductory text, explanations, or markdown formatting around the JSON. Your output must be parsable by a standard JSON parser.
     """
 
+    # Truncate HTML to prevent context length errors (Groq has token limits)
+    # Most recipe info is in the first 50k characters anyway
+    max_html_length = 50000
+    if len(html) > max_html_length:
+        html = html[:max_html_length] + "\n... [HTML truncated due to length]"
+
     try:
         chat_completion = client.chat.completions.create(
             messages=[
