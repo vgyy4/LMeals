@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, HttpUrl
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, date
 
 # Ingredient Schemas
 class IngredientBase(BaseModel):
@@ -70,7 +70,7 @@ class GroqSettings(BaseModel):
 
 # Meal Plan Schemas
 class MealPlanEntryBase(BaseModel):
-    date: str  # Using string to handle date format
+    date: date
     recipe_id: int
 
 class MealPlanEntryCreate(MealPlanEntryBase):
