@@ -36,16 +36,28 @@ def extract_with_groq(html: str):
     client = Groq(api_key=api_key)
 
     system_prompt = """
-    You are an expert recipe data extractor. Your task is to extract recipe data from the provided HTML text and return ONLY a strict JSON object with the following keys: "title", "ingredients" (which must be a list of strings), "instructions" (also a list of strings), "prep_time" (as a string), "cook_time" (as a string), "servings" (as a string), and "image_url" (as a string).
+    You are an expert recipe data extractor. Your task is to extract recipe data from the provided text and return ONLY a strict JSON object with the following keys: "title", "ingredients" (which must be a list of strings), "instructions" (also a list of strings), "prep_time" (as a string), "cook_time" (as a string), "servings" (as a string), and "image_url" (as a string).
 
     Do not include any introductory text, explanations, or markdown formatting around the JSON. Your output must be parsable by a standard JSON parser.
     """
 
-    # Truncate HTML to prevent context length errors (Groq has token limits)
-    # Most recipe info is in the first 50k characters anyway
-    max_html_length = 50000
-    if len(html) > max_html_length:
-        html = html[:max_html_length] + "\n... [HTML truncated due to length]"
+    # Extract only text from HTML to reduce tokens and improve accuracy
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, 'html.parser')
+    
+    # Remove script and style elements
+    for script in soup(["script", "style"]):
+        script.decompose()
+    
+    # Get text
+    text = soup.get_text()
+    
+    # Break into lines and remove leading and trailing space on each
+    lines = (line.strip() for line in text.splitlines())
+    # Break multi-headlines into a line each
+    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+    # Drop blank lines
+    text = '\n'.join(chunk for chunk in chunks if chunk)
 
     try:
         chat_completion = client.chat.completions.create(
@@ -56,7 +68,7 @@ def extract_with_groq(html: str):
                 },
                 {
                     "role": "user",
-                    "content": f"Here is the HTML content:\n\n{html}",
+                    "content": f"Here is the recipe text:\n\n{text}",
                 },
             ],
             model=model,
