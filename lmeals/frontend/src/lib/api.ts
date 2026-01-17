@@ -82,3 +82,24 @@ export const getShoppingList = async (startDate: string, endDate: string): Promi
     const response = await api.get('/shopping-list', { params: { start_date: startDate, end_date: endDate } });
     return response.data;
 };
+
+// Settings Endpoints
+export const getSettings = async (): Promise<any[]> => {
+    const response = await api.get('/settings');
+    return response.data;
+};
+
+export const saveSetting = async (key: string, value: string): Promise<any> => {
+    const response = await api.post('/settings', { key, value });
+    return response.data;
+};
+
+export const verifyGroqKey = async (apiKey: string): Promise<{ status: string; message: string }> => {
+    const response = await api.post('/settings/verify-groq', { key: 'GROQ_API_KEY', value: apiKey });
+    return response.data;
+};
+
+export const getGroqModels = async (): Promise<{ status: string; models: string[] }> => {
+    const response = await api.get('/settings/groq-models');
+    return response.data;
+};
