@@ -23,7 +23,7 @@ def scrape_recipe(scrape_request: schemas.ScrapeRequest, db: Session = Depends(g
     2. Tries to scrape using the recipe-scrapers library.
     3. If that fails, returns a status indicating AI is required.
     """
-    existing_recipe = crud.get_recipe_by_source_url(db, source_url=scrape_request.url)
+    existing_recipe = crud.get_recipe_by_source_url(db, source_url=str(scrape_request.url))
     if existing_recipe:
         return {"status": "exists", "recipe": existing_recipe}
 
