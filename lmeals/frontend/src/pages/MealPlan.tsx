@@ -56,12 +56,13 @@ const MealSlot = ({ date, mealType, icon: Icon, children }: { date: string, meal
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 min-h-[2.5rem] p-1 rounded transition-colors border border-transparent flex flex-col gap-1 ${isOver ? 'bg-emerald-50 dark:bg-emerald-900/40 border-emerald-300 dark:border-emerald-700' : hasContent ? 'bg-slate-50 dark:bg-slate-800/50' : ''
+      className={`flex-1 min-h-[2.5rem] p-1 rounded-md transition-all border border-transparent flex flex-col gap-1 ${isOver ? 'bg-emerald-50 dark:bg-emerald-900/40 border-emerald-300 dark:border-emerald-700 shadow-inner' :
+          hasContent ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700' : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
         }`}
     >
-      <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 dark:text-slate-600 select-none">
-        <Icon size={10} />
-        {/* Only show text on hover or drop to save space if needed? Keeping text hidden mostly or very subtle */}
+      <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 select-none px-1">
+        <Icon size={12} className="opacity-70" />
+        <span className="opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider text-[9px]">{mealType}</span>
       </div>
       <div className="flex flex-col gap-1">
         {children}
@@ -79,9 +80,9 @@ const DayCell = ({ date, mealPlanData, onDelete }: { date: Date, mealPlanData: R
   const getEntries = (type: string) => (mealPlanData[dateString] || []).filter(e => (e.meal_type || 'Dinner') === type);
 
   return (
-    <div className={`bg-white dark:bg-slate-800 p-1.5 min-h-[140px] flex flex-col gap-1 overflow-hidden transition-all hover:bg-slate-50 dark:hover:bg-slate-750 ${isToday ? 'ring-1 ring-emerald-500 inset-0 z-10' : ''}`}>
+    <div className={`group bg-white dark:bg-slate-800 p-1.5 min-h-[140px] flex flex-col gap-1 overflow-hidden transition-all hover:bg-white dark:hover:bg-slate-750 hover:shadow-sm hover:z-10 ${isToday ? 'ring-2 ring-emerald-500 inset-0 z-10 shadow-md' : ''}`}>
       <div className="text-right">
-        <span className={`text-[10px] font-medium inline-block min-w-[18px] text-center rounded-full ${isToday ? 'bg-emerald-500 text-white px-1' : 'text-slate-400 dark:text-slate-500'}`}>
+        <span className={`text-[10px] font-bold inline-block min-w-[20px] text-center rounded-full ${isToday ? 'bg-emerald-500 text-white py-0.5 px-1' : 'text-slate-500 dark:text-slate-400'}`}>
           {date.getDate()}
         </span>
       </div>
@@ -92,13 +93,13 @@ const DayCell = ({ date, mealPlanData, onDelete }: { date: Date, mealPlanData: R
             <MealEntryItem key={entry.id} entry={entry} onDelete={onDelete} />
           ))}
         </MealSlot>
-        <div className="border-t border-dashed border-slate-100 dark:border-slate-700/50 my-0.5"></div>
+        <div className="border-t border-dashed border-slate-200 dark:border-slate-700 my-0.5 opacity-50"></div>
         <MealSlot date={dateString} mealType="Lunch" icon={Sun}>
           {getEntries('Lunch').map(entry => (
             <MealEntryItem key={entry.id} entry={entry} onDelete={onDelete} />
           ))}
         </MealSlot>
-        <div className="border-t border-dashed border-slate-100 dark:border-slate-700/50 my-0.5"></div>
+        <div className="border-t border-dashed border-slate-200 dark:border-slate-700 my-0.5 opacity-50"></div>
         <MealSlot date={dateString} mealType="Dinner" icon={Moon}>
           {getEntries('Dinner').map(entry => (
             <MealEntryItem key={entry.id} entry={entry} onDelete={onDelete} />
