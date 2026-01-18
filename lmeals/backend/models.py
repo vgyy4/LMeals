@@ -35,6 +35,7 @@ class Allergen(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True, nullable=False)
+    keywords = Column(JSON, default=list)
 
 class MealPlanEntry(Base):
     __tablename__ = "meal_plan_entries"

@@ -49,6 +49,7 @@ class AllergenCreate(AllergenBase):
 
 class Allergen(AllergenBase):
     id: int
+    keywords: List[str] = []
 
     class Config:
         orm_mode = True

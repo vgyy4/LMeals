@@ -69,8 +69,8 @@ def get_allergen_by_name(db: Session, name: str):
 def get_allergens(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Allergen).offset(skip).limit(limit).all()
 
-def create_allergen(db: Session, allergen: schemas.AllergenCreate):
-    db_allergen = models.Allergen(name=allergen.name)
+def create_allergen(db: Session, allergen: schemas.AllergenCreate, keywords: list[str] = []):
+    db_allergen = models.Allergen(name=allergen.name, keywords=keywords)
     db.add(db_allergen)
     db.commit()
     db.refresh(db_allergen)

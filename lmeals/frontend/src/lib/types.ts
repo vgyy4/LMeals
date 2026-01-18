@@ -23,6 +23,7 @@ export interface Recipe {
 export interface Allergen {
   id: number;
   name: string;
+  keywords?: string[];
 }
 
 export interface ScrapeRequest {

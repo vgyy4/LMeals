@@ -16,12 +16,18 @@ def get_db():
     finally:
         db.close()
 
+import llm
+
 @router.post("/allergens", response_model=schemas.Allergen)
 def create_allergen(allergen: schemas.AllergenCreate, db: Session = Depends(get_db)):
     db_allergen = crud.get_allergen_by_name(db, name=allergen.name)
     if db_allergen:
         raise HTTPException(status_code=400, detail="Allergen already exists")
-    return crud.create_allergen(db=db, allergen=allergen)
+    
+    # Expand keywords using LLM
+    keywords = llm.expand_allergen_keywords(allergen.name)
+    
+    return crud.create_allergen(db=db, allergen=allergen, keywords=keywords)
 
 @router.get("/allergens", response_model=List[schemas.Allergen])
 def read_allergens(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
