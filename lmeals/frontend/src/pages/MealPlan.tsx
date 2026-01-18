@@ -56,15 +56,15 @@ const MealSlot = ({ date, mealType, icon: Icon, children }: { date: string, meal
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 min-h-[2.5rem] p-1 rounded-md transition-all border border-transparent flex flex-col gap-1 ${isOver ? 'bg-emerald-50 dark:bg-emerald-900/40 border-emerald-300 dark:border-emerald-700 shadow-inner' :
-          hasContent ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700' : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
+      className={`relative flex-1 min-h-[2.5rem] p-1 rounded-md transition-all border border-transparent flex flex-col gap-1 ${isOver ? 'bg-emerald-50 dark:bg-emerald-900/40 border-emerald-300 dark:border-emerald-700 shadow-inner' :
+        hasContent ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700' : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
         }`}
     >
-      <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 select-none px-1">
-        <Icon size={12} className="opacity-70" />
-        <span className="opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider text-[9px]">{mealType}</span>
+      <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 select-none px-1 h-3 mb-0.5">
+        <Icon size={12} className="opacity-70 shrink-0" />
+        <span className="absolute right-1 top-0.5 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider text-[8px] font-bold text-emerald-500/70 whitespace-nowrap bg-white/80 dark:bg-slate-800/80 px-1 rounded backdrop-blur-sm shadow-sm z-20 pointer-events-none">{mealType}</span>
       </div>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 z-10">
         {children}
       </div>
     </div>
