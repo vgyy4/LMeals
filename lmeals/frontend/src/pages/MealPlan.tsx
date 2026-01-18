@@ -158,10 +158,13 @@ const MealPlan = () => {
   const [activeDragItem, setActiveDragItem] = useState<any | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to 8 AM on load
+  // Auto-scroll to current time or 8 AM
   useEffect(() => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 7 * PIXELS_PER_HOUR;
+      const hour = new Date().getHours();
+      // Scroll to 1 hour before current time, or 7 AM if it's early/late
+      const targetHour = hour > 6 && hour < 22 ? hour - 1 : 7;
+      scrollContainerRef.current.scrollTop = targetHour * PIXELS_PER_HOUR;
     }
   }, []);
 
@@ -319,7 +322,19 @@ const MealPlan = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
-            {recipes.map(recipe => <DraggableRecipe key={recipe.id} recipe={recipe} />)}
+            {recipes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-40 text-center p-4 opacity-60">
+                <div className="bg-slate-100 dark:bg-slate-700/50 p-3 rounded-full mb-3">
+                  <ChefHat className="text-slate-400 dark:text-slate-500" size={24} />
+                </div>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                  No recipes found.<br />
+                  <Link to="/" className="text-emerald-500 hover:underline">Add one now</Link>
+                </p>
+              </div>
+            ) : (
+              recipes.map(recipe => <DraggableRecipe key={recipe.id} recipe={recipe} />)
+            )}
           </div>
         </div>
 
@@ -338,32 +353,33 @@ const MealPlan = () => {
             </div>
           </div>
 
-          {/* Days Header */}
-          <div className="flex border-b border-slate-100 dark:border-slate-700">
-            <div className="w-16 shrink-0 border-r border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"></div> {/* Time axis spacer */}
-            {weekDays.map(date => {
-              const isToday = new Date().toDateString() === date.toDateString();
-              return (
-                <div key={date.toISOString()} className="flex-1 py-3 text-center border-r border-slate-100 dark:border-slate-700/50 last:border-0">
-                  <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isToday ? 'text-emerald-600' : 'text-slate-400'}`}>
-                    {date.toLocaleString('default', { weekday: 'short' })}
-                  </div>
-                  <div className={`text-xl font-normal inline-flex items-center justify-center w-8 h-8 rounded-full ${isToday ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-700 dark:text-slate-200'}`}>
-                    {date.getDate()}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
           {/* Scrolling Grid */}
-          <div className="flex-1 overflow-y-auto relative custom-scrollbar" ref={scrollContainerRef}>
-            <div className="flex" style={{ height: HOURS.length * PIXELS_PER_HOUR }}>
+          <div className="flex-1 overflow-y-auto relative custom-scrollbar flex flex-col" ref={scrollContainerRef}>
+
+            {/* Sticky Days Header */}
+            <div className="sticky top-0 z-30 flex bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 shadow-sm shrink-0">
+              <div className="w-16 shrink-0 border-r border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"></div> {/* Time axis spacer */}
+              {weekDays.map(date => {
+                const isToday = new Date().toDateString() === date.toDateString();
+                return (
+                  <div key={date.toISOString()} className="flex-1 py-3 text-center border-r border-slate-100 dark:border-slate-700/50 last:border-0">
+                    <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isToday ? 'text-emerald-600' : 'text-slate-400'}`}>
+                      {date.toLocaleString('default', { weekday: 'short' })}
+                    </div>
+                    <div className={`text-xl font-normal inline-flex items-center justify-center w-8 h-8 rounded-full ${isToday ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-700 dark:text-slate-200'}`}>
+                      {date.getDate()}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-1" style={{ minHeight: HOURS.length * PIXELS_PER_HOUR }}>
 
               {/* Time Axis */}
               <div className="w-16 shrink-0 border-r border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 sticky left-0 z-20">
                 {HOURS.map(hour => (
-                  <div key={hour} className="relative h-[60px] border-b border-transparent">
+                  <div key={hour} className="relative border-b border-transparent box-border" style={{ height: PIXELS_PER_HOUR }}>
                     <span className="absolute -top-2.5 right-2 text-[10px] text-slate-400 font-medium">
                       {hour === 0 ? '' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}
                     </span>
