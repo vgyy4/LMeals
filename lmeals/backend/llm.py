@@ -141,9 +141,9 @@ def expand_allergen_keywords(allergen_name: str) -> list[str]:
     You are an expert food safety assistant. Your task is to generate a comprehensive list of keywords associated with a specific allergen.
     Include:
     1. The allergen name itself in English.
-    2. Common names of the allergen in French, Spanish, German, Italian, and other major European languages.
-    3. Common ingredients that CONTAIN this allergen (e.g. for "Milk", include "butter", "cheese", "cream", "yogurt", "whey", "casein").
-    4. Derived names (e.g. for "Wheat", include "flour", "gluten", "semolina").
+    2. Common names of the allergen in Hebrew, French, Spanish, German, Italian, and other major languages.
+    3. Common ingredients that CONTAIN this allergen (e.g. for "Milk", include "butter", "cheese", "cream", "yogurt", "whey", "casein", "חלב", "גבינה", "יוגורט").
+    4. Derived names (e.g. for "Wheat", include "flour", "gluten", "semolina", "קמח").
 
     Return ONLY a JSON object with a single key "keywords" which is a list of lowercase strings.
     Example input: "Milk"
