@@ -68,8 +68,8 @@ export const getMealPlanEntries = async (startDate: string, endDate: string): Pr
     return response.data;
 };
 
-export const createMealPlanEntry = async (date: string, recipeId: number): Promise<any> => {
-    const response = await api.post('/meal-plan', { date, recipe_id: recipeId });
+export const createMealPlanEntry = async (date: string, recipeId: number, mealType: string = 'Dinner'): Promise<any> => {
+    const response = await api.post('/meal-plan', { date, recipe_id: recipeId, meal_type: mealType });
     return response.data;
 };
 

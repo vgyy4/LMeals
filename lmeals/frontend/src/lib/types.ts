@@ -46,4 +46,5 @@ export interface MealPlanEntry {
   date: string;
   recipe_id: number;
   recipe: Recipe;
+  meal_type?: string;
 }

@@ -44,6 +44,7 @@ class MealPlanEntry(Base):
     recipe_id = Column(Integer, ForeignKey("recipes.id"), nullable=False)
 
     recipe = relationship("Recipe")
+    meal_type = Column(String, default="Dinner")
 
 class Setting(Base):
     __tablename__ = "settings"

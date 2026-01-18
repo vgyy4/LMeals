@@ -72,6 +72,7 @@ class GroqSettings(BaseModel):
 class MealPlanEntryBase(BaseModel):
     date: date
     recipe_id: int
+    meal_type: str = "Dinner"
 
 class MealPlanEntryCreate(MealPlanEntryBase):
     pass
