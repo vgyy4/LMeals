@@ -109,14 +109,32 @@ const Settings: React.FC = () => {
     }
   };
 
+  const [isAddingAllergen, setIsAddingAllergen] = useState(false);
+
   const handleAddAllergen = async () => {
     if (!newAllergen.trim()) return;
+
+    setIsAddingAllergen(true);
+    setMessage('');
+
     try {
       await createAllergen(newAllergen);
       setNewAllergen('');
-      loadAllergens();
-    } catch (error) {
+      await loadAllergens();
+      setMessage('Allergen added successfully!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error: any) {
       console.error('Error adding allergen:', error);
+      let errorMsg = 'Failed to add allergen';
+      if (error.response?.status === 400) {
+        errorMsg = 'Allergen already exists';
+      } else if (error.response?.status === 500) {
+        errorMsg = 'Server error (AI generation failed). Try again.';
+      }
+      setMessage(errorMsg);
+      setTimeout(() => setMessage(''), 5000);
+    } finally {
+      setIsAddingAllergen(false);
     }
   };
 
@@ -208,27 +226,41 @@ const Settings: React.FC = () => {
           >
             Save Settings
           </button>
-          {message && <span className="text-green-600 dark:text-green-400 text-sm font-bold">{message}</span>}
+          {message && !message.includes('Allergen') && <span className="text-green-600 dark:text-green-400 text-sm font-bold">{message}</span>}
         </div>
       </div>
 
       <div className="bg-white dark:bg-slate-800 shadow-md rounded px-8 pt-6 pb-8 mb-6">
         <h2 className="text-xl font-bold mb-4 text-slate-900 dark:text-slate-50">Allergens</h2>
+
+        {message && message.includes('Allergen') && (
+          <div className={`mb-4 px-3 py-2 rounded text-sm font-semibold ${message.includes('Failed') || message.includes('exists') || message.includes('error') ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
+            {message}
+          </div>
+        )}
+
         <div className="flex mb-4">
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-slate-700 dark:text-slate-900 leading-tight focus:outline-none focus:shadow-outline mr-2 bg-white"
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-slate-700 dark:text-slate-900 leading-tight focus:outline-none focus:shadow-outline mr-2 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
             type="text"
-            placeholder="Add new allergen"
+            placeholder="Add new allergen (e.g., Milk)"
             value={newAllergen}
             onChange={(e) => setNewAllergen(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAddAllergen()}
+            onKeyPress={(e) => e.key === 'Enter' && !isAddingAllergen && handleAddAllergen()}
+            disabled={isAddingAllergen}
           />
           <button
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors"
+            className={`font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors flex items-center justify-center min-w-[80px] ${isAddingAllergen ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
             type="button"
             onClick={handleAddAllergen}
+            disabled={isAddingAllergen}
           >
-            Add
+            {isAddingAllergen ? (
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : 'Add'}
           </button>
         </div>
         <ul>
