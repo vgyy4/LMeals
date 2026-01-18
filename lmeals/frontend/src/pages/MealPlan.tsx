@@ -122,7 +122,7 @@ const DayColumn = ({ date, children }: { date: Date, children: React.ReactNode }
   const height = PIXELS_PER_HOUR * 3; // larger hit area
 
   return (
-    <div className="relative border-r border-slate-100 dark:border-slate-800 h-full bg-white dark:bg-slate-900 min-w-[120px]">
+    <div className="flex-1 relative border-r border-slate-100 dark:border-slate-800 h-full bg-white dark:bg-slate-900 min-w-[120px]">
       {/* Background Grid Lines */}
       {HOURS.map(hour => (
         <div
@@ -362,7 +362,7 @@ const MealPlan = () => {
               {weekDays.map(date => {
                 const isToday = new Date().toDateString() === date.toDateString();
                 return (
-                  <div key={date.toISOString()} className="flex-1 py-3 text-center border-r border-slate-100 dark:border-slate-700/50 last:border-0">
+                  <div key={date.toISOString()} className="flex-1 min-w-[120px] py-3 text-center border-r border-slate-100 dark:border-slate-700/50 last:border-0">
                     <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isToday ? 'text-emerald-600' : 'text-slate-400'}`}>
                       {date.toLocaleString('default', { weekday: 'short' })}
                     </div>
