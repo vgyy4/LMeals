@@ -88,6 +88,16 @@ def get_meal_plan_entries(db: Session, start_date: str, end_date: str):
     return db.query(models.MealPlanEntry).filter(models.MealPlanEntry.date.between(start_date, end_date)).options(joinedload(models.MealPlanEntry.recipe).joinedload(models.Recipe.ingredients)).all()
 
 def create_meal_plan_entry(db: Session, entry: schemas.MealPlanEntryCreate):
+    # Verify recipe exists to avoid IntegrityError
+    db_recipe = get_recipe(db, entry.recipe_id)
+    if not db_recipe:
+        # We can raise an error or return None. 
+        # Since CRUD usually returns the created object, returning None might be ambiguous if not handled.
+        # But raising an exception here is safer than letting DB do it.
+        # Ideally, we let the router handle the 404. 
+        # Let's return None and update router.
+        return None
+
     db_entry = models.MealPlanEntry(**entry.dict())
     db.add(db_entry)
     db.commit()

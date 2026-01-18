@@ -22,7 +22,10 @@ def read_meal_plan_entries(start_date: date, end_date: date, db: Session = Depen
 
 @router.post("/meal-plan", response_model=schemas.MealPlanEntry)
 def create_meal_plan_entry(entry: schemas.MealPlanEntryCreate, db: Session = Depends(get_db)):
-    return crud.create_meal_plan_entry(db, entry=entry)
+    db_entry = crud.create_meal_plan_entry(db, entry=entry)
+    if db_entry is None:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    return db_entry
 
 @router.delete("/meal-plan/{entry_id}", response_model=schemas.MealPlanEntry)
 def delete_meal_plan_entry(entry_id: int, db: Session = Depends(get_db)):
