@@ -26,10 +26,13 @@ const DraggableRecipe = ({ recipe }: { recipe: Recipe }) => {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`p-2 px-3 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-md cursor-grab mb-2 shadow-sm border border-slate-200 dark:border-slate-600 flex items-center gap-2 text-xs font-medium hover:border-emerald-400 transition-colors ${isDragging ? 'opacity-50 ring-2 ring-emerald-500' : ''}`}
+      className={`group relative p-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-lg cursor-grab mb-3 shadow-sm border border-slate-200 dark:border-slate-700 flex items-start gap-3 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-md transition-all ${isDragging ? 'opacity-50 ring-2 ring-emerald-500 rotate-2' : ''}`}
     >
-      <ChefHat size={14} className="text-emerald-500 shrink-0" />
-      <span className="truncate">{recipe.title}</span>
+      <div className="bg-emerald-50 dark:bg-emerald-900/30 p-1.5 rounded-md shrink-0 mt-0.5">
+        <ChefHat size={16} className="text-emerald-600 dark:text-emerald-400" />
+      </div>
+      <span className="text-sm font-medium leading-tight line-clamp-2 pr-1">{recipe.title}</span>
+      <div className="absolute inset-0 rounded-lg ring-1 ring-inset ring-transparent group-hover:ring-emerald-400/50 transition-all pointer-events-none" />
     </div>
   );
 };
@@ -37,16 +40,18 @@ const DraggableRecipe = ({ recipe }: { recipe: Recipe }) => {
 // Overlay Component
 const RecipeOverlay = ({ recipe }: { recipe: Recipe }) => {
   return (
-    <div className="p-2 px-3 bg-emerald-600 text-white rounded-md shadow-xl w-48 flex items-center gap-2 transform scale-105 cursor-grabbing opacity-90 text-xs font-bold">
-      <ChefHat size={14} />
-      <span className="truncate">{recipe.title}</span>
+    <div className="p-3 bg-white dark:bg-slate-800 text-slate-800 dark:text-white rounded-lg shadow-xl w-56 flex items-start gap-3 ring-2 ring-emerald-500 rotate-2 cursor-grabbing opacity-95">
+      <div className="bg-emerald-50 dark:bg-emerald-900/30 p-1.5 rounded-md shrink-0 mt-0.5">
+        <ChefHat size={16} className="text-emerald-600 dark:text-emerald-400" />
+      </div>
+      <span className="text-sm font-bold leading-tight">{recipe.title}</span>
     </div>
   );
 };
 
 
 // Single Meal Slot
-const MealSlot = ({ date, mealType, icon: Icon, children }: { date: string, mealType: string, icon: any, children?: React.ReactNode }) => {
+const MealSlot = ({ date, mealType, icon: Icon, label, children }: { date: string, mealType: string, icon: any, label: string, children?: React.ReactNode }) => {
   const { isOver, setNodeRef } = useDroppable({
     id: `${date}::${mealType}`,
   });
@@ -56,20 +61,40 @@ const MealSlot = ({ date, mealType, icon: Icon, children }: { date: string, meal
   return (
     <div
       ref={setNodeRef}
-      className={`relative flex-1 min-h-[2.5rem] p-1 rounded-md transition-all border border-transparent flex flex-col gap-1 ${isOver ? 'bg-emerald-50 dark:bg-emerald-900/40 border-emerald-300 dark:border-emerald-700 shadow-inner' :
-        hasContent ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700' : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
+      className={`flex-1 flex flex-col gap-1.5 p-1.5 rounded-md transition-all duration-200 min-h-[80px] ${isOver ? 'bg-emerald-50/80 dark:bg-emerald-900/30 ring-2 ring-emerald-400/50 ring-inset' :
+        'hover:bg-slate-50 dark:hover:bg-slate-800/50'
         }`}
     >
-      <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 select-none px-1 h-3 mb-0.5">
-        <Icon size={12} className="opacity-70 shrink-0" />
-        <span className="absolute right-1 top-0.5 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider text-[8px] font-bold text-emerald-500/70 whitespace-nowrap bg-white/80 dark:bg-slate-800/80 px-1 rounded backdrop-blur-sm shadow-sm z-20 pointer-events-none">{mealType}</span>
+      <div className="flex items-center gap-1.5 select-none opacity-40 group-hover/day:opacity-70 transition-opacity px-1">
+        <Icon size={12} className={isOver ? "text-emerald-600" : ""} />
+        <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
       </div>
-      <div className="flex flex-col gap-1 z-10">
+
+      <div className="flex flex-col gap-1.5 flex-1 w-full">
         {children}
+        {children && React.Children.count(children) === 0 && (
+          <div className={`h-full w-full rounded border border-dashed border-slate-200 dark:border-slate-700/50 opacity-0 transition-opacity ${isOver ? 'opacity-100 bg-emerald-100/20' : 'group-hover/day:opacity-50'}`}></div>
+        )}
       </div>
     </div>
   );
 };
+
+
+const MealEntryItem = ({ entry, onDelete }: { entry: MealPlanEntry, onDelete: (id: number) => void }) => (
+  <div className="group/item relative bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-2 rounded-md border border-slate-200 dark:border-slate-600 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 hover:border-emerald-300 dark:hover:border-emerald-500 cursor-grab active:cursor-grabbing w-full">
+    <div className="flex justify-between items-start gap-2">
+      <span className="text-xs font-medium leading-snug line-clamp-2 w-full">{entry.recipe.title}</span>
+    </div>
+    <button
+      onClick={(e) => { e.stopPropagation(); onDelete(entry.id); }}
+      className="absolute -top-1 -right-1 opacity-0 group-hover/item:opacity-100 bg-rose-500 text-white rounded-full p-0.5 shadow-sm hover:bg-rose-600 hover:scale-110 transition-all z-10"
+      title="Remove from plan"
+    >
+      <X size={10} />
+    </button>
+  </div>
+);
 
 
 // Day Cell
@@ -80,47 +105,39 @@ const DayCell = ({ date, mealPlanData, onDelete }: { date: Date, mealPlanData: R
   const getEntries = (type: string) => (mealPlanData[dateString] || []).filter(e => (e.meal_type || 'Dinner') === type);
 
   return (
-    <div className={`group bg-white dark:bg-slate-800 p-1.5 min-h-[140px] flex flex-col gap-1 overflow-hidden transition-all hover:bg-white dark:hover:bg-slate-750 hover:shadow-sm hover:z-10 ${isToday ? 'ring-2 ring-emerald-500 inset-0 z-10 shadow-md' : ''}`}>
-      <div className="text-right">
-        <span className={`text-[10px] font-bold inline-block min-w-[20px] text-center rounded-full ${isToday ? 'bg-emerald-500 text-white py-0.5 px-1' : 'text-slate-500 dark:text-slate-400'}`}>
+    <div className={`group/day relative bg-white dark:bg-slate-800 flex flex-col min-h-[320px] transition-colors border-r border-b border-slate-100 dark:border-slate-700/50 ${isToday ? 'bg-slate-50/30' : ''}`}>
+      {/* Date Header */}
+      <div className={`p-2 flex justify-end ${isToday ? 'bg-emerald-50/30' : ''}`}>
+        <span className={`text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full transition-all ${isToday ? 'bg-emerald-500 text-white shadow-sm scale-110' : 'text-slate-400 dark:text-slate-500'}`}>
           {date.getDate()}
         </span>
       </div>
 
-      <div className="flex-1 flex flex-col justify-between gap-0.5">
-        <MealSlot date={dateString} mealType="Breakfast" icon={Coffee}>
+      <div className="flex-1 flex flex-col px-1 pb-2 gap-1">
+        <MealSlot date={dateString} mealType="Breakfast" icon={Coffee} label="Breakfast">
           {getEntries('Breakfast').map(entry => (
             <MealEntryItem key={entry.id} entry={entry} onDelete={onDelete} />
           ))}
         </MealSlot>
-        <div className="border-t border-dashed border-slate-200 dark:border-slate-700 my-0.5 opacity-50"></div>
-        <MealSlot date={dateString} mealType="Lunch" icon={Sun}>
+
+        <MealSlot date={dateString} mealType="Lunch" icon={Sun} label="Lunch">
           {getEntries('Lunch').map(entry => (
             <MealEntryItem key={entry.id} entry={entry} onDelete={onDelete} />
           ))}
         </MealSlot>
-        <div className="border-t border-dashed border-slate-200 dark:border-slate-700 my-0.5 opacity-50"></div>
-        <MealSlot date={dateString} mealType="Dinner" icon={Moon}>
+
+        <MealSlot date={dateString} mealType="Dinner" icon={Moon} label="Dinner">
           {getEntries('Dinner').map(entry => (
             <MealEntryItem key={entry.id} entry={entry} onDelete={onDelete} />
           ))}
         </MealSlot>
       </div>
+
+      {/* Today Highlight Border */}
+      {isToday && <div className="absolute inset-0 border-2 border-emerald-500 pointer-events-none z-20 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]"></div>}
     </div>
   );
 };
-
-const MealEntryItem = ({ entry, onDelete }: { entry: MealPlanEntry, onDelete: (id: number) => void }) => (
-  <div className="group relative bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600 text-[10px] shadow-sm flex justify-between items-center hover:border-indigo-300 dark:hover:border-indigo-500 transition-colors">
-    <span className="truncate pr-3 w-full">{entry.recipe.title}</span>
-    <button
-      onClick={(e) => { e.stopPropagation(); onDelete(entry.id); }}
-      className="hidden group-hover:flex absolute right-0.5 top-1/2 -translate-y-1/2 text-rose-500 hover:text-white hover:bg-rose-500 rounded p-0.5 transition-all"
-    >
-      <X size={8} />
-    </button>
-  </div>
-);
 
 
 const MealPlan = () => {
@@ -309,9 +326,9 @@ const MealPlan = () => {
             </div>
 
             {/* Calendar Body */}
-            <div className="grid grid-cols-7 grid-rows-5 gap-px bg-slate-100 dark:bg-slate-700/50 flex-1 overflow-hidden">
+            <div className="grid grid-cols-7 auto-rows-fr gap-px bg-slate-200 dark:bg-slate-900 flex-1 overflow-y-auto custom-scrollbar">
               {calendarDays.map((date, i) => {
-                if (!date) return <div key={`empty-${i}`} className="bg-slate-50/30 dark:bg-slate-800"></div>;
+                if (!date) return <div key={`empty-${i}`} className="bg-slate-50/50 dark:bg-slate-800/50"></div>;
                 return (
                   <DayCell
                     key={date.toISOString()}
