@@ -13,24 +13,30 @@ const DatePicker: React.FC<DatePickerProps> = ({ startDate, endDate, onRangeChan
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Convert string dates to Date objects for the hook
-    const selectedDates = [
+    // Buffer state to handle range picking without immediate parent sync resetting the hook
+    const [internalDates, setInternalDates] = useState<Date[]>([
         moment(startDate).toDate(),
         moment(endDate).toDate()
-    ];
+    ]);
+
+    // Sync internal state when parent props change externally (not during picking)
+    useEffect(() => {
+        if (!isOpen) {
+            setInternalDates([
+                moment(startDate).toDate(),
+                moment(endDate).toDate()
+            ]);
+        }
+    }, [startDate, endDate, isOpen]);
 
     const {
-        data: { calendars, weekDays },
+        data: { calendars, weekDays, selectedDates: hookSelectedDates },
         propGetters: { dayButton, addOffset, subtractOffset },
     } = useDatePicker({
-        selectedDates,
+        selectedDates: internalDates,
         onDatesChange: (dates) => {
-            if (dates.length === 1) {
-                // First selection: set both to start
-                const dateStr = moment(dates[0]).format('YYYY-MM-DD');
-                onRangeChange(dateStr, dateStr);
-            } else if (dates.length === 2) {
-                // Second selection: sort and set range
+            setInternalDates(dates);
+            if (dates.length === 2) {
                 const start = moment(dates[0]);
                 const end = moment(dates[1]);
                 if (start.isAfter(end)) {
@@ -38,7 +44,8 @@ const DatePicker: React.FC<DatePickerProps> = ({ startDate, endDate, onRangeChan
                 } else {
                     onRangeChange(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
                 }
-                setIsOpen(false);
+                // Optional: close on second click
+                // setIsOpen(false);
             }
         },
         dates: {
