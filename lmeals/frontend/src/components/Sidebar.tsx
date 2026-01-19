@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Calendar, ShoppingCart, Settings, Heart, ChevronLeft, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Calendar, ShoppingCart, Settings, Heart } from 'lucide-react';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -8,7 +8,17 @@ interface SidebarProps {
   setIsMobileOpen?: (open: boolean) => void;
 }
 
+const AnimatedHamburger = ({ isOpen }: { isOpen: boolean }) => (
+  <div className="relative w-5 h-5 flex flex-col justify-around transition-all duration-300">
+    <span className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-left ${isOpen ? 'rotate-45 translate-x-1 -translate-y-0.5' : ''}`} />
+    <span className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ${isOpen ? 'opacity-0 -translate-x-2' : ''}`} />
+    <span className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 origin-left ${isOpen ? '-rotate-45 translate-x-1 translate-y-0.5' : ''}`} />
+  </div>
+);
+
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }) => {
+  const isOpen = isMobileOpen || !isCollapsed;
+
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
     `flex items-center p-3 rounded-xl text-lg transition-all mb-2 group ${isActive
       ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20 font-semibold'
@@ -39,16 +49,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, isMobile
         {/* Toggle / Close Button */}
         <button
           onClick={() => isMobileOpen ? setIsMobileOpen?.(false) : setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-xl bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-white transition-all duration-300 active:scale-90"
-          title={isMobileOpen ? "Close Menu" : isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          className="p-2.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-white transition-all duration-300 active:scale-90"
+          title={isOpen ? "Collapse Menu" : "Expand Menu"}
         >
-          {isMobileOpen ? (
-            <X size={24} className="animate-in spin-in-90 duration-300" />
-          ) : isCollapsed ? (
-            <Menu size={20} />
-          ) : (
-            <ChevronLeft size={20} className="transition-transform duration-300" />
-          )}
+          <AnimatedHamburger isOpen={isOpen} />
         </button>
       </div>
 
