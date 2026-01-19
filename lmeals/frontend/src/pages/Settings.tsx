@@ -212,6 +212,7 @@ const Settings: React.FC = () => {
                   placeholder="Paste your key here..."
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
+                  autoComplete="new-password"
                 />
                 <Key className="absolute left-4 top-3.5 text-slate-400 group-focus-within:text-rose-500 transition-colors" size={18} />
               </div>
@@ -263,6 +264,7 @@ const Settings: React.FC = () => {
                           onChange={(e) => setSearchTerm(e.target.value)}
                           onKeyDown={(e) => e.stopPropagation()}
                           autoFocus
+                          autoComplete="off"
                         />
                         <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
                       </div>
