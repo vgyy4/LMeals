@@ -12,15 +12,15 @@ const AnimatedHamburger = ({ isOpen }: { isOpen: boolean }) => (
   <div className="relative w-5 h-5 flex items-center justify-center transition-all duration-300 pointer-events-none">
     <div className="relative w-5 h-3.5">
       <span
-        className={`absolute left-0 w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out ${isOpen ? 'top-[45%] rotate-45' : 'top-0'
+        className={`absolute left-0 w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out ${isOpen ? 'top-1/2 -rotate-45' : 'top-0'
           }`}
       />
       <span
-        className={`absolute left-0 top-[45%] w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out ${isOpen ? 'opacity-0 -translate-x-2' : 'opacity-100'
+        className={`absolute left-0 top-1/2 -translate-y-1/2 w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out ${isOpen ? 'opacity-0 -translate-x-2' : 'opacity-100'
           }`}
       />
       <span
-        className={`absolute left-0 w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out ${isOpen ? 'top-[45%] -rotate-45' : 'top-full'
+        className={`absolute left-0 w-full h-0.5 bg-current rounded-full transition-all duration-300 ease-in-out ${isOpen ? 'top-1/2 rotate-45' : 'bottom-0'
           }`}
       />
     </div>
@@ -31,7 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, isMobile
   const isOpen = isMobileOpen || !isCollapsed;
 
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center p-3 rounded-xl text-lg transition-all mb- group relative ${isActive
+    `flex items-center p-3 rounded-xl text-lg transition-all mb-1 group relative ${isActive
       ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20 font-semibold'
       : 'text-slate-300 hover:bg-slate-800 hover:text-white'
     } ${isCollapsed && !isMobileOpen ? 'justify-center px-3' : 'px-4'}`;
@@ -53,21 +53,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, isMobile
         ${isCollapsed && !isMobileOpen ? 'md:w-20' : 'md:w-64'}
       `}
     >
-      <div className={`mb-8 flex items-center justify-between transition-all duration-300 ${isCollapsed && !isMobileOpen ? 'px-0 justify-center' : 'px-2'}`}>
-        {(!isCollapsed || isMobileOpen) ? (
+      <div className={`mb-8 flex items-center transition-all duration-300 ${isCollapsed && !isMobileOpen ? 'flex-col space-y-4 px-0 justify-center' : 'flex-row justify-between px-2'}`}>
+        {/* Only show logo in full view or mobile */}
+        {(!isCollapsed || isMobileOpen) && (
           <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent truncate animate-in fade-in duration-500">
             LMeals
           </h1>
-        ) : (
-          <div className="w-10 h-10 flex items-center justify-center">
-            <div className="w-6 h-6 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-lg shadow-lg rotate-12" />
-          </div>
         )}
 
-        {/* Toggle / Close Button */}
+        {/* Toggle / Close Button - Center it in collapsed mode */}
         <button
           onClick={() => isMobileOpen ? setIsMobileOpen?.(false) : setIsCollapsed(!isCollapsed)}
-          className="p-2.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-white transition-all duration-300 active:scale-90 outline-none"
+          className={`p-2.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-white transition-all duration-300 active:scale-90 outline-none ${isCollapsed && !isMobileOpen ? 'mx-auto' : ''
+            }`}
           title={isOpen ? "Collapse Menu" : "Expand Menu"}
         >
           <AnimatedHamburger isOpen={isOpen} />

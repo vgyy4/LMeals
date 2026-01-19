@@ -6,15 +6,15 @@ const AnimatedHamburger = ({ isOpen }: { isOpen: boolean }) => (
   <div className="relative w-6 h-6 flex items-center justify-center transition-all duration-300 pointer-events-none">
     <div className="relative w-5 h-4">
       <span
-        className={`absolute left-0 w-full h-0.5 bg-slate-600 dark:bg-slate-400 rounded-full transition-all duration-300 ease-in-out ${isOpen ? 'top-[45%] rotate-45' : 'top-0'
+        className={`absolute left-0 w-full h-0.5 bg-slate-600 dark:bg-slate-400 rounded-full transition-all duration-300 ease-in-out ${isOpen ? 'top-1/2 -rotate-45' : 'top-0'
           }`}
       />
       <span
-        className={`absolute left-0 top-[45%] w-full h-0.5 bg-slate-600 dark:bg-slate-400 rounded-full transition-all duration-300 ease-in-out ${isOpen ? 'opacity-0 -translate-x-2' : 'opacity-100'
+        className={`absolute left-0 top-1/2 -translate-y-1/2 w-full h-0.5 bg-slate-600 dark:bg-slate-400 rounded-full transition-all duration-300 ease-in-out ${isOpen ? 'opacity-0 -translate-x-2' : 'opacity-100'
           }`}
       />
       <span
-        className={`absolute left-0 w-full h-0.5 bg-slate-600 dark:bg-slate-400 rounded-full transition-all duration-300 ease-in-out ${isOpen ? 'top-[45%] -rotate-45' : 'top-full'
+        className={`absolute left-0 w-full h-0.5 bg-slate-600 dark:bg-slate-400 rounded-full transition-all duration-300 ease-in-out ${isOpen ? 'top-1/2 rotate-45' : 'bottom-0'
           }`}
       />
     </div>
