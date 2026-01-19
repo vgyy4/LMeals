@@ -64,14 +64,24 @@ const RecipeOverlay = ({ title }: { title: string }) => {
 
 // Meal Item Card (Inside a slot)
 const MealEntryCard = ({ entry, onDelete }: { entry: MealPlanEntry, onDelete: (id: number) => void }) => {
+  const [isRemoving, setIsRemoving] = React.useState(false);
+
+  const handleDelete = () => {
+    setIsRemoving(true);
+    // Wait for animation to finish before actually removing
+    setTimeout(() => onDelete(entry.id), 300);
+  };
+
   return (
-    <div className="group relative bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow active:cursor-grabbing cursor-grab flex items-start gap-2 mb-1 last:mb-0">
+    <div
+      className={`group relative bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow active:cursor-grabbing cursor-grab flex items-start gap-2 mb-1 last:mb-0 transition-all duration-300 ${isRemoving ? 'opacity-0 -translate-x-full scale-95' : 'opacity-100 translate-x-0 scale-100'}`}
+    >
       <span className="text-xs font-medium text-slate-700 dark:text-slate-200 leading-tight line-clamp-2 flex-1">
         {entry.recipe.title}
       </span>
       <button
-        onClick={(e) => { e.stopPropagation(); onDelete(entry.id); }}
-        className="opacity-0 group-hover:opacity-100 text-rose-500 hover:bg-rose-50 rounded p-0.5 transition-all"
+        onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+        className="opacity-0 group-hover:opacity-100 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded p-0.5 transition-all"
       >
         <X size={12} />
       </button>
@@ -242,17 +252,35 @@ const MealPlan = () => {
   };
 
   const handleDeleteEntry = async (entryId: number) => {
+    // Optimistic update: remove from UI immediately
+    setMealPlan(prev => {
+      const next = { ...prev };
+      for (const key in next) {
+        next[key] = next[key].filter(e => e.id !== entryId);
+      }
+      return next;
+    });
+
+    // Then call the API
     try {
       await deleteMealPlanEntry(entryId);
-      setMealPlan(prev => {
-        const next = { ...prev };
-        for (const key in next) {
-          next[key] = next[key].filter(e => e.id !== entryId);
-        }
-        return next;
-      });
     } catch (error) {
       console.error("Failed to delete meal plan entry:", error);
+      // Revert on error - refetch the data
+      const startDate = weekDays[0].toISOString().split('T')[0];
+      const endDate = weekDays[6].toISOString().split('T')[0];
+      try {
+        const mealPlanData = await getMealPlanEntries(startDate, endDate);
+        const plan = mealPlanData.reduce((acc, entry) => {
+          const date = entry.date.split('T')[0];
+          if (!acc[date]) acc[date] = [];
+          acc[date].push(entry);
+          return acc;
+        }, {} as Record<string, MealPlanEntry[]>);
+        setMealPlan(plan);
+      } catch (refetchError) {
+        console.error("Failed to refetch after delete error:", refetchError);
+      }
     }
   };
 

@@ -11,9 +11,10 @@ interface RecipeCardProps {
   cookTime?: string;
   prepTime?: string;
   isFavorite: boolean;
+  onFavoriteChange?: (id: number, isFavorite: boolean) => void;
 }
 
-const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, isFavorite }: RecipeCardProps) => {
+const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, isFavorite, onFavoriteChange }: RecipeCardProps) => {
   const totalTime = (parseInt(prepTime || '0') || 0) + (parseInt(cookTime || '0') || 0);
   const [isFav, setIsFav] = useState(isFavorite);
 
@@ -22,7 +23,14 @@ const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, isF
     e.stopPropagation();
     const newFavStatus = !isFav;
     setIsFav(newFavStatus);
+
+    // Call the API
     await setFavoriteStatus(id, newFavStatus);
+
+    // Notify parent component if callback provided
+    if (onFavoriteChange) {
+      onFavoriteChange(id, newFavStatus);
+    }
   };
 
   return (

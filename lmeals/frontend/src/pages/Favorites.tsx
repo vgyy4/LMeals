@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { getFavoriteRecipes } from '../lib/api';
-import { Recipe } from '../lib/types';
+import { getFavoriteRecipes, getAllergens } from '../lib/api';
+import { Recipe, Allergen } from '../lib/types';
 import RecipeCard from '../components/RecipeCard';
 
 const FavoritesPage = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [allergens, setAllergens] = useState<Allergen[]>([]);
+  const [removingIds, setRemovingIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -12,8 +14,12 @@ const FavoritesPage = () => {
     const fetchFavorites = async () => {
       try {
         setLoading(true);
-        const favoriteRecipes = await getFavoriteRecipes();
+        const [favoriteRecipes, allergensData] = await Promise.all([
+          getFavoriteRecipes(),
+          getAllergens()
+        ]);
         setRecipes(favoriteRecipes);
+        setAllergens(allergensData);
       } catch (err) {
         setError('Failed to load favorite recipes.');
         console.error(err);
@@ -24,26 +30,65 @@ const FavoritesPage = () => {
     fetchFavorites();
   }, []);
 
+  // Check if a recipe has allergens
+  const checkForAllergens = (recipe: Recipe): boolean => {
+    if (recipe.has_allergens !== undefined && recipe.has_allergens !== null) {
+      return recipe.has_allergens;
+    }
+
+    if (!allergens.length) return false;
+    const recipeIngredients = recipe.ingredients.map(i => i.text.toLowerCase());
+    return allergens.some(allergen => {
+      const checks = [allergen.name.toLowerCase(), ...(allergen.keywords || []).map(k => k.toLowerCase())];
+      return recipeIngredients.some(ingredient => checks.some(check => ingredient.includes(check)));
+    });
+  };
+
   return (
-    <div className="p-4 md:p-8 lg:px-12">
-      <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800 mb-8">Your Favorite Recipes</h1>
+    <div className="p-4 md:p-8 lg:px-12 max-w-7xl mx-auto">
+      <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight mb-8">Your Favorite Recipes</h1>
       {loading ? (
-        <p>Loading favorites...</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-64 bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse"></div>)}
+        </div>
       ) : error ? (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg" role="alert">{error}</div>
+        <div className="bg-rose-50 border-l-4 border-rose-500 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400 px-4 py-3 rounded-r shadow-sm" role="alert">{error}</div>
+      ) : recipes.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-slate-500 dark:text-slate-400 text-lg">No favorite recipes yet. Start adding some! ❤️</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {recipes.map(recipe => (
-            <RecipeCard
+            <div
               key={recipe.id}
-              id={recipe.id}
-              title={recipe.title}
-              imageUrl={recipe.image_url || undefined}
-              hasAllergens={false} // We don't have allergen info here, so we'll just pass false
-              cookTime={recipe.cook_time || undefined}
-              prepTime={recipe.prep_time || undefined}
-              isFavorite={recipe.is_favorite || false}
-            />
+              className={`transition-all duration-500 ${removingIds.has(recipe.id) ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+            >
+              <RecipeCard
+                id={recipe.id}
+                title={recipe.title}
+                imageUrl={recipe.image_url || undefined}
+                hasAllergens={checkForAllergens(recipe)}
+                cookTime={recipe.cook_time || undefined}
+                prepTime={recipe.prep_time || undefined}
+                isFavorite={true}
+                onFavoriteChange={(id, isFavorite) => {
+                  if (!isFavorite) {
+                    // Add to removing set for animation
+                    setRemovingIds(prev => new Set(prev).add(id));
+                    // Remove from list after animation
+                    setTimeout(() => {
+                      setRecipes(prev => prev.filter(r => r.id !== id));
+                      setRemovingIds(prev => {
+                        const next = new Set(prev);
+                        next.delete(id);
+                        return next;
+                      });
+                    }, 500);
+                  }
+                }}
+              />
+            </div>
           ))}
         </div>
       )}
