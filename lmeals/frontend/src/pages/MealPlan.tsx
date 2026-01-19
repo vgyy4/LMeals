@@ -10,10 +10,11 @@ import {
   useSensors,
   useSensor,
   PointerSensor,
+  TouchSensor,
 } from '@dnd-kit/core';
 import { getRecipes, getMealPlanEntries, createMealPlanEntry, deleteMealPlanEntry } from '../lib/api';
 import { Recipe, MealPlanEntry } from '../lib/types';
-import { X, ChevronLeft, ChevronRight, Calendar as CalendarIcon, ChefHat, Plus, Coffee, Sun, Moon, IceCream } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Calendar as CalendarIcon, ChefHat, Plus, Coffee, Sun, Moon, IceCream, Search, Filter } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 // --- Constants ---
@@ -40,9 +41,9 @@ const DraggableRecipe = ({ recipe }: { recipe: Recipe }) => {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`group relative p-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-lg cursor-grab mb-3 shadow-sm border border-slate-200 dark:border-slate-700 flex items-start gap-3 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-md transition-all ${isDragging ? 'opacity-50 ring-2 ring-emerald-500 rotate-2' : ''}`}
+      className={`group relative p-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl cursor-grab mb-3 shadow-sm border border-slate-100 dark:border-slate-700 flex items-start gap-3 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-md transition-all ${isDragging ? 'opacity-50 ring-2 ring-emerald-500 rotate-2' : ''}`}
     >
-      <div className="bg-emerald-50 dark:bg-emerald-900/30 p-1.5 rounded-md shrink-0 mt-0.5">
+      <div className="bg-emerald-50 dark:bg-emerald-900/30 p-1.5 rounded-lg shrink-0 mt-0.5">
         <ChefHat size={16} className="text-emerald-600 dark:text-emerald-400" />
       </div>
       <span className="text-sm font-medium leading-tight line-clamp-2 pr-1">{recipe.title}</span>
@@ -53,8 +54,8 @@ const DraggableRecipe = ({ recipe }: { recipe: Recipe }) => {
 // Drag Overlay
 const RecipeOverlay = ({ title }: { title: string }) => {
   return (
-    <div className="p-3 bg-white dark:bg-slate-800 text-slate-800 dark:text-white rounded-lg shadow-xl w-56 flex items-start gap-3 ring-2 ring-emerald-500 rotate-2 cursor-grabbing opacity-95">
-      <div className="bg-emerald-50 dark:bg-emerald-900/30 p-1.5 rounded-md shrink-0 mt-0.5">
+    <div className="p-3 bg-white dark:bg-slate-800 text-slate-800 dark:text-white rounded-xl shadow-xl w-56 flex items-start gap-3 ring-2 ring-emerald-500 rotate-2 cursor-grabbing opacity-95 border border-emerald-100 dark:border-emerald-900">
+      <div className="bg-emerald-50 dark:bg-emerald-900/30 p-1.5 rounded-lg shrink-0 mt-0.5">
         <ChefHat size={16} className="text-emerald-600 dark:text-emerald-400" />
       </div>
       <span className="text-sm font-bold leading-tight">{title}</span>
@@ -68,22 +69,21 @@ const MealEntryCard = ({ entry, onDelete }: { entry: MealPlanEntry, onDelete: (i
 
   const handleDelete = () => {
     setIsRemoving(true);
-    // Wait for animation to finish before actually removing
     setTimeout(() => onDelete(entry.id), 300);
   };
 
   return (
     <div
-      className={`group relative bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow active:cursor-grabbing cursor-grab flex items-start gap-2 mb-1 last:mb-0 transition-all duration-300 ${isRemoving ? 'opacity-0 -translate-x-full scale-95' : 'opacity-100 translate-x-0 scale-100'}`}
+      className={`group relative bg-white dark:bg-slate-800 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow active:cursor-grabbing cursor-grab flex items-start gap-2 mb-1.5 last:mb-0 transition-all duration-300 ${isRemoving ? 'opacity-0 -translate-x-full scale-95' : 'opacity-100 translate-x-0 scale-100'}`}
     >
-      <span className="text-xs font-medium text-slate-700 dark:text-slate-200 leading-tight line-clamp-2 flex-1">
+      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-tight line-clamp-2 flex-1">
         {entry.recipe.title}
       </span>
       <button
         onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-        className="opacity-0 group-hover:opacity-100 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded p-0.5 transition-all"
+        className="opacity-0 group-hover:opacity-100 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded p-1 transition-all"
       >
-        <X size={12} />
+        <X size={14} />
       </button>
     </div>
   )
@@ -109,14 +109,14 @@ const MealSlot = ({
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 flex flex-col p-1.5 gap-1 transition-colors border-b last:border-0 border-slate-100 dark:border-slate-700/50 min-h-[80px] ${slot.bg} ${isOver ? 'ring-2 ring-inset ring-emerald-400 bg-emerald-50 dark:bg-emerald-900/30' : ''}`}
+      className={`flex-1 flex flex-col p-2 gap-1.5 transition-colors border-b last:border-0 border-slate-100/50 dark:border-slate-700/30 min-h-[100px] ${slot.bg} ${isOver ? 'ring-2 ring-inset ring-emerald-400 bg-emerald-50/80 dark:bg-emerald-900/40' : ''}`}
     >
-      <div className={`flex items-center gap-1.5 mb-1 ${slot.color} opacity-70`}>
-        <slot.icon size={12} />
-        <span className="text-[10px] font-bold uppercase tracking-wider">{slot.label}</span>
+      <div className={`flex items-center gap-1.5 mb-1 ${slot.color} opacity-80`}>
+        <slot.icon size={13} strokeWidth={2.5} />
+        <span className="text-[10px] font-extrabold uppercase tracking-widest">{slot.label}</span>
       </div>
 
-      <div className="flex flex-col flex-1 gap-1">
+      <div className="flex flex-col flex-1 gap-1.5">
         {entries.map(entry => (
           <MealEntryCard key={entry.id} entry={entry} onDelete={onDelete} />
         ))}
@@ -132,7 +132,7 @@ const DayColumn = ({ date, mealPlan, onDelete }: { date: Date, mealPlan: Record<
   const dayEntries = mealPlan[dateStr] || [];
 
   return (
-    <div className="flex-1 min-w-[140px] border-r border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-full">
+    <div className="flex-1 min-w-[150px] sm:min-w-[180px] border-r border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-full last:border-r-0">
       {MEAL_SLOTS.map(slot => (
         <MealSlot
           key={slot.id}
@@ -152,20 +152,18 @@ const DayColumn = ({ date, mealPlan, onDelete }: { date: Date, mealPlan: Record<
 const MealPlan = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [mealPlan, setMealPlan] = useState<Record<string, MealPlanEntry[]>>({});
+  const [showRecipes, setShowRecipes] = useState(false);
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
     const now = new Date();
-    const day = now.getDay(); // 0 is Sunday
-    const diff = now.getDate() - day; // Adjust to Sunday
+    const day = now.getDay();
+    const diff = now.getDate() - day;
     return new Date(now.setDate(diff));
   });
   const [activeDragItem, setActiveDragItem] = useState<any | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
   );
 
   const weekDays = useMemo(() => {
@@ -252,7 +250,6 @@ const MealPlan = () => {
   };
 
   const handleDeleteEntry = async (entryId: number) => {
-    // Optimistic update: remove from UI immediately
     setMealPlan(prev => {
       const next = { ...prev };
       for (const key in next) {
@@ -261,12 +258,10 @@ const MealPlan = () => {
       return next;
     });
 
-    // Then call the API
     try {
       await deleteMealPlanEntry(entryId);
     } catch (error) {
       console.error("Failed to delete meal plan entry:", error);
-      // Revert on error - refetch the data
       const startDate = weekDays[0].toISOString().split('T')[0];
       const endDate = weekDays[6].toISOString().split('T')[0];
       try {
@@ -311,31 +306,44 @@ const MealPlan = () => {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex h-full gap-4">
+      <div className="flex flex-col lg:flex-row h-full gap-4 relative overflow-hidden">
 
-        {/* Sidebar */}
-        <div className="w-64 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col shrink-0">
-          <h1 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-6">
-            <CalendarIcon className="text-emerald-500" size={24} />
-            Meal Plan
-          </h1>
+        {/* Recipe Sidebar / Drawer */}
+        <div
+          className={`
+            fixed inset-y-0 left-0 z-50 lg:static lg:z-auto w-72 bg-white dark:bg-slate-800 p-5 shadow-2xl lg:shadow-sm border-r lg:border border-slate-100 dark:border-slate-700 flex flex-col shrink-0 transition-transform duration-300 lg:translate-x-0 rounded-r-2xl lg:rounded-2xl
+            ${showRecipes ? 'translate-x-0' : '-translate-x-full'}
+          `}
+        >
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-3">
+              <ChefHat className="text-emerald-500" size={28} />
+              Recipes
+            </h1>
+            <button
+              onClick={() => setShowRecipes(false)}
+              className="lg:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500"
+            >
+              <X size={20} />
+            </button>
+          </div>
 
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="font-bold text-slate-500 uppercase text-[10px] tracking-wider">Recipes</h3>
-            <Link to="/" className="text-[10px] text-emerald-500 hover:text-emerald-600 font-medium flex items-center gap-1">
-              <Plus size={10} /> Add
-            </Link>
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search favorites..."
+              className="w-full bg-slate-50 dark:bg-slate-900 border-0 ring-1 ring-slate-100 dark:ring-slate-700/50 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-emerald-500 transition-all outline-none"
+            />
           </div>
 
           <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
             {recipes.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 text-center p-4 opacity-60">
-                <div className="bg-slate-100 dark:bg-slate-700/50 p-3 rounded-full mb-3">
-                  <ChefHat className="text-slate-400 dark:text-slate-500" size={24} />
-                </div>
-                <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                <ChefHat className="text-slate-300 dark:text-slate-600 mb-3" size={32} />
+                <p className="text-sm text-slate-500 font-medium leading-relaxed">
                   No recipes found.<br />
-                  <Link to="/" className="text-emerald-500 hover:underline">Add one now</Link>
+                  <Link to="/" className="text-emerald-500 hover:underline">Import some!</Link>
                 </p>
               </div>
             ) : (
@@ -345,48 +353,66 @@ const MealPlan = () => {
         </div>
 
         {/* Main Calendar Area */}
-        <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col overflow-hidden">
+        <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col overflow-hidden relative">
 
           {/* Header */}
-          <div className="flex justify-between items-center p-4 border-b border-slate-100 dark:border-slate-700 shrink-0">
-            <div className="flex items-center gap-4">
-              <button onClick={goToday} className="px-3 py-1.5 text-sm font-semibold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Today</button>
-              <div className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
-                <button onClick={prevWeek} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"><ChevronLeft size={20} /></button>
-                <button onClick={nextWeek} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"><ChevronRight size={20} /></button>
+          <div className="flex flex-col sm:flex-row justify-between items-center p-4 gap-4 border-b border-slate-100 dark:border-slate-700 shrink-0 bg-white/50 dark:bg-slate-800/50 backdrop-blur-md sticky top-0 z-30">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <button
+                onClick={() => setShowRecipes(true)}
+                className="lg:hidden p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 mr-2"
+              >
+                <ChefHat size={22} />
+              </button>
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white truncate">{monthTitle}</h2>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl shrink-0">
+                <button onClick={prevWeek} className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg shadow-sm transition-all text-slate-600 dark:text-slate-400"><ChevronLeft size={18} /></button>
+                <button onClick={nextWeek} className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg shadow-sm transition-all text-slate-600 dark:text-slate-400"><ChevronRight size={18} /></button>
               </div>
-              <h2 className="text-lg font-semibold text-slate-800 dark:text-white ml-2">{monthTitle}</h2>
+              <button
+                onClick={goToday}
+                className="px-5 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-emerald-500 hover:text-white rounded-xl shadow-sm transition-all active:scale-95"
+              >
+                Today
+              </button>
             </div>
           </div>
 
-          {/* Days Header */}
-          <div className="flex border-b border-slate-100 dark:border-slate-700 shrink-0">
-            {weekDays.map(date => {
-              const isToday = new Date().toDateString() === date.toDateString();
-              return (
-                <div key={date.toISOString()} className="flex-1 min-w-[140px] py-3 text-center border-r border-slate-100 dark:border-slate-700/50 last:border-0">
-                  <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isToday ? 'text-emerald-600' : 'text-slate-400'}`}>
-                    {date.toLocaleString('default', { weekday: 'short' })}
-                  </div>
-                  <div className={`text-xl font-normal inline-flex items-center justify-center w-8 h-8 rounded-full ${isToday ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-700 dark:text-slate-200'}`}>
-                    {date.getDate()}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          {/* Scrolling Grid Wrapper */}
+          <div className="flex-1 overflow-x-auto custom-scrollbar flex flex-col">
 
-          {/* Scrolling Grid */}
-          <div className="flex-1 overflow-y-auto relative custom-scrollbar flex">
-            {/* Day Columns */}
-            {weekDays.map(date => (
-              <DayColumn
-                key={date.toISOString()}
-                date={date}
-                mealPlan={mealPlan}
-                onDelete={handleDeleteEntry}
-              />
-            ))}
+            {/* Sticky Days Header */}
+            <div className="flex border-b border-slate-100 dark:border-slate-700 shrink-0 sticky top-0 z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm">
+              {weekDays.map(date => {
+                const isToday = new Date().toDateString() === date.toDateString();
+                const dayName = date.toLocaleString('default', { weekday: 'short' });
+                return (
+                  <div key={date.toISOString()} className="flex-1 min-w-[150px] sm:min-w-[180px] py-4 text-center border-r border-slate-100 dark:border-slate-700/50 last:border-0">
+                    <div className={`text-[11px] font-black uppercase tracking-widest mb-1.5 ${isToday ? 'text-emerald-500' : 'text-slate-400 dark:text-slate-500'}`}>
+                      {dayName}
+                    </div>
+                    <div className={`text-xl font-medium inline-flex items-center justify-center w-9 h-9 rounded-xl transition-all ${isToday ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-110' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>
+                      {date.getDate()}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Grid Body */}
+            <div className="flex-1 flex min-h-0 bg-slate-50/30 dark:bg-slate-900/10">
+              {weekDays.map(date => (
+                <DayColumn
+                  key={date.toISOString()}
+                  date={date}
+                  mealPlan={mealPlan}
+                  onDelete={handleDeleteEntry}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
