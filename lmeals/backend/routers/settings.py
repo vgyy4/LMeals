@@ -72,8 +72,12 @@ def get_groq_models(db: Session = Depends(get_db), api_key: str = None):
         response = requests.get("https://api.groq.com/openai/v1/models", headers=headers)
         if response.status_code == 200:
             models_data = response.json()
-            # Filter for chat models if needed, or just return all
-            return {"status": "success", "models": [m["id"] for m in models_data.get("data", [])]}
+            # Filter for text-to-text models (exclude whisper, etc.)
+            text_models = [
+                m["id"] for m in models_data.get("data", [])
+                if "whisper" not in m["id"].lower() and "vision" not in m["id"].lower()
+            ]
+            return {"status": "success", "models": text_models}
         else:
              raise HTTPException(status_code=response.status_code, detail="Failed to fetch models from Groq")
     except Exception as e:
