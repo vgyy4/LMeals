@@ -10,7 +10,8 @@ import {
   AlertCircle,
   RefreshCcw,
   Key,
-  ChevronDown
+  ChevronDown,
+  Search
 } from 'lucide-react';
 
 interface Setting {
@@ -33,12 +34,14 @@ const Settings: React.FC = () => {
   const [message, setMessage] = useState('');
   const [keyStatus, setKeyStatus] = useState<{ status: string; message: string } | null>(null);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const container = document.getElementById('model-dropdown-container');
       if (container && !container.contains(event.target as Node)) {
         setShowModelDropdown(false);
+        setSearchTerm('');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -250,20 +253,44 @@ const Settings: React.FC = () => {
                 {/* Custom Glassmorphic Dropdown */}
                 {showModelDropdown && availableModels.length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-top">
+                    <div className="p-2 border-b border-white/10">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          className="w-full bg-slate-100/50 dark:bg-slate-800/50 border-0 ring-1 ring-slate-200/50 dark:ring-slate-700/50 focus:ring-2 focus:ring-rose-500/50 rounded-xl py-2 pl-9 pr-4 text-xs text-slate-900 dark:text-slate-100 outline-none placeholder:text-slate-400"
+                          placeholder="Search models..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          autoFocus
+                        />
+                        <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
+                      </div>
+                    </div>
+
                     <div className="max-h-60 overflow-y-auto py-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
-                      {availableModels.map((m) => (
-                        <div
-                          key={m}
-                          className={`px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center justify-between group/item ${model === m ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                          onClick={() => {
-                            setModel(m);
-                            setShowModelDropdown(false);
-                          }}
-                        >
-                          <span className="font-medium truncate">{m}</span>
-                          {model === m && <CheckCircle2 size={14} className="text-rose-500" />}
+                      {availableModels.filter(m => m.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
+                        <div className="px-4 py-8 text-center">
+                          <p className="text-xs text-slate-400 italic">No models match your search</p>
                         </div>
-                      ))}
+                      ) : (
+                        availableModels
+                          .filter(m => m.toLowerCase().includes(searchTerm.toLowerCase()))
+                          .map((m) => (
+                            <div
+                              key={m}
+                              className={`px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center justify-between group/item ${model === m ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                              onClick={() => {
+                                setModel(m);
+                                setShowModelDropdown(false);
+                                setSearchTerm('');
+                              }}
+                            >
+                              <span className="font-medium truncate">{m}</span>
+                              {model === m && <CheckCircle2 size={14} className="text-rose-500" />}
+                            </div>
+                          ))
+                      )}
                     </div>
                   </div>
                 )}
