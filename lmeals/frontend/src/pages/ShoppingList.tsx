@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { getShoppingList } from '../lib/api';
 import moment from 'moment';
-import { CheckSquare, Square } from 'lucide-react';
+import { CheckSquare, Square, ShoppingCart, RefreshCw } from 'lucide-react';
+import DatePicker from '../components/DatePicker';
 
 const ShoppingListPage = () => {
     const [startDate, setStartDate] = useState(moment().startOf('week').format('YYYY-MM-DD'));
@@ -12,10 +13,15 @@ const ShoppingListPage = () => {
 
     const handleGenerateList = async () => {
         setLoading(true);
-        const list = await getShoppingList(startDate, endDate);
-        setShoppingList(list);
-        setCheckedItems(new Set());
-        setLoading(false);
+        try {
+            const list = await getShoppingList(startDate, endDate);
+            setShoppingList(list);
+            setCheckedItems(new Set());
+        } catch (error) {
+            console.error("Failed to generate shopping list:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleItemToggle = (item: string) => {
@@ -29,22 +35,33 @@ const ShoppingListPage = () => {
     };
 
     return (
-        <div className="p-4 md:p-8 lg:px-12">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-slate-50 mb-8">Shopping List</h1>
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg">
-                <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
-                    <div className="w-full md:w-auto">
-                        <label htmlFor="start-date" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Start Date</label>
-                        <input type="date" id="start-date" value={startDate} onChange={e => setStartDate(e.target.value)} className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100" />
-                    </div>
-                    <div className="w-full md:w-auto">
-                        <label htmlFor="end-date" className="block text-sm font-medium text-slate-700 dark:text-slate-300">End Date</label>
-                        <input type="date" id="end-date" value={endDate} onChange={e => setEndDate(e.target.value)} className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100" />
-                    </div>
-                    <button onClick={handleGenerateList} className="bg-rose-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-rose-700 transition-colors self-end w-full md:w-auto shadow-md">
-                        {loading ? 'Generating...' : 'Generate List'}
+        <div className="p-4 md:p-8 lg:px-12 max-w-5xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-slate-50 flex items-center gap-3">
+                    <ShoppingCart className="text-rose-600" size={36} />
+                    Shopping List
+                </h1>
+
+                <div className="flex flex-col sm:flex-row items-center gap-3 bg-white dark:bg-slate-800 p-2 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50">
+                    <DatePicker
+                        startDate={startDate}
+                        endDate={endDate}
+                        onRangeChange={(start, end) => {
+                            setStartDate(start);
+                            setEndDate(end);
+                        }}
+                    />
+                    <button
+                        onClick={handleGenerateList}
+                        disabled={loading}
+                        className="bg-rose-600 text-white font-bold py-2.5 px-6 rounded-xl hover:bg-rose-700 active:scale-95 transition-all w-full sm:w-auto shadow-lg shadow-rose-200 dark:shadow-rose-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                        {loading ? <RefreshCw className="animate-spin" size={18} /> : null}
+                        {loading ? 'Generating...' : 'Generate'}
                     </button>
                 </div>
+            </div>
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-4">Your List</h2>
                     <ul className="space-y-2">
