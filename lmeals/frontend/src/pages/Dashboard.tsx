@@ -35,11 +35,31 @@ const Dashboard = () => {
   }, []);
 
   const checkForAllergens = (recipe: Recipe): boolean => {
+    // Use backend-computed has_allergens field if available (includes multilingual translation)
+    if (recipe.has_allergens !== undefined && recipe.has_allergens !== null) {
+      return recipe.has_allergens;
+    }
+
+    // Fallback to client-side checking (for backwards compatibility or if backend check not available)
     if (!allergens.length) return false;
+
     const recipeIngredients = recipe.ingredients.map(i => i.text.toLowerCase());
+
     return allergens.some(allergen => {
+      // Collect all keywords (name + keyword variants)
       const checks = [allergen.name.toLowerCase(), ...(allergen.keywords || []).map(k => k.toLowerCase())];
-      return recipeIngredients.some(ingredient => checks.some(check => ingredient.includes(check)));
+
+      // Check if any ingredient contains any of the allergen keywords
+      const hasMatch = recipeIngredients.some(ingredient => {
+        // Check all keyword variants
+        return checks.some(check => ingredient.includes(check));
+      });
+
+      if (hasMatch) {
+        console.log(`Allergen '${allergen.name}' detected in recipe '${recipe.title}'`);
+      }
+
+      return hasMatch;
     });
   };
 

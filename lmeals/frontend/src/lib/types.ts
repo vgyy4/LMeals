@@ -18,6 +18,7 @@ export interface Recipe {
   updated_at: string | null;
   ingredients: Ingredient[];
   is_favorite?: boolean;
+  has_allergens?: boolean;
 }
 
 export interface Allergen {

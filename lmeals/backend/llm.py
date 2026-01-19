@@ -133,9 +133,30 @@ def expand_allergen_keywords(allergen_name: str) -> list[str]:
     Uses Groq to generate a list of synonyms and related ingredients for a given allergen 
     in multiple languages, including common derived products.
     """
+    # Fallback dictionaries for common allergens
+    COMMON_ALLERGEN_KEYWORDS = {
+        "milk": ["milk", "dairy", "butter", "cheese", "cream", "yogurt", "whey", "casein", "lactose", 
+                 "lait", "leche", "milch", "latte", "חלב", "גבינה", "יוגורט", "beurre", "mantequilla",
+                 "fromage", "queso", "crème", "parmesan", "cheddar", "mozzarella"],
+        "egg": ["egg", "eggs", "albumin", "mayonnaise", "ביצה", "ביצים", "oeuf", "huevo"],
+        "wheat": ["wheat", "flour", "gluten", "bread", "pasta", "semolina", "חיטה", "קמח", "blé", "trigo"],
+        "soy": ["soy", "soya", "tofu", "edamame", "soybean", "סויה", "soja"],
+        "peanut": ["peanut", "peanuts", "groundnut", "arachis", "בוטנים", "cacahuete", "arachide"],
+        "tree nut": ["almond", "cashew", "walnut", "pecan", "hazelnut", "אגוז", "nuez", "noix"],
+        "fish": ["fish", "salmon", "tuna", "cod", "דג", "poisson", "pescado"],
+        "shellfish": ["shrimp", "crab", "lobster", "prawn", "shellfish", "seafood", "רכיכות"],
+    }
+    
     client, model = get_groq_client()
     if not client:
-        return [allergen_name.lower()]
+        print(f"Warning: No Groq client available for allergen '{allergen_name}'. Using fallback keywords.")
+        # Check if we have a fallback for this allergen
+        allergen_lower = allergen_name.lower()
+        for key, keywords in COMMON_ALLERGEN_KEYWORDS.items():
+            if allergen_lower in keywords or key in allergen_lower:
+                print(f"Using fallback keywords for '{allergen_name}': {keywords}")
+                return keywords
+        return [allergen_lower]
 
     system_prompt = """
     You are an expert food safety assistant. Your task is to generate a comprehensive list of keywords associated with a specific allergen.
@@ -151,6 +172,7 @@ def expand_allergen_keywords(allergen_name: str) -> list[str]:
     """
 
     try:
+        print(f"Calling Groq API to expand keywords for allergen: '{allergen_name}'")
         completion = client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -160,12 +182,40 @@ def expand_allergen_keywords(allergen_name: str) -> list[str]:
             response_format={"type": "json_object"}
         )
         
-        data = json.loads(completion.choices[0].message.content)
+        response_content = completion.choices[0].message.content
+        print(f"Groq API response for '{allergen_name}': {response_content}")
+        
+        data = json.loads(response_content)
         keywords = data.get("keywords", [])
+        
+        if not keywords or len(keywords) <= 1:
+            print(f"Warning: Groq returned insufficient keywords for '{allergen_name}'. Response: {data}")
+            # Use fallback
+            allergen_lower = allergen_name.lower()
+            for key, fallback_keywords in COMMON_ALLERGEN_KEYWORDS.items():
+                if allergen_lower in fallback_keywords or key in allergen_lower:
+                    print(f"Using fallback keywords for '{allergen_name}': {fallback_keywords}")
+                    return fallback_keywords
+        
         # Ensure the original name is included
         if allergen_name.lower() not in keywords:
             keywords.append(allergen_name.lower())
-        return list(set(keywords)) # Dedup
+        
+        result = list(set(keywords))  # Dedup
+        print(f"Final keywords for '{allergen_name}': {result}")
+        return result
     except Exception as e:
-        print(f"Error expanding allergen keywords: {e}")
-        return [allergen_name.lower()]
+        print(f"Error expanding allergen keywords for '{allergen_name}': {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # Use fallback on error
+        allergen_lower = allergen_name.lower()
+        for key, fallback_keywords in COMMON_ALLERGEN_KEYWORDS.items():
+            if allergen_lower in fallback_keywords or key in allergen_lower:
+                print(f"Using fallback keywords after error for '{allergen_name}': {fallback_keywords}")
+                return fallback_keywords
+        
+        print(f"No fallback found for '{allergen_name}', returning just the allergen name")
+        return [allergen_lower]
+

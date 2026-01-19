@@ -36,6 +36,7 @@ class Recipe(RecipeBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     ingredients: List[Ingredient] = []
+    has_allergens: Optional[bool] = None  # Computed field, not in DB
 
     class Config:
         orm_mode = True

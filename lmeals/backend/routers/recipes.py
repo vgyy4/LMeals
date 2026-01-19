@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-import crud, schemas, scraper, llm
+import crud, schemas, scraper, llm, allergen_checker
 from database import SessionLocal
 
 router = APIRouter()
@@ -77,11 +77,27 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, db: Session = Depends(get_d
 @router.get("/recipes", response_model=List[schemas.Recipe])
 def read_recipes(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     recipes = crud.get_recipes(db, skip=skip, limit=limit)
+    
+    # Get all allergens once for efficiency
+    allergens = crud.get_allergens(db)
+    
+    # Add has_allergens to each recipe using translation-based checking
+    for recipe in recipes:
+        recipe.has_allergens = allergen_checker.check_recipe_allergens(recipe, allergens)
+    
     return recipes
 
 @router.get("/recipes/favorites", response_model=List[schemas.Recipe])
 def read_favorite_recipes(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     recipes = crud.get_favorite_recipes(db, skip=skip, limit=limit)
+    
+    # Get all allergens once for efficiency
+    allergens = crud.get_allergens(db)
+    
+    # Add has_allergens to each recipe using translation-based checking
+    for recipe in recipes:
+        recipe.has_allergens = allergen_checker.check_recipe_allergens(recipe, allergens)
+    
     return recipes
 
 @router.get("/recipes/{recipe_id}", response_model=schemas.Recipe)
