@@ -4,6 +4,7 @@ import {
   Settings as SettingsIcon,
   Cpu,
   ShieldAlert,
+  Plus,
   X,
   CheckCircle2,
   AlertCircle,
@@ -100,7 +101,7 @@ const Settings: React.FC = () => {
       setTimeout(() => setMessage(''), 3000);
     } catch (error: any) {
       console.error('Error saving settings:', error);
-      setMessage(`Failed to save settings: ${error.message || 'Unknown error'} `);
+      setMessage(`Failed to save settings: ${error.message || 'Unknown error'}`);
       setTimeout(() => setMessage(''), 5000);
     }
   };
@@ -220,7 +221,7 @@ const Settings: React.FC = () => {
                   Verify Key
                 </button>
                 {keyStatus && (
-                  <div className={`flex items - center gap - 1.5 text - xs font - medium ${keyStatus.status === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} `}>
+                  <div className={`flex items-center gap-1.5 text-xs font-medium ${keyStatus.status === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                     {keyStatus.status === 'success' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
                     {keyStatus.message}
                   </div>
@@ -234,14 +235,14 @@ const Settings: React.FC = () => {
               </label>
               <div className="relative group" id="model-dropdown-container">
                 <div
-                  className={`w - full bg - slate - 50 dark: bg - slate - 900 border - 0 ring - 1 ring - slate - 200 dark: ring - slate - 700 focus - within: ring - 2 focus - within: ring - rose - 500 rounded - 2xl py - 3 px - 11 text - slate - 900 dark: text - slate - 100 transition - all duration - 300 outline - none cursor - pointer flex items - center justify - between ${showModelDropdown ? 'ring-2 ring-rose-500' : ''} `}
+                  className={`w-full bg-slate-50 dark:bg-slate-900 border-0 ring-1 ring-slate-200 dark:ring-slate-700 focus-within:ring-2 focus-within:ring-rose-500 rounded-2xl py-3 px-11 text-slate-900 dark:text-slate-100 transition-all duration-300 outline-none cursor-pointer flex items-center justify-between ${showModelDropdown ? 'ring-2 ring-rose-500' : ''}`}
                   onClick={() => availableModels.length > 0 && setShowModelDropdown(!showModelDropdown)}
                 >
                   <span className={model ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400'}>
                     {model || (availableModels.length > 0 ? "Choose a model..." : "No models loaded")}
                   </span>
-                  <div className={`transition - transform duration - 300 ${showModelDropdown ? 'rotate-180' : ''} `}>
-                    <Plus className="text-slate-400" size={16} />
+                  <div className={`transition-transform duration-300 ${showModelDropdown ? 'rotate-180' : ''}`}>
+                    <ChevronDown className="text-slate-400" size={16} />
                   </div>
                 </div>
                 <Cpu className="absolute left-4 top-3.5 text-slate-400 group-focus-within:text-rose-500 transition-colors pointer-events-none" size={18} />
@@ -316,7 +317,7 @@ const Settings: React.FC = () => {
                   disabled={isAddingAllergen}
                 />
                 <button
-                  className={`w - 12 h - 12 rounded - 2xl flex items - center justify - center transition - all ${isAddingAllergen ? 'bg-slate-200 dark:bg-slate-700' : 'bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/20 active:scale-90'} `}
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isAddingAllergen ? 'bg-slate-200 dark:bg-slate-700' : 'bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/20 active:scale-90'}`}
                   type="button"
                   onClick={handleAddAllergen}
                   disabled={isAddingAllergen}
@@ -356,7 +357,7 @@ const Settings: React.FC = () => {
           </div>
 
           {message && message.includes('Allergen') && (
-            <div className={`px - 4 py - 2.5 rounded - 2xl text - xs font - bold text - center flex items - center justify - center gap - 2 ${message.includes('Failed') || message.includes('exists') || message.includes('error') ? 'bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'} `}>
+            <div className={`px-4 py-2.5 rounded-2xl text-xs font-bold text-center flex items-center justify-center gap-2 ${message.includes('Failed') || message.includes('exists') || message.includes('error') ? 'bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'}`}>
               {message.includes('Failed') ? <AlertCircle size={14} /> : <CheckCircle2 size={14} />}
               {message}
             </div>
