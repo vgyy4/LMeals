@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus, Search, Filter, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import RecipeCard from '../components/RecipeCard';
 import AddRecipeModal from '../components/AddRecipeModal';
@@ -172,14 +172,34 @@ const Dashboard = () => {
             <h2 className="text-xl font-bold text-slate-800">Recipe of the Day</h2>
           </div>
 
-          <Link to={`/recipe/${recipeOfTheDay.id}`} className="block relative group overflow-hidden rounded-2xl md:rounded-3xl h-[360px] shadow-xl ring-1 ring-black/5">
-            <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-105" style={{ backgroundImage: `url(${recipeOfTheDay.image_url || '/placeholder-recipe.jpg'})` }}></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-            <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-              <h3 className="text-white text-3xl md:text-5xl font-bold mb-2 leading-tight shadow-sm">{recipeOfTheDay.title}</h3>
-              {recipeOfTheDay.prep_time && <p className="text-slate-200 font-medium flex items-center gap-2">{recipeOfTheDay.prep_time} prep</p>}
-            </div>
-          </Link>
+          {(() => {
+            const featuredPrep = parseInt(recipeOfTheDay.prep_time || '0') || 0;
+            const featuredCook = parseInt(recipeOfTheDay.cook_time || '0') || 0;
+            const featuredTotal = featuredPrep + featuredCook;
+
+            return (
+              <Link to={`/recipe/${recipeOfTheDay.id}`} className="block relative group overflow-hidden rounded-2xl md:rounded-3xl h-[360px] shadow-xl ring-1 ring-black/5 bg-slate-800">
+                <img
+                  src={recipeOfTheDay.image_url || 'https://placehold.co/1200x800/F8E8EE/C9A9A6?text=LMeals'}
+                  alt={recipeOfTheDay.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://placehold.co/1200x800/F8E8EE/C9A9A6?text=LMeals';
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                  <h3 className="text-white text-3xl md:text-5xl font-bold mb-2 leading-tight shadow-sm text-balance">{recipeOfTheDay.title}</h3>
+                  {featuredTotal > 0 && (
+                    <div className="text-slate-200 font-medium flex items-center gap-2 drop-shadow-sm">
+                      <Clock size={18} className="text-p-peach" />
+                      <span>{featuredTotal} min</span>
+                    </div>
+                  )}
+                </div>
+              </Link>
+            );
+          })()}
         </div>
       )}
 
