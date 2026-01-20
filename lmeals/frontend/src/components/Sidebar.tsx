@@ -45,10 +45,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, isMobile
   return (
     <aside
       className={`
-        h-screen bg-p-sidebar text-slate-800 p-4 flex flex-col border-r border-p-sky/30 shadow-sm transition-all duration-300 ease-in-out
+        h-full bg-p-sidebar text-slate-800 p-4 flex flex-col border-r border-p-sky/30 shadow-sm transition-all duration-300 ease-in-out
         ${isMobileOpen
           ? 'fixed inset-y-0 left-0 z-50 w-64 translate-x-0'
-          : 'fixed md:sticky top-0 inset-y-0 -translate-x-full md:translate-x-0 hidden md:flex'
+          : 'fixed md:relative inset-y-0 -translate-x-full md:translate-x-0 hidden md:flex'
         }
         ${isCollapsed && !isMobileOpen ? 'md:w-20' : 'md:w-64'}
       `}

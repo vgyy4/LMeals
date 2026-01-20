@@ -26,7 +26,7 @@ const AppLayout = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
-    <div className="flex bg-p-surface min-h-screen text-slate-800 relative overflow-x-hidden">
+    <div className="flex bg-p-surface h-screen text-slate-800 overflow-hidden relative">
       {/* Mobile Header/Toggle */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-p-surface/90 backdrop-blur-md border-b border-p-sky/20 flex items-center px-4 z-40">
         <button
@@ -52,8 +52,10 @@ const AppLayout = () => {
         isMobileOpen={isMobileOpen}
         setIsMobileOpen={setIsMobileOpen}
       />
-      <main className="flex-1 p-8 pt-20 md:pt-8 overflow-y-auto w-full transition-all duration-300">
-        <Outlet />
+      <main className="flex-1 h-full overflow-y-auto p-4 md:p-8 pt-20 md:pt-8 transition-all duration-300">
+        <div className="max-w-7xl mx-auto">
+          <Outlet />
+        </div>
       </main>
     </div>
   );
