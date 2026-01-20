@@ -1,16 +1,24 @@
-from recipe_scrapers import scrape_me
+from recipe_scrapers import scrape_html
 from recipe_scrapers._exceptions import WebsiteNotImplementedError
 import requests
 
 def scrape_with_library(url: str):
     """
     Scrapes a recipe from a URL using the recipe-scrapers library.
-    Strictly uses official support only (wild_mode=False).
+    Fetches HTML first with a browser-like User-Agent to avoid bot detection.
+    Strictly uses official support only (Standard Mode).
     """
     print(f"DEBUG: Attempting to scrape URL with library: {url}")
+    
+    html = get_html(url)
+    if not html:
+        return None
+
     try:
-        # Use a real browser user agent for the fetch
-        scraper = scrape_me(url, wild_mode=False)
+        # Pass pre-fetched HTML to the library. 
+        # By not passing wild_mode=True, it stays in "Standard" mode and 
+        # will raise WebsiteNotImplementedError for unsupported sites.
+        scraper = scrape_html(html, org_url=url)
         
         # Extract fields safely
         try:
@@ -50,10 +58,15 @@ def scrape_with_library(url: str):
 
 def get_html(url: str):
     """
-    Fetches the raw HTML content of a URL.
+    Fetches the raw HTML content of a URL using a browser-like User-Agent.
     """
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+    }
     try:
-        response = requests.get(url, headers={'User-Agent': 'LMeals Recipe Scraper'})
+        response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
         return response.text
     except requests.exceptions.RequestException as e:
