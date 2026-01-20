@@ -56,31 +56,31 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 max-w-lg w-full">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center z-50 animate-in fade-in duration-300">
+      <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full border border-p-sky/10">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Add a New Recipe</h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">
+          <h2 className="text-2xl font-bold text-slate-800">Add a New Recipe</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
             <X size={24} />
           </button>
         </div>
 
-        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">{error}</div>}
+        {error && <div className="bg-p-rose/30 border-l-4 border-p-coral text-red-800 px-4 py-3 rounded-lg mb-4 text-sm font-medium">{error}</div>}
 
         {!needsAiConfirmation ? (
           <div>
-            <p className="mb-4 text-slate-600 dark:text-slate-300">Enter the URL of the recipe you want to import.</p>
+            <p className="mb-4 text-slate-500">Enter the URL of the recipe you want to import.</p>
             <input
               type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
+              className="w-full px-4 py-3 border-0 ring-1 ring-p-sky/20 rounded-2xl bg-p-surface text-slate-800 focus:outline-none focus:ring-2 focus:ring-p-mint transition-all"
               placeholder="https://example.com/recipe"
               disabled={isLoading}
             />
             <button
               onClick={handleInitialScrape}
-              className="w-full mt-4 bg-emerald-600 text-white font-semibold py-2 rounded-lg hover:bg-emerald-700 transition-colors"
+              className="w-full mt-6 bg-p-mint text-emerald-900 font-bold py-3 rounded-2xl hover:bg-emerald-100 transition-all shadow-sm active:scale-95 border border-p-mint/50"
               disabled={isLoading}
             >
               {isLoading ? 'Importing...' : 'Import Recipe'}
@@ -88,20 +88,20 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
           </div>
         ) : (
           <div>
-            <p className="mb-4 text-slate-600 dark:text-slate-300">
+            <p className="mb-6 text-slate-500 leading-relaxed">
               The standard import failed for this URL. Would you like to try our advanced AI importer?
             </p>
-            <div className="flex justify-end gap-4">
+            <div className="flex justify-end gap-3">
               <button
                 onClick={() => setNeedsAiConfirmation(false)}
-                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                className="px-6 py-2.5 bg-p-surface text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-colors border border-p-sky/10"
                 disabled={isLoading}
               >
                 Cancel
               </button>
               <button
                 onClick={handleAiScrape}
-                className="px-4 py-2 bg-rose-600 text-white font-semibold rounded-lg hover:bg-rose-700 transition-colors"
+                className="px-6 py-2.5 bg-p-coral text-white font-bold rounded-xl hover:bg-red-500 transition-colors shadow-lg shadow-p-coral/20 active:scale-95"
                 disabled={isLoading}
               >
                 {isLoading ? 'Processing...' : 'Use AI Importer'}

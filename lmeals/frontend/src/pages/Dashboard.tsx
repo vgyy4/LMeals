@@ -128,8 +128,8 @@ const Dashboard = () => {
           <p className="text-slate-500 dark:text-slate-400 mt-1">Discover your next favorite meal.</p>
         </div>
 
-        <button onClick={() => setIsModalOpen(true)} className="bg-emerald-600 text-white font-semibold py-2.5 px-5 rounded-full flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-md active:scale-95">
-          <Plus size={20} />
+        <button onClick={() => setIsModalOpen(true)} className="bg-p-mint text-emerald-900 font-bold py-2.5 px-5 rounded-full flex items-center gap-2 hover:bg-emerald-100 transition-all shadow-sm active:scale-95 border border-p-mint/50">
+          <Plus size={20} className="text-emerald-700" />
           <span>Add Recipe</span>
         </button>
       </div>
@@ -143,7 +143,7 @@ const Dashboard = () => {
             placeholder="Search recipes, ingredients, tags..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full h-12 ps-12 pe-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-900/50 transition-all shadow-sm text-slate-900 dark:text-slate-100 placeholder-slate-400"
+            className="w-full h-12 ps-12 pe-4 rounded-xl bg-white border border-p-sky/30 focus:border-p-mint focus:ring-4 focus:ring-p-mint/20 transition-all shadow-sm text-slate-800 placeholder-slate-400 outline-none"
           />
         </div>
 
@@ -154,8 +154,8 @@ const Dashboard = () => {
               key={filter}
               onClick={() => setActiveFilter(filter)}
               className={`h-9 px-4 rounded-full font-medium text-sm transition-all whitespace-nowrap border ${activeFilter === filter
-                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-md transform scale-105'
-                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750'
+                ? 'bg-p-sky text-blue-900 border-p-sky shadow-sm transform scale-105'
+                : 'bg-white text-slate-500 border-p-sky/20 hover:border-p-sky/50 hover:bg-p-surface'
                 }`}
             >
               {filter}
@@ -168,8 +168,8 @@ const Dashboard = () => {
       {recipeOfTheDay && !searchTerm && activeFilter === 'All' && (
         <div className="mb-12 animate-fadeIn">
           <div className="flex items-center gap-2 mb-4">
-            <span className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs font-bold px-2 py-1 rounded uppercase tracking-wide">Featured</span>
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Recipe of the Day</h2>
+            <span className="bg-p-peach text-orange-700 text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider">Featured</span>
+            <h2 className="text-xl font-bold text-slate-800">Recipe of the Day</h2>
           </div>
 
           <Link to={`/recipe/${recipeOfTheDay.id}`} className="block relative group overflow-hidden rounded-2xl md:rounded-3xl h-[360px] shadow-xl ring-1 ring-black/5">
@@ -183,7 +183,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {error && <div className="bg-rose-50 border-l-4 border-rose-500 text-rose-700 px-4 py-3 rounded-r mb-6 shadow-sm" role="alert">{error}</div>}
+      {error && <div className="bg-p-rose/30 border-l-4 border-p-coral text-red-800 px-4 py-3 rounded-r mb-6 shadow-sm" role="alert">{error}</div>}
 
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{activeFilter === 'All' ? 'All Recipes' : `${activeFilter} Recipes`}</h2>
@@ -211,7 +211,7 @@ const Dashboard = () => {
           {filteredRecipes.length === 0 && (
             <div className="col-span-full py-12 text-center text-slate-400">
               <p>No recipes match your criteria.</p>
-              <button onClick={() => { setSearchTerm(''); setActiveFilter('All'); }} className="text-emerald-500 font-medium mt-2 hover:underline">Clear filters</button>
+              <button onClick={() => { setSearchTerm(''); setActiveFilter('All'); }} className="text-p-coral font-bold mt-2 hover:underline">Clear filters</button>
             </div>
           )}
         </div>

@@ -34,10 +34,10 @@ const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, isF
   };
 
   return (
-    <Link to={`/recipe/${id}`} className="group block rounded-2xl bg-white dark:bg-slate-800 shadow-md hover:shadow-lg transition-all duration-300">
+    <Link to={`/recipe/${id}`} className="group block rounded-2xl bg-white shadow-md hover:shadow-xl transition-all duration-300 border border-p-sky/10">
       <div className="relative">
-        <button onClick={handleFavoriteClick} className="absolute top-2 start-2 bg-white/70 dark:bg-slate-900/70 p-2 rounded-full hover:bg-white dark:hover:bg-slate-900 transition-colors z-10">
-          <Heart size={20} className={`${isFav ? 'text-red-500 fill-current' : 'text-slate-500 dark:text-slate-400'}`} />
+        <button onClick={handleFavoriteClick} className="absolute top-2 start-2 bg-white/80 p-2 rounded-full hover:bg-white transition-colors z-10 border border-p-sky/10">
+          <Heart size={20} className={`${isFav ? 'text-p-coral fill-current' : 'text-slate-400'}`} />
         </button>
         <img
           src={imageUrl || 'https://placehold.co/600x400/F8E8EE/C9A9A6?text=LMeals'}
@@ -45,15 +45,15 @@ const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, isF
           className="w-full h-40 object-cover rounded-t-2xl"
         />
         {hasAllergens && (
-          <div className="absolute top-2 end-2 bg-red-500 text-white p-2 rounded-full">
+          <div className="absolute top-2 end-2 bg-p-coral text-white p-2 rounded-full shadow-lg">
             <AlertTriangle size={20} />
           </div>
         )}
       </div>
       <div className="p-4">
-        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 truncate group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">{title}</h3>
+        <h3 className="text-lg font-bold text-slate-800 truncate group-hover:text-p-coral transition-colors">{title}</h3>
         {totalTime > 0 && (
-          <div className="flex items-center gap-2 mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-2 mt-2 text-sm text-slate-400">
             <Clock size={16} />
             <span>{totalTime} min</span>
           </div>

@@ -174,7 +174,7 @@ const Settings: React.FC = () => {
   if (loading) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[50vh]">
-        <RefreshCcw className="animate-spin text-rose-500" size={48} />
+        <RefreshCcw className="animate-spin text-p-coral" size={48} />
       </div>
     );
   }
@@ -182,7 +182,7 @@ const Settings: React.FC = () => {
   return (
     <div className="p-4 md:p-8 lg:px-12 max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
       <div className="flex items-center gap-4">
-        <div className="p-3 bg-rose-100 dark:bg-rose-900/30 rounded-2xl text-rose-600 dark:text-rose-400">
+        <div className="p-3 bg-p-rose/40 rounded-2xl text-p-coral">
           <SettingsIcon size={32} />
         </div>
         <div>
@@ -193,10 +193,10 @@ const Settings: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Groq Configuration Card */}
-        <section className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-white/20 dark:border-white/5 space-y-6">
+        <section className="bg-white p-6 rounded-3xl shadow-sm border border-p-sky/10 space-y-6">
           <div className="flex items-center gap-3 mb-2">
-            <Cpu className="text-rose-500" size={24} />
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 uppercase tracking-tighter">AI Engine</h2>
+            <Cpu className="text-p-coral" size={24} />
+            <h2 className="text-xl font-bold text-slate-800 uppercase tracking-tighter">AI Engine</h2>
           </div>
 
           <div className="space-y-4">
@@ -206,7 +206,7 @@ const Settings: React.FC = () => {
               </label>
               <div className="relative group">
                 <input
-                  className="w-full bg-slate-50 dark:bg-slate-900 border-0 ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-rose-500 rounded-2xl py-3 px-11 text-slate-900 dark:text-slate-100 transition-all duration-300 outline-none"
+                  className="w-full bg-p-surface border-0 ring-1 ring-p-sky/20 focus:ring-2 focus:ring-p-coral rounded-2xl py-3 px-11 text-slate-800 transition-all duration-300 outline-none"
                   id="apiKey"
                   type="password"
                   placeholder="Paste your key here..."
@@ -214,18 +214,18 @@ const Settings: React.FC = () => {
                   onChange={(e) => setApiKey(e.target.value)}
                   autoComplete="new-password"
                 />
-                <Key className="absolute left-4 top-3.5 text-slate-400 group-focus-within:text-rose-500 transition-colors" size={18} />
+                <Key className="absolute left-4 top-3.5 text-slate-400 group-focus-within:text-p-coral transition-colors" size={18} />
               </div>
               <div className="flex justify-between items-center mt-2 px-1">
                 <button
                   onClick={handleVerifyKey}
                   disabled={!apiKey}
-                  className="text-xs font-bold text-rose-600 hover:text-rose-700 uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="text-xs font-bold text-p-coral hover:text-red-600 uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
                   Verify Key
                 </button>
                 {keyStatus && (
-                  <div className={`flex items-center gap-1.5 text-xs font-medium ${keyStatus.status === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                  <div className={`flex items-center gap-1.5 text-xs font-medium ${keyStatus.status === 'success' ? 'text-emerald-600' : 'text-p-coral'}`}>
                     {keyStatus.status === 'success' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
                     {keyStatus.message}
                   </div>
@@ -239,7 +239,7 @@ const Settings: React.FC = () => {
               </label>
               <div className="relative group" id="model-dropdown-container">
                 <div
-                  className={`w-full bg-slate-50 dark:bg-slate-900 border-0 ring-1 ring-slate-200 dark:ring-slate-700 focus-within:ring-2 focus-within:ring-rose-500 rounded-2xl py-3 px-11 text-slate-900 dark:text-slate-100 transition-all duration-300 outline-none cursor-pointer flex items-center justify-between ${showModelDropdown ? 'ring-2 ring-rose-500' : ''}`}
+                  className={`w-full bg-p-surface border-0 ring-1 ring-p-sky/20 focus-within:ring-2 focus-within:ring-p-coral rounded-2xl py-3 px-11 text-slate-800 transition-all duration-300 outline-none cursor-pointer flex items-center justify-between ${showModelDropdown ? 'ring-2 ring-p-coral' : ''}`}
                   onClick={() => availableModels.length > 0 && setShowModelDropdown(!showModelDropdown)}
                 >
                   <span className={model ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400'}>
@@ -249,7 +249,7 @@ const Settings: React.FC = () => {
                     <ChevronDown className="text-slate-400" size={16} />
                   </div>
                 </div>
-                <Cpu className="absolute left-4 top-3.5 text-slate-400 group-focus-within:text-rose-500 transition-colors pointer-events-none" size={18} />
+                <Cpu className="absolute left-4 top-3.5 text-slate-400 group-focus-within:text-p-coral transition-colors pointer-events-none" size={18} />
 
                 {/* Custom Glassmorphic Dropdown */}
                 {showModelDropdown && availableModels.length > 0 && (
@@ -307,7 +307,7 @@ const Settings: React.FC = () => {
           </div>
 
           <button
-            className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-rose-200 dark:shadow-rose-900/20 active:scale-95 transition-all text-sm uppercase tracking-widest mt-4"
+            className="w-full bg-p-coral hover:bg-red-500 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-p-coral/20 active:scale-95 transition-all text-sm uppercase tracking-widest mt-4"
             type="button"
             onClick={handleSaveSettings}
           >
@@ -324,10 +324,10 @@ const Settings: React.FC = () => {
         </section>
 
         {/* Allergens Configuration Card */}
-        <section className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-white/20 dark:border-white/5 space-y-6">
+        <section className="bg-white p-6 rounded-3xl shadow-sm border border-p-sky/10 space-y-6">
           <div className="flex items-center gap-3 mb-2">
-            <ShieldAlert className="text-rose-500" size={24} />
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 uppercase tracking-tighter">Dietary Safety</h2>
+            <ShieldAlert className="text-p-coral" size={24} />
+            <h2 className="text-xl font-bold text-slate-800 uppercase tracking-tighter">Dietary Safety</h2>
           </div>
 
           <div className="space-y-4">
@@ -337,7 +337,7 @@ const Settings: React.FC = () => {
               </label>
               <div className="flex gap-2">
                 <input
-                  className="flex-1 bg-slate-50 dark:bg-slate-900 border-0 ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-rose-500 rounded-2xl py-3 px-4 text-slate-900 dark:text-slate-100 transition-all outline-none disabled:opacity-50"
+                  className="flex-1 bg-p-surface border-0 ring-1 ring-p-sky/20 focus:ring-2 focus:ring-p-coral rounded-2xl py-3 px-4 text-slate-800 transition-all outline-none disabled:opacity-50"
                   type="text"
                   placeholder="e.g. Peanuts, Milk..."
                   value={newAllergen}
@@ -346,7 +346,7 @@ const Settings: React.FC = () => {
                   disabled={isAddingAllergen}
                 />
                 <button
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isAddingAllergen ? 'bg-slate-200 dark:bg-slate-700' : 'bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/20 active:scale-90'}`}
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isAddingAllergen ? 'bg-p-surface' : 'bg-p-coral hover:bg-red-500 text-white shadow-lg shadow-p-coral/20 active:scale-90'}`}
                   type="button"
                   onClick={handleAddAllergen}
                   disabled={isAddingAllergen}
@@ -367,14 +367,14 @@ const Settings: React.FC = () => {
                   allergens.map((allergen) => (
                     <div
                       key={allergen.id}
-                      className="group flex items-center gap-2 bg-slate-100/50 dark:bg-slate-900/50 hover:bg-rose-50 dark:hover:bg-rose-900/20 px-4 py-2 rounded-full border border-slate-200/50 dark:border-slate-700 transition-all duration-300"
+                      className="group flex items-center gap-2 bg-p-surface hover:bg-p-rose/40 px-4 py-2 rounded-full border border-p-sky/20 transition-all duration-300"
                     >
-                      <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-rose-600 dark:group-hover:text-rose-400">
+                      <span className="text-sm font-medium text-slate-700 group-hover:text-red-700">
                         {allergen.name}
                       </span>
                       <button
                         onClick={() => handleDeleteAllergen(allergen.id)}
-                        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-all p-0.5 rounded-full"
+                        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-p-coral transition-all p-0.5 rounded-full"
                       >
                         <X size={14} />
                       </button>
@@ -386,7 +386,7 @@ const Settings: React.FC = () => {
           </div>
 
           {message && message.includes('Allergen') && (
-            <div className={`px-4 py-2.5 rounded-2xl text-xs font-bold text-center flex items-center justify-center gap-2 ${message.includes('Failed') || message.includes('exists') || message.includes('error') ? 'bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'}`}>
+            <div className={`px-4 py-2.5 rounded-2xl text-xs font-bold text-center flex items-center justify-center gap-2 ${message.includes('Failed') || message.includes('exists') || message.includes('error') ? 'bg-p-rose/30 text-red-700' : 'bg-p-mint/40 text-emerald-800'}`}>
               {message.includes('Failed') ? <AlertCircle size={14} /> : <CheckCircle2 size={14} />}
               {message}
             </div>
@@ -394,12 +394,12 @@ const Settings: React.FC = () => {
         </section>
       </div>
 
-      <div className="p-6 bg-amber-50 dark:bg-amber-900/10 rounded-3xl border border-amber-200/50 dark:border-amber-900/20">
+      <div className="p-6 bg-p-peach/30 rounded-3xl border border-p-peach/50">
         <div className="flex gap-4">
-          <AlertCircle className="text-amber-600 flex-shrink-0" size={24} />
+          <AlertCircle className="text-orange-600 flex-shrink-0" size={24} />
           <div>
-            <h3 className="font-bold text-amber-800 dark:text-amber-400">Safety Disclaimer</h3>
-            <p className="text-sm text-amber-700 dark:text-amber-500/80 leading-relaxed mt-1">
+            <h3 className="font-bold text-orange-900">Safety Disclaimer</h3>
+            <p className="text-sm text-orange-800/80 leading-relaxed mt-1">
               Allergen detection is AI-enhanced but not infallible. Always verify ingredients on physical packaging. LMeals uses the Groq engine to understand complex ingredient lists, but system errors or missing information in recipes can occur.
             </p>
           </div>

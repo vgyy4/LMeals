@@ -1,37 +1,35 @@
 @import "tailwindcss";
 
-@layer base {
-    body {
-        @apply bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-50;
-    }
+body {
+    @apply bg-p-surface text-slate-800 antialiased;
+}
 
-    button,
-    .btn {
-        @apply cursor-pointer transition-all duration-200;
-        position: relative;
-        overflow: hidden;
-        -webkit-tap-highlight-color: transparent;
-    }
+button,
+.btn {
+    @apply cursor-pointer transition-all duration-200;
+    position: relative;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+}
 
-    button:active,
-    .btn:active {
-        @apply scale-95;
-        cursor: grabbing;
-    }
+button:active,
+.btn:active {
+    @apply scale-95;
+    cursor: grabbing;
+}
 
-    .ripple {
-        position: absolute;
-        border-radius: 50%;
-        transform: scale(0);
-        animation: ripple 600ms linear;
-        background-color: rgba(255, 255, 255, 0.4);
-        pointer-events: none;
-    }
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    transform: scale(0);
+    animation: ripple 600ms linear;
+    background-color: rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+}
 
-    @keyframes ripple {
-        to {
-            transform: scale(4);
-            opacity: 0;
-        }
+@keyframes ripple {
+    to {
+        transform: scale(4);
+        opacity: 0;
     }
 }

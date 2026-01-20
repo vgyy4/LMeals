@@ -46,7 +46,7 @@ const FavoritesPage = () => {
 
   return (
     <div className="p-4 md:p-8 lg:px-12 max-w-7xl mx-auto">
-      <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight mb-8">Your Favorite Recipes</h1>
+      <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight mb-8">Your Favorite Recipes</h1>
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map(i => <div key={i} className="h-64 bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse"></div>)}
@@ -55,7 +55,7 @@ const FavoritesPage = () => {
         <div className="bg-rose-50 border-l-4 border-rose-500 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400 px-4 py-3 rounded-r shadow-sm" role="alert">{error}</div>
       ) : recipes.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-slate-500 dark:text-slate-400 text-lg">No favorite recipes yet. Start adding some! ❤️</p>
+          <p className="text-slate-500 text-lg">No favorite recipes yet. Start adding some! ❤️</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

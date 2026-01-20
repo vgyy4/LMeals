@@ -32,8 +32,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, isMobile
 
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
     `flex items-center p-3 rounded-xl text-lg transition-all mb-1 group relative ${isActive
-      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20 font-semibold'
-      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+      ? 'bg-p-sky text-slate-800 shadow-sm font-semibold'
+      : 'text-slate-500 hover:bg-p-sky/40 hover:text-slate-800'
     } ${isCollapsed && !isMobileOpen ? 'justify-center px-3' : 'px-4'}`;
 
   const handleLinkClick = () => {
@@ -45,7 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, isMobile
   return (
     <aside
       className={`
-        h-screen bg-slate-900 text-slate-50 p-4 flex flex-col shadow-2xl transition-all duration-300 ease-in-out
+        h-screen bg-white text-slate-800 p-4 flex flex-col border-r border-p-sky/30 shadow-sm transition-all duration-300 ease-in-out
         ${isMobileOpen
           ? 'fixed inset-y-0 left-0 z-50 w-64 translate-x-0'
           : 'fixed md:sticky top-0 inset-y-0 -translate-x-full md:translate-x-0 hidden md:flex'
@@ -56,7 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, isMobile
       <div className={`mb-8 flex items-center transition-all duration-300 ${isCollapsed && !isMobileOpen ? 'flex-col space-y-4 px-0 justify-center' : 'flex-row justify-between px-2'}`}>
         {/* Only show logo in full view or mobile */}
         {(!isCollapsed || isMobileOpen) && (
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent truncate animate-in fade-in duration-500">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-p-coral to-p-peach bg-clip-text text-transparent truncate animate-in fade-in duration-500">
             LMeals
           </h1>
         )}
@@ -64,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, isMobile
         {/* Toggle / Close Button - Center it in collapsed mode */}
         <button
           onClick={() => isMobileOpen ? setIsMobileOpen?.(false) : setIsCollapsed(!isCollapsed)}
-          className={`p-2.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-white transition-all duration-300 active:scale-90 outline-none ${isCollapsed && !isMobileOpen ? 'mx-auto' : ''
+          className={`p-2.5 rounded-xl bg-p-surface hover:bg-p-sky/50 text-slate-400 hover:text-slate-600 transition-all duration-300 active:scale-90 outline-none ${isCollapsed && !isMobileOpen ? 'mx-auto' : ''
             }`}
           title={isOpen ? "Collapse Menu" : "Expand Menu"}
         >
@@ -98,8 +98,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, isMobile
 
       {/* Mobile Footer */}
       {(isMobileOpen || !isCollapsed) && (
-        <div className="mt-auto p-4 text-center border-t border-slate-800/50 pt-6 animate-in fade-in slide-up-4 duration-500 delay-200">
-          <p className="text-slate-500 text-[10px] tracking-wider uppercase font-medium">LMeals v1.0</p>
+        <div className="mt-auto p-4 text-center border-t border-p-sky/10 pt-6 animate-in fade-in slide-up-4 duration-500 delay-200">
+          <p className="text-slate-400 text-[10px] tracking-wider uppercase font-medium">LMeals v1.0</p>
         </div>
       )}
     </aside>

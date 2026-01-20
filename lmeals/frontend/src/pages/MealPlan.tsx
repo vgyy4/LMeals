@@ -19,12 +19,12 @@ import { Link } from 'react-router-dom';
 
 // --- Constants ---
 const MEAL_SLOTS = [
-  { id: 'Breakfast', label: 'Breakfast', icon: Coffee, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20' },
-  { id: 'Morning Dessert', label: 'Dessert', icon: IceCream, color: 'text-pink-500', bg: 'bg-pink-50 dark:bg-pink-900/10' },
-  { id: 'Lunch', label: 'Lunch', icon: Sun, color: 'text-sky-600', bg: 'bg-sky-50 dark:bg-sky-900/20' },
-  { id: 'Afternoon Dessert', label: 'Dessert', icon: IceCream, color: 'text-pink-500', bg: 'bg-pink-50 dark:bg-pink-900/10' },
-  { id: 'Dinner', label: 'Dinner', icon: Moon, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/20' },
-  { id: 'Evening Dessert', label: 'Dessert', icon: IceCream, color: 'text-pink-500', bg: 'bg-pink-50 dark:bg-pink-900/10' },
+  { id: 'Breakfast', label: 'Breakfast', icon: Coffee, color: 'text-orange-600/70', bg: 'bg-p-peach/40' },
+  { id: 'Morning Dessert', label: 'Dessert', icon: IceCream, color: 'text-purple-600/70', bg: 'bg-p-lavender/40' },
+  { id: 'Lunch', label: 'Lunch', icon: Sun, color: 'text-blue-600/70', bg: 'bg-p-sky/40' },
+  { id: 'Afternoon Dessert', label: 'Dessert', icon: IceCream, color: 'text-purple-600/70', bg: 'bg-p-lavender/40' },
+  { id: 'Dinner', label: 'Dinner', icon: Moon, color: 'text-indigo-600/70', bg: 'bg-p-lavender/60' },
+  { id: 'Evening Dessert', label: 'Dessert', icon: IceCream, color: 'text-purple-600/70', bg: 'bg-p-lavender/40' },
 ];
 
 // --- Helper Components ---
@@ -41,10 +41,10 @@ const DraggableRecipe = ({ recipe }: { recipe: Recipe }) => {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`group relative p-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl cursor-grab mb-3 shadow-sm border border-slate-100 dark:border-slate-700 flex items-start gap-3 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-md transition-all ${isDragging ? 'opacity-50 ring-2 ring-emerald-500 rotate-2' : ''}`}
+      className={`group relative p-3 bg-white text-slate-700 rounded-xl cursor-grab mb-3 shadow-sm border border-p-sky/20 flex items-start gap-3 hover:border-p-mint hover:shadow-md transition-all ${isDragging ? 'opacity-50 ring-2 ring-p-mint rotate-2' : ''}`}
     >
-      <div className="bg-emerald-50 dark:bg-emerald-900/30 p-1.5 rounded-lg shrink-0 mt-0.5">
-        <ChefHat size={16} className="text-emerald-600 dark:text-emerald-400" />
+      <div className="bg-p-mint/30 p-1.5 rounded-lg shrink-0 mt-0.5">
+        <ChefHat size={16} className="text-emerald-700" />
       </div>
       <span className="text-sm font-medium leading-tight line-clamp-2 pr-1">{recipe.title}</span>
     </div>
@@ -54,9 +54,9 @@ const DraggableRecipe = ({ recipe }: { recipe: Recipe }) => {
 // Drag Overlay
 const RecipeOverlay = ({ title }: { title: string }) => {
   return (
-    <div className="p-3 bg-white dark:bg-slate-800 text-slate-800 dark:text-white rounded-xl shadow-xl w-56 flex items-start gap-3 ring-2 ring-emerald-500 rotate-2 cursor-grabbing opacity-95 border border-emerald-100 dark:border-emerald-900">
-      <div className="bg-emerald-50 dark:bg-emerald-900/30 p-1.5 rounded-lg shrink-0 mt-0.5">
-        <ChefHat size={16} className="text-emerald-600 dark:text-emerald-400" />
+    <div className="p-3 bg-white text-slate-800 rounded-xl shadow-xl w-56 flex items-start gap-3 ring-2 ring-p-mint rotate-2 cursor-grabbing opacity-95 border border-p-mint/30">
+      <div className="bg-p-mint/40 p-1.5 rounded-lg shrink-0 mt-0.5">
+        <ChefHat size={16} className="text-emerald-700" />
       </div>
       <span className="text-sm font-bold leading-tight">{title}</span>
     </div>
@@ -74,14 +74,14 @@ const MealEntryCard = ({ entry, onDelete }: { entry: MealPlanEntry, onDelete: (i
 
   return (
     <div
-      className={`group relative bg-white dark:bg-slate-800 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow active:cursor-grabbing cursor-grab flex items-start gap-2 mb-1.5 last:mb-0 transition-all duration-300 ${isRemoving ? 'opacity-0 -translate-x-full scale-95' : 'opacity-100 translate-x-0 scale-100'}`}
+      className={`group relative bg-white p-2.5 rounded-lg border border-p-sky/10 shadow-sm hover:shadow active:cursor-grabbing cursor-grab flex items-start gap-2 mb-1.5 last:mb-0 transition-all duration-300 ${isRemoving ? 'opacity-0 -translate-x-full scale-95' : 'opacity-100 translate-x-0 scale-100'}`}
     >
-      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-tight line-clamp-2 flex-1">
+      <span className="text-xs font-semibold text-slate-700 leading-tight line-clamp-2 flex-1">
         {entry.recipe.title}
       </span>
       <button
         onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-        className="opacity-0 group-hover:opacity-100 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded p-1 transition-all"
+        className="opacity-0 group-hover:opacity-100 text-p-coral hover:bg-p-rose/20 rounded p-1 transition-all"
       >
         <X size={14} />
       </button>
@@ -109,7 +109,7 @@ const MealSlot = ({
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 flex flex-col p-2 gap-1.5 transition-colors border-b last:border-0 border-slate-100/50 dark:border-slate-700/30 min-h-[100px] ${slot.bg} ${isOver ? 'ring-2 ring-inset ring-emerald-400 bg-emerald-50/80 dark:bg-emerald-900/40' : ''}`}
+      className={`flex-1 flex flex-col p-2 gap-1.5 transition-colors border-b last:border-0 border-p-sky/10 min-h-[100px] ${slot.bg} ${isOver ? 'ring-2 ring-inset ring-p-mint bg-p-mint/40' : ''}`}
     >
       <div className={`flex items-center gap-1.5 mb-1 ${slot.color} opacity-80`}>
         <slot.icon size={13} strokeWidth={2.5} />
@@ -132,7 +132,7 @@ const DayColumn = ({ date, mealPlan, onDelete }: { date: Date, mealPlan: Record<
   const dayEntries = mealPlan[dateStr] || [];
 
   return (
-    <div className="flex-1 min-w-[150px] sm:min-w-[180px] border-r border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-full last:border-r-0">
+    <div className="flex-1 min-w-[150px] sm:min-w-[180px] border-r border-p-sky/10 bg-white flex flex-col h-full last:border-r-0">
       {MEAL_SLOTS.map(slot => (
         <MealSlot
           key={slot.id}
@@ -311,18 +311,18 @@ const MealPlan = () => {
         {/* Recipe Sidebar / Drawer */}
         <div
           className={`
-            fixed inset-y-0 left-0 z-50 lg:static lg:z-auto w-72 bg-white dark:bg-slate-800 p-5 shadow-2xl lg:shadow-sm border-r lg:border border-slate-100 dark:border-slate-700 flex flex-col shrink-0 transition-transform duration-300 lg:translate-x-0 rounded-r-2xl lg:rounded-2xl
+            fixed inset-y-0 left-0 z-50 lg:static lg:z-auto w-72 bg-white p-5 shadow-2xl lg:shadow-sm border-r lg:border border-p-sky/10 flex flex-col shrink-0 transition-transform duration-300 lg:translate-x-0 rounded-r-2xl lg:rounded-2xl
             ${showRecipes ? 'translate-x-0' : '-translate-x-full'}
           `}
         >
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-3">
-              <ChefHat className="text-emerald-500" size={28} />
+            <h1 className="text-2xl font-black text-slate-800 flex items-center gap-3">
+              <ChefHat className="text-p-mint" strokeWidth={3} size={28} />
               Recipes
             </h1>
             <button
               onClick={() => setShowRecipes(false)}
-              className="lg:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500"
+              className="lg:hidden p-2 rounded-xl bg-p-surface text-slate-500 border border-p-sky/10"
             >
               <X size={20} />
             </button>
@@ -333,17 +333,17 @@ const MealPlan = () => {
             <input
               type="text"
               placeholder="Search favorites..."
-              className="w-full bg-slate-50 dark:bg-slate-900 border-0 ring-1 ring-slate-100 dark:ring-slate-700/50 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-emerald-500 transition-all outline-none"
+              className="w-full bg-p-surface border-0 ring-1 ring-p-sky/20 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-p-mint transition-all outline-none"
             />
           </div>
 
           <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
             {recipes.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 text-center p-4 opacity-60">
-                <ChefHat className="text-slate-300 dark:text-slate-600 mb-3" size={32} />
+                <ChefHat className="text-p-mint/50" size={32} />
                 <p className="text-sm text-slate-500 font-medium leading-relaxed">
                   No recipes found.<br />
-                  <Link to="/" className="text-emerald-500 hover:underline">Import some!</Link>
+                  <Link to="/" className="text-p-coral hover:underline">Import some!</Link>
                 </p>
               </div>
             ) : (
@@ -353,28 +353,28 @@ const MealPlan = () => {
         </div>
 
         {/* Main Calendar Area */}
-        <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col overflow-hidden relative">
+        <div className="flex-1 bg-white rounded-2xl shadow-sm border border-p-sky/10 flex flex-col overflow-hidden relative">
 
           {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-center p-4 gap-4 border-b border-slate-100 dark:border-slate-700 shrink-0 bg-white/50 dark:bg-slate-800/50 backdrop-blur-md sticky top-0 z-30">
+          <div className="flex flex-col sm:flex-row justify-between items-center p-4 gap-4 border-b border-p-sky/10 shrink-0 bg-white/50 backdrop-blur-md sticky top-0 z-30">
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <button
                 onClick={() => setShowRecipes(true)}
-                className="lg:hidden p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 mr-2"
+                className="lg:hidden p-2.5 rounded-xl bg-p-mint/40 text-emerald-800 mr-2"
               >
                 <ChefHat size={22} />
               </button>
-              <h2 className="text-xl font-bold text-slate-800 dark:text-white truncate">{monthTitle}</h2>
+              <h2 className="text-xl font-bold text-slate-800 truncate">{monthTitle}</h2>
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl shrink-0">
-                <button onClick={prevWeek} className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg shadow-sm transition-all text-slate-600 dark:text-slate-400"><ChevronLeft size={18} /></button>
-                <button onClick={nextWeek} className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg shadow-sm transition-all text-slate-600 dark:text-slate-400"><ChevronRight size={18} /></button>
+              <div className="flex items-center gap-1 bg-p-surface p-1 rounded-xl shrink-0 border border-p-sky/10">
+                <button onClick={prevWeek} className="p-2 hover:bg-white rounded-lg shadow-sm transition-all text-slate-500"><ChevronLeft size={18} /></button>
+                <button onClick={nextWeek} className="p-2 hover:bg-white rounded-lg shadow-sm transition-all text-slate-500"><ChevronRight size={18} /></button>
               </div>
               <button
                 onClick={goToday}
-                className="px-5 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-emerald-500 hover:text-white rounded-xl shadow-sm transition-all active:scale-95"
+                className="px-5 py-2 text-sm font-bold text-slate-700 bg-p-surface hover:bg-p-mint hover:text-emerald-900 rounded-xl shadow-sm transition-all active:scale-95 border border-p-sky/10"
               >
                 Today
               </button>
@@ -385,16 +385,16 @@ const MealPlan = () => {
           <div className="flex-1 overflow-x-auto custom-scrollbar flex flex-col">
 
             {/* Sticky Days Header */}
-            <div className="flex border-b border-slate-100 dark:border-slate-700 shrink-0 sticky top-0 z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm">
+            <div className="flex border-b border-p-sky/10 shrink-0 sticky top-0 z-20 bg-white/95 backdrop-blur-sm">
               {weekDays.map(date => {
                 const isToday = new Date().toDateString() === date.toDateString();
                 const dayName = date.toLocaleString('default', { weekday: 'short' });
                 return (
-                  <div key={date.toISOString()} className="flex-1 min-w-[150px] sm:min-w-[180px] py-4 text-center border-r border-slate-100 dark:border-slate-700/50 last:border-0">
-                    <div className={`text-[11px] font-black uppercase tracking-widest mb-1.5 ${isToday ? 'text-emerald-500' : 'text-slate-400 dark:text-slate-500'}`}>
+                  <div key={date.toISOString()} className="flex-1 min-w-[150px] sm:min-w-[180px] py-4 text-center border-r border-p-sky/10 last:border-0">
+                    <div className={`text-[11px] font-black uppercase tracking-widest mb-1.5 ${isToday ? 'text-p-coral' : 'text-slate-400'}`}>
                       {dayName}
                     </div>
-                    <div className={`text-xl font-medium inline-flex items-center justify-center w-9 h-9 rounded-xl transition-all ${isToday ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-110' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>
+                    <div className={`text-xl font-medium inline-flex items-center justify-center w-9 h-9 rounded-xl transition-all ${isToday ? 'bg-p-coral text-white shadow-lg shadow-p-coral/20 scale-110' : 'text-slate-700 hover:bg-p-surface'}`}>
                       {date.getDate()}
                     </div>
                   </div>
@@ -403,7 +403,7 @@ const MealPlan = () => {
             </div>
 
             {/* Grid Body */}
-            <div className="flex-1 flex min-h-0 bg-slate-50/30 dark:bg-slate-900/10">
+            <div className="flex-1 flex min-h-0 bg-transparent">
               {weekDays.map(date => (
                 <DayColumn
                   key={date.toISOString()}

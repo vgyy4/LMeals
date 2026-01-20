@@ -10,6 +10,12 @@ export default {
         'soft-rose': '#fecfca',
         'sage-green': '#b2d2a4',
         'periwinkle-blue': '#a2a2d0',
+        'p-mint': '#E3F9E5',
+        'p-coral': '#FF746C',
+        'p-sky': '#E0F2FE',
+        'p-lavender': '#F3E8FF',
+        'p-peach': '#FFF3E0',
+        'p-surface': '#FFFDF5',
       }
     },
   },
