@@ -35,18 +35,21 @@ const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, isF
 
   return (
     <Link to={`/recipe/${id}`} className="group block rounded-2xl bg-white shadow-md hover:shadow-xl transition-all duration-300 border border-p-sky/10">
-      <div className="relative">
-        <button onClick={handleFavoriteClick} className="absolute top-2 start-2 bg-white/80 p-2 rounded-full hover:bg-white transition-colors z-10 border border-p-sky/10">
-          <Heart size={20} className={`${isFav ? 'text-p-coral fill-current' : 'text-slate-400'}`} />
-        </button>
+      <div className="relative overflow-hidden">
         <img
           src={imageUrl || 'https://placehold.co/600x400/F8E8EE/C9A9A6?text=LMeals'}
           alt={title}
-          className="w-full h-40 object-cover rounded-t-2xl"
+          className="w-full h-40 object-cover rounded-t-2xl block"
         />
+        <button
+          onClick={handleFavoriteClick}
+          className="absolute top-3 left-3 bg-white/90 p-2 rounded-full hover:bg-white transition-all z-10 shadow-sm border border-slate-100"
+        >
+          <Heart size={18} className={`${isFav ? 'text-p-coral fill-current' : 'text-slate-400'}`} />
+        </button>
         {hasAllergens && (
-          <div className="absolute top-2 end-2 bg-p-coral text-white p-2 rounded-full shadow-lg">
-            <AlertTriangle size={20} />
+          <div className="absolute top-3 right-3 bg-p-coral/90 text-white p-2 rounded-full shadow-lg backdrop-blur-sm z-10">
+            <AlertTriangle size={18} />
           </div>
         )}
       </div>
