@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+@theme {
+    --color-p-mint: #E3F9E5;
+    --color-p-coral: #FF746C;
+    --color-p-sky: #E0F2FE;
+    --color-p-lavender: #F3E8FF;
+    --color-p-peach: #FFF3E0;
+    --color-p-surface: #FFFDF5;
+
+    /* Legacy names if referenced */
+    --color-soft-rose: #fecfca;
+    --color-sage-green: #b2d2a4;
+    --color-periwinkle-blue: #a2a2d0;
+}
+
 body {
     @apply bg-p-surface text-slate-800 antialiased;
 }
