@@ -1,4 +1,4 @@
-from recipe_scrapers import scrape_html
+from recipe_scrapers import scrape_me
 from recipe_scrapers._exceptions import WebsiteNotImplementedError
 import requests
 
@@ -15,10 +15,13 @@ def scrape_with_library(url: str):
         return None
 
     try:
-        # Pass pre-fetched HTML to the library. 
-        # By not passing wild_mode=True, it stays in "Standard" mode and 
-        # will raise WebsiteNotImplementedError for unsupported sites.
-        scraper = scrape_html(html, org_url=url)
+        # Use scrape_me with pre-fetched HTML if possible.
+        # This is compatible with most versions of the library.
+        try:
+            scraper = scrape_me(url, html=html)
+        except TypeError:
+            # Fallback for even older versions that don't support the 'html' argument
+            scraper = scrape_me(url)
         
         # Extract fields safely
         try:

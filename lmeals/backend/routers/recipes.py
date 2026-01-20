@@ -27,12 +27,18 @@ def scrape_recipe(scrape_request: schemas.ScrapeRequest, db: Session = Depends(g
     if existing_recipe:
         return {"status": "exists", "recipe": existing_recipe}
 
-    # Ensure url is a string before passing to scraper
-    recipe_data = scraper.scrape_with_library(str(scrape_request.url))
-    if recipe_data:
-        recipe_create = schemas.RecipeCreate(**recipe_data)
-        new_recipe = crud.create_recipe(db, recipe=recipe_create)
-        return {"status": "success", "recipe": new_recipe}
+    try:
+        # Ensure url is a string before passing to scraper
+        recipe_data = scraper.scrape_with_library(str(scrape_request.url))
+        if recipe_data:
+            recipe_create = schemas.RecipeCreate(**recipe_data)
+            new_recipe = crud.create_recipe(db, recipe=recipe_create)
+            return {"status": "success", "recipe": new_recipe}
+    except Exception as e:
+        print(f"ERROR during scraping: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=f"Scraping failed: {str(e)}")
     
     # If library scraping fails, signal to the frontend that AI is an option
     return {"status": "ai_required", "message": "Standard scraping failed. Would you like to try with AI?"}
