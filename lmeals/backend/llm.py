@@ -219,3 +219,47 @@ def expand_allergen_keywords(allergen_name: str) -> list[str]:
         print(f"No fallback found for '{allergen_name}', returning just the allergen name")
         return [allergen_lower]
 
+
+def verify_allergens_with_ai(ingredient_text: str, allergens: list[str]) -> bool:
+    """
+    Uses Groq to verify if an ingredient text actually contains any of the specified allergens.
+    This helps prevent false positives like 'peanut butter' being flagged for a 'milk' allergy.
+    """
+    client, model = get_groq_client()
+    if not client:
+        return True # Fallback to 'True' if AI is unavailable
+
+    system_prompt = """
+    You are a professional food safety and allergen expert. 
+    Your task is to determine if a specific ingredient text contains any of the allergens listed by the user.
+    
+    CRITICAL RULE: You must ignore false positives where an allergen name is part of another safe food (e.g., 'Peanut Butter' does NOT contain milk/dairy, 'Coconut Milk' does NOT contain cow's milk).
+    
+    Respond ONLY with a JSON object: {"contains_allergen": true/false, "reason": "short explanation"}
+    """
+
+    user_prompt = f"""
+    Ingredient: "{ingredient_text}"
+    Check for these allergens: {', '.join(allergens)}
+    
+    Does this specific ingredient contain any of these allergens?
+    """
+
+    try:
+        completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            model=model,
+            response_format={"type": "json_object"}
+        )
+        
+        data = json.loads(completion.choices[0].message.content)
+        result = data.get("contains_allergen", True)
+        print(f"AI Verification for '{ingredient_text}': {result} ({data.get('reason')})")
+        return result
+    except Exception as e:
+        print(f"Error in AI allergen verification: {e}")
+        return True # Fallback to True on error
+

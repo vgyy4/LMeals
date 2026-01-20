@@ -105,8 +105,8 @@ def ingredient_contains_allergen(ingredient_text: str, allergen_keywords: list[s
     # Check if any variant contains any allergen keyword
     for variant in ingredient_variants:
         for keyword in allergen_keywords:
-            if keyword.lower() in variant:
-                print(f"✓ Allergen detected: '{keyword}' found in '{variant}' (original: '{ingredient_text}')")
+            if re.search(rf'\b{re.escape(keyword.lower())}\b', variant, re.IGNORECASE):
+                print(f"✓ Potential allergen detected: '{keyword}' found in '{variant}' (original: '{ingredient_text}')")
                 return True
     
     return False
