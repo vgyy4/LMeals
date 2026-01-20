@@ -45,9 +45,9 @@ def scrape_with_library(url: str):
         return {
             "title": title,
             "instructions": scraper.instructions_list(),
-            "prep_time": scraper.prep_time(),
-            "cook_time": scraper.cook_time(),
-            "servings": scraper.yields(),
+            "prep_time": str(scraper.prep_time()) if scraper.prep_time() is not None else None,
+            "cook_time": str(scraper.cook_time()) if scraper.cook_time() is not None else None,
+            "servings": str(scraper.yields()) if scraper.yields() is not None else None,
             "image_url": image_url,
             "ingredients": [{"text": i} for i in ingredients],
             "source_url": url
