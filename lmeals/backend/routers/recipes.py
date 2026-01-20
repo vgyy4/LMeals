@@ -33,15 +33,18 @@ def scrape_recipe(scrape_request: schemas.ScrapeRequest, db: Session = Depends(g
         if recipe_data:
             recipe_create = schemas.RecipeCreate(**recipe_data)
             new_recipe = crud.create_recipe(db, recipe=recipe_create)
-            return {"status": "success", "recipe": new_recipe}
+            
+            # Manually construct and validate response to avoid hidden 500 errors in response validation
+            response_obj = schemas.ScrapeResponse(status="success", recipe=new_recipe)
+            return response_obj
     except Exception as e:
-        print(f"ERROR during scraping: {str(e)}")
+        print(f"ERROR during scraping execution: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=400, detail=f"Scraping failed: {str(e)}")
     
     # If library scraping fails, signal to the frontend that AI is an option
-    return {"status": "ai_required", "message": "Standard scraping failed. Would you like to try with AI?"}
+    return schemas.ScrapeResponse(status="ai_required", message="Standard scraping failed. Would you like to try with AI?")
 
 
 @router.post("/scrape-ai", response_model=schemas.ScrapeResponse)

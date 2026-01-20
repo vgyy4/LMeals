@@ -14,10 +14,6 @@ def scrape_with_library(url: str):
     if not html:
         return None
 
-    html = get_html(url)
-    if not html:
-        return None
-
     try:
         # Dynamic detection of scraper method based on installed library version
         try:
