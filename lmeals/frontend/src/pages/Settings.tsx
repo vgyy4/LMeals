@@ -11,7 +11,8 @@ import {
   RefreshCcw,
   Key,
   ChevronDown,
-  Search
+  Search,
+  Palette
 } from 'lucide-react';
 
 interface Setting {
@@ -35,6 +36,7 @@ const Settings: React.FC = () => {
   const [keyStatus, setKeyStatus] = useState<{ status: string; message: string } | null>(null);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [theme, setTheme] = useState(() => localStorage.getItem('lmeals-theme') || 'pastel');
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -169,6 +171,12 @@ const Settings: React.FC = () => {
     } catch (error) {
       console.error('Error deleting allergen:', error);
     }
+  };
+
+  const handleThemeChange = (newTheme: string) => {
+    setTheme(newTheme);
+    localStorage.setItem('lmeals-theme', newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
   };
 
   if (loading) {
@@ -391,6 +399,43 @@ const Settings: React.FC = () => {
               {message}
             </div>
           )}
+        </section>
+        {/* Appearance Configuration Card */}
+        <section className="bg-white p-6 rounded-3xl shadow-sm border border-p-sky/10 space-y-6">
+          <div className="flex items-center gap-3 mb-2">
+            <Palette className="text-p-coral" size={24} />
+            <h2 className="text-xl font-bold text-slate-800 uppercase tracking-tighter">Appearance</h2>
+          </div>
+
+          <div className="space-y-4">
+            <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1.5 ml-1">
+              Color Palette
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => handleThemeChange('pastel')}
+                className={`p-4 rounded-2xl border-2 transition-all text-left flex flex-col gap-2 ${theme === 'pastel' ? 'border-p-coral bg-p-surface shadow-sm' : 'border-slate-100 hover:border-p-sky/30'}`}
+              >
+                <span className={`font-bold ${theme === 'pastel' ? 'text-p-coral' : 'text-slate-700'}`}>Soft Pastel</span>
+                <div className="flex gap-1">
+                  <div className="w-3 h-3 rounded-full bg-[#E3F9E5]" />
+                  <div className="w-3 h-3 rounded-full bg-[#FF746C]" />
+                  <div className="w-3 h-3 rounded-full bg-[#E0F2FE]" />
+                </div>
+              </button>
+              <button
+                onClick={() => handleThemeChange('vibrant')}
+                className={`p-4 rounded-2xl border-2 transition-all text-left flex flex-col gap-2 ${theme === 'vibrant' ? 'border-p-coral bg-p-surface shadow-sm' : 'border-slate-100 hover:border-p-sky/30'}`}
+              >
+                <span className={`font-bold ${theme === 'vibrant' ? 'text-p-coral' : 'text-slate-700'}`}>Bold Vibrant</span>
+                <div className="flex gap-1">
+                  <div className="w-3 h-3 rounded-full bg-[#10B981]" />
+                  <div className="w-3 h-3 rounded-full bg-[#EF4444]" />
+                  <div className="w-3 h-3 rounded-full bg-[#3B82F6]" />
+                </div>
+              </button>
+            </div>
+          </div>
         </section>
       </div>
 

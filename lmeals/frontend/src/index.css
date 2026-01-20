@@ -1,18 +1,35 @@
 @import "tailwindcss";
 
 @theme {
-    --color-p-mint: #E3F9E5;
-    --color-p-coral: #FF746C;
-    --color-p-sky: #E0F2FE;
-    --color-p-lavender: #F3E8FF;
-    --color-p-peach: #FFF3E0;
-    --color-p-surface: #FFFDF5;
-    --color-p-sidebar: #fcf7e3;
+    --color-p-mint: var(--p-mint);
+    --color-p-coral: var(--p-coral);
+    --color-p-sky: var(--p-sky);
+    --color-p-lavender: var(--p-lavender);
+    --color-p-peach: var(--p-peach);
+    --color-p-surface: var(--p-surface);
+    --color-p-sidebar: var(--p-sidebar);
+}
 
-    /* Legacy names if referenced */
-    --color-soft-rose: #fecfca;
-    --color-sage-green: #b2d2a4;
-    --color-periwinkle-blue: #a2a2d0;
+:root {
+    /* Pastel Theme (Default) */
+    --p-mint: #E3F9E5;
+    --p-coral: #FF746C;
+    --p-sky: #E0F2FE;
+    --p-lavender: #F3E8FF;
+    --p-peach: #FFF3E0;
+    --p-surface: #FFFDF5;
+    --p-sidebar: #fcf7e3;
+}
+
+[data-theme='vibrant'] {
+    /* Vibrant Theme */
+    --p-mint: #10B981;
+    --p-coral: #EF4444;
+    --p-sky: #3B82F6;
+    --p-lavender: #8B5CF6;
+    --p-peach: #F59E0B;
+    --p-surface: #FFFFFF;
+    --p-sidebar: #F8FAFC;
 }
 
 body {
