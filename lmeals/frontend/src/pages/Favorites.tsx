@@ -71,6 +71,7 @@ const FavoritesPage = () => {
                 hasAllergens={checkForAllergens(recipe)}
                 cookTime={recipe.cook_time || undefined}
                 prepTime={recipe.prep_time || undefined}
+                servings={recipe.servings || undefined}
                 isFavorite={true}
                 onFavoriteChange={(id, isFavorite) => {
                   if (!isFavorite) {

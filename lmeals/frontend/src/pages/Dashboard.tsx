@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Filter, Clock } from 'lucide-react';
+import { Plus, Search, Filter, Clock, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import RecipeCard from '../components/RecipeCard';
 import AddRecipeModal from '../components/AddRecipeModal';
@@ -190,12 +190,20 @@ const Dashboard = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                 <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                   <h3 className="text-white text-3xl md:text-5xl font-bold mb-2 leading-tight shadow-sm text-balance">{recipeOfTheDay.title}</h3>
-                  {featuredTotal > 0 && (
-                    <div className="text-slate-200 font-medium flex items-center gap-2 drop-shadow-sm">
-                      <Clock size={18} className="text-p-peach" />
-                      <span>{featuredTotal} min</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-4 text-slate-200 font-medium drop-shadow-sm">
+                    {featuredTotal > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Clock size={18} className="text-p-peach" />
+                        <span>{featuredTotal} min</span>
+                      </div>
+                    )}
+                    {recipeOfTheDay.servings && (
+                      <div className="flex items-center gap-2">
+                        <Users size={18} className="text-p-sky" />
+                        <span>{recipeOfTheDay.servings} people</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Link>
             );
@@ -225,6 +233,7 @@ const Dashboard = () => {
               hasAllergens={checkForAllergens(recipe)}
               cookTime={recipe.cook_time || undefined}
               prepTime={recipe.prep_time || undefined}
+              servings={recipe.servings || undefined}
               isFavorite={recipe.is_favorite || false}
             />
           ))}
