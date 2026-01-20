@@ -121,8 +121,11 @@ const DatePicker: React.FC<DatePickerProps> = ({ startDate, endDate, onRangeChan
                                     className={`
                     w-10 h-10 flex items-center justify-center text-sm rounded-lg transition-all relative
                     ${!inCurrentMonth ? 'opacity-20 pointer-events-none' : 'hover:bg-p-coral/10'}
-                    ${selected ? 'bg-p-coral text-white font-bold shadow-sm' : 'text-slate-700'}
-                    ${range.includes('in-range') || range.includes('range-start') || range.includes('range-end') ? 'bg-p-coral/5' : ''}
+                    ${selected
+                                            ? 'bg-p-coral text-white font-bold shadow-md scale-105 z-10'
+                                            : range.includes('in-range')
+                                                ? 'bg-p-coral/20 text-slate-700'
+                                                : 'text-slate-700'}
                   `}
                                 >
                                     {dayNum}
