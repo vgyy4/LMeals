@@ -14,13 +14,17 @@ def scrape_with_library(url: str):
     if not html:
         return None
 
+    html = get_html(url)
+    if not html:
+        return None
+
     try:
-        # Use scrape_me with pre-fetched HTML if possible.
-        # This is compatible with most versions of the library.
+        # Dynamic detection of scraper method based on installed library version
         try:
-            scraper = scrape_me(url, html=html)
-        except TypeError:
-            # Fallback for even older versions that don't support the 'html' argument
+            from recipe_scrapers import scrape_html
+            scraper = scrape_html(html, org_url=url)
+        except (ImportError, TypeError):
+            # Fallback for versions that don't have scrape_html or require different arguments
             scraper = scrape_me(url)
         
         # Extract fields safely
@@ -56,7 +60,9 @@ def scrape_with_library(url: str):
         print(f"DEBUG: Website not officially supported by library: {url}")
         return None
     except Exception as e:
-        print(f"DEBUG: Unexpected scraping error for {url}: {e}")
+        print(f"DEBUG: Unexpected scraping error for {url}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def get_html(url: str):
