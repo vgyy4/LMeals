@@ -241,8 +241,12 @@ def verify_allergens_with_ai(ingredient_text: str, allergens: list[str]) -> bool
         if category in local_false_positives:
             for safe_item in local_false_positives[category]:
                 if safe_item in safe_lowered:
-                    print(f"Local Smart Verification: '{ingredient_text}' is safe for {category} (Known false positive: {safe_item})")
-                    return False
+                    # Final check: Does it contain the literal category name OUTSIDE of the safe phrase?
+                    # Example: "Peanut butter with milk" should still trigger for milk.
+                    # We check if the name exists separately from the safe item.
+                    if category not in safe_lowered.replace(safe_item, ""):
+                        print(f"Local Smart Verification: '{ingredient_text}' is safe for {category} (Known false positive: {safe_item})")
+                        return False
 
     if not client:
         # If AI is unavailable, we've already done our local check above.
