@@ -23,7 +23,7 @@ const MEAL_SLOTS = [
   { id: 'Morning Dessert', label: 'Dessert', icon: IceCream, color: 'text-purple-600/70', bg: 'bg-p-lavender/40' },
   { id: 'Lunch', label: 'Lunch', icon: Sun, color: 'text-blue-600/70', bg: 'bg-p-sky/40' },
   { id: 'Afternoon Dessert', label: 'Dessert', icon: IceCream, color: 'text-purple-600/70', bg: 'bg-p-lavender/40' },
-  { id: 'Dinner', label: 'Dinner', icon: Moon, color: 'text-indigo-600/70', bg: 'bg-p-lavender/60' },
+  { id: 'Dinner', label: 'Dinner', icon: Moon, color: 'text-emerald-600/70', bg: 'bg-p-mint/40' },
   { id: 'Evening Dessert', label: 'Dessert', icon: IceCream, color: 'text-purple-600/70', bg: 'bg-p-lavender/40' },
 ];
 
