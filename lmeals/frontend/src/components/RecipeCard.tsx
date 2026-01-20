@@ -34,32 +34,36 @@ const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, isF
   };
 
   return (
-    <Link to={`/recipe/${id}`} className="group relative block rounded-2xl bg-white shadow-md hover:shadow-xl transition-all duration-300 border border-p-sky/10 overflow-hidden">
-      {/* Top Section: Image and Overlays */}
+    <Link to={`/recipe/${id}`} className="group relative block rounded-2xl bg-white shadow-md hover:shadow-xl transition-all duration-300 border border-slate-100 overflow-hidden">
+      {/* Absolute Overlay Buttons - Placed at the top level for stability */}
+      <button
+        onClick={handleFavoriteClick}
+        style={{ position: 'absolute', top: '12px', left: '12px', zIndex: 40 }}
+        className="bg-white/95 p-2 rounded-full hover:bg-white transition-all shadow-md active:scale-90 border border-slate-200/50 flex items-center justify-center pointer-events-auto"
+      >
+        <Heart size={20} className={`${isFav ? 'text-p-coral fill-current' : 'text-slate-500'}`} />
+      </button>
+
+      {hasAllergens && (
+        <div
+          style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 40 }}
+          className="bg-p-coral text-white p-2 rounded-full shadow-lg backdrop-blur-sm flex items-center justify-center pointer-events-none"
+        >
+          <AlertTriangle size={20} />
+        </div>
+      )}
+
+      {/* Top Section: Image */}
       <div className="relative h-40 w-full bg-slate-100 overflow-hidden">
         <img
           src={imageUrl || 'https://placehold.co/600x400/F8E8EE/C9A9A6?text=LMeals'}
           alt={title}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-
-        {/* Buttons Overlay */}
-        <button
-          onClick={handleFavoriteClick}
-          className="absolute top-3 left-3 bg-white/90 p-2 rounded-full hover:bg-white transition-all z-20 shadow-sm active:scale-90 pointer-events-auto"
-        >
-          <Heart size={18} className={`${isFav ? 'text-p-coral fill-current' : 'text-slate-400'}`} />
-        </button>
-
-        {hasAllergens && (
-          <div className="absolute top-3 right-3 bg-p-coral text-white p-2 rounded-full shadow-lg backdrop-blur-sm z-20 flex items-center justify-center">
-            <AlertTriangle size={18} />
-          </div>
-        )}
       </div>
 
       {/* Bottom Section: Info */}
-      <div className="p-4 bg-white relative z-10">
+      <div className="p-4 bg-white">
         <h3 className="text-lg font-bold text-slate-800 truncate group-hover:text-p-coral transition-colors">{title}</h3>
         {totalTime > 0 && (
           <div className="flex items-center gap-2 mt-2 text-sm text-slate-400">
