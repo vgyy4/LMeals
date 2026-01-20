@@ -26,7 +26,7 @@ def create_recipe(db: Session, recipe: schemas.RecipeCreate):
     db.commit()
     db.refresh(db_recipe)
     for ingredient_data in recipe.ingredients:
-        db_ingredient = models.Ingredient(**ingredient_data.dict(), recipe_id=db_recipe.id)
+        db_ingredient = models.Ingredient(**ingredient_data.model_dump(), recipe_id=db_recipe.id)
         db.add(db_ingredient)
     db.commit()
     db.refresh(db_recipe)
@@ -35,7 +35,7 @@ def create_recipe(db: Session, recipe: schemas.RecipeCreate):
 def update_recipe(db: Session, recipe_id: int, recipe: schemas.RecipeCreate):
     db_recipe = get_recipe(db, recipe_id)
     if db_recipe:
-        for key, value in recipe.dict().items():
+        for key, value in recipe.model_dump().items():
             setattr(db_recipe, key, value)
         db.commit()
         db.refresh(db_recipe)
@@ -98,7 +98,7 @@ def create_meal_plan_entry(db: Session, entry: schemas.MealPlanEntryCreate):
         # Let's return None and update router.
         return None
 
-    db_entry = models.MealPlanEntry(**entry.dict())
+    db_entry = models.MealPlanEntry(**entry.model_dump())
     db.add(db_entry)
     db.commit()
     db.refresh(db_entry)

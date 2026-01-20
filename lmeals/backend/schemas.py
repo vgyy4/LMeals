@@ -14,7 +14,7 @@ class Ingredient(IngredientBase):
     recipe_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Recipe Schemas
 class RecipeBase(BaseModel):
@@ -39,7 +39,7 @@ class Recipe(RecipeBase):
     has_allergens: Optional[bool] = None  # Computed field, not in DB
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Allergen Schemas
 class AllergenBase(BaseModel):
@@ -53,7 +53,7 @@ class Allergen(AllergenBase):
     keywords: List[str] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Scraping Schemas
 class ScrapeRequest(BaseModel):
@@ -84,7 +84,7 @@ class MealPlanEntry(MealPlanEntryBase):
     recipe: Recipe
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Setting Schemas
 class SettingBase(BaseModel):
