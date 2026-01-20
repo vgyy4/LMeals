@@ -71,20 +71,20 @@ const DatePicker: React.FC<DatePickerProps> = ({ startDate, endDate, onRangeChan
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-700 dark:text-slate-200"
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-p-sky/20 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-700 outline-none"
             >
-                <CalendarIcon size={18} className="text-rose-500" />
-                <span className="font-medium">
-                    {moment(startDate).format('MMM D')} - {moment(endDate).format('MMM D')}
+                <CalendarIcon size={18} className="text-p-coral" />
+                <span className="font-semibold text-sm">
+                    {moment(startDate).format('MMM D')} — {moment(endDate).format('MMM D')}
                 </span>
             </button>
 
             {isOpen && (
-                <div className="absolute top-full mt-2 left-0 z-50 p-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-200 origin-top-left min-w-[320px]">
+                <div className="absolute top-full mt-2 left-0 z-50 p-4 bg-white/95 backdrop-blur-xl border border-p-sky/10 rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-200 origin-top-left min-w-[320px]">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                            <span className="text-rose-500 font-bold">{month}</span>
-                            <span className="text-slate-400 font-light">{year}</span>
+                        <h3 className="font-extrabold text-slate-800 flex items-center gap-2">
+                            <span className="text-p-coral">{month}</span>
+                            <span className="text-slate-300 font-light">{year}</span>
                         </h3>
                         <div className="flex gap-1">
                             <button
@@ -120,32 +120,32 @@ const DatePicker: React.FC<DatePickerProps> = ({ startDate, endDate, onRangeChan
                                     {...dayButton(day)}
                                     className={`
                     w-10 h-10 flex items-center justify-center text-sm rounded-lg transition-all relative
-                    ${!inCurrentMonth ? 'opacity-20 pointer-events-none' : 'hover:bg-rose-50 dark:hover:bg-rose-900/20'}
-                    ${selected ? 'bg-rose-600 text-white font-bold shadow-lg shadow-rose-200 dark:shadow-rose-900/30' : 'text-slate-700 dark:text-slate-300'}
-                    ${range.includes('in-range') || range.includes('range-start') || range.includes('range-end') ? 'bg-rose-50 dark:bg-rose-900/10' : ''}
+                    ${!inCurrentMonth ? 'opacity-20 pointer-events-none' : 'hover:bg-p-coral/10'}
+                    ${selected ? 'bg-p-coral text-white font-bold shadow-sm' : 'text-slate-700'}
+                    ${range.includes('in-range') || range.includes('range-start') || range.includes('range-end') ? 'bg-p-coral/5' : ''}
                   `}
                                 >
                                     {dayNum}
                                     {now && !selected && (
-                                        <div className="absolute bottom-1 w-1 h-1 bg-rose-500 rounded-full" />
+                                        <div className="absolute bottom-1 w-1 h-1 bg-p-coral rounded-full" />
                                     )}
                                 </button>
                             );
                         })}
                     </div>
 
-                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs">
+                    <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center text-xs">
                         <div className="flex gap-2 text-slate-400">
                             <div className="flex items-center gap-1">
-                                <div className="w-2 h-2 bg-rose-600 rounded-full" /> Selected
+                                <div className="w-2 h-2 bg-p-coral rounded-full" /> Selected
                             </div>
                             <div className="flex items-center gap-1">
-                                <div className="w-2 h-2 bg-rose-50 dark:bg-rose-900/10 rounded-full" /> Range
+                                <div className="w-2 h-2 bg-p-coral/10 rounded-full" /> Range
                             </div>
                         </div>
                         <button
                             onClick={() => setIsOpen(false)}
-                            className="font-bold text-rose-600 hover:text-rose-700 uppercase tracking-tighter"
+                            className="font-black text-p-coral hover:text-red-500 uppercase tracking-wider"
                         >
                             Close
                         </button>
