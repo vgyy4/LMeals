@@ -226,8 +226,28 @@ def verify_allergens_with_ai(ingredient_text: str, allergens: list[str]) -> bool
     This helps prevent false positives like 'peanut butter' being flagged for a 'milk' allergy.
     """
     client, model = get_groq_client()
+    
+    # Common sense local check for the most frequent false positives
+    # This ensures things like 'Peanut Butter' don't trigger 'Milk' warnings even without an AI key.
+    safe_lowered = ingredient_text.lower()
+    local_false_positives = {
+        "milk": ["peanut butter", "coconut milk", "almond milk", "soy milk", "oat milk", "rice milk", "cashew milk", "cocoa butter", "shea butter", "nut butter"],
+        "egg": ["eggplant"],
+        "wheat": ["buckwheat", "water chestnut"],
+    }
+    
+    for allergen in allergens:
+        category = allergen.lower()
+        if category in local_false_positives:
+            for safe_item in local_false_positives[category]:
+                if safe_item in safe_lowered:
+                    print(f"Local Smart Verification: '{ingredient_text}' is safe for {category} (Known false positive: {safe_item})")
+                    return False
+
     if not client:
-        return True # Fallback to 'True' if AI is unavailable
+        # If AI is unavailable, we've already done our local check above.
+        # Still return True for anything else suspicious as a safety measure.
+        return True 
 
     system_prompt = """
     You are a professional food safety and allergen expert. 
