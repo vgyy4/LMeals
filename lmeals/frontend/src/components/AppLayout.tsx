@@ -35,7 +35,7 @@ const AppLayout = () => {
         >
           <AnimatedHamburger isOpen={isMobileOpen} />
         </button>
-        <span className="ml-4 font-bold text-xl bg-gradient-to-r from-p-coral to-p-peach bg-clip-text text-transparent">LMeals</span>
+        <span className="ml-4 font-bold text-xl bg-gradient-to-r from-p-coral to-rose-600 bg-clip-text text-transparent">LMeals</span>
       </div>
 
       {/* Overlay for mobile */}
