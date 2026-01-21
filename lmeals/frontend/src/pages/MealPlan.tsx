@@ -9,7 +9,7 @@ import {
   DragEndEvent,
   useSensors,
   useSensor,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
 } from '@dnd-kit/core';
 import { getRecipes, getMealPlanEntries, createMealPlanEntry, deleteMealPlanEntry } from '../lib/api';
@@ -41,6 +41,7 @@ const DraggableRecipe = ({ recipe }: { recipe: Recipe }) => {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      style={{ touchAction: 'none' }}
       className={`group relative p-3 bg-white text-slate-700 rounded-xl cursor-grab mb-3 shadow-sm border border-p-sky/20 flex items-start gap-3 hover:border-p-mint hover:shadow-md transition-all ${isDragging ? 'opacity-50 ring-2 ring-p-mint rotate-2' : ''}`}
     >
       <div className="bg-p-mint/30 p-1.5 rounded-lg shrink-0 mt-0.5">
@@ -81,7 +82,7 @@ const MealEntryCard = ({ entry, onDelete }: { entry: MealPlanEntry, onDelete: (i
       </span>
       <button
         onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-        className="opacity-0 group-hover:opacity-100 text-p-coral hover:bg-p-rose/20 rounded p-1 transition-all"
+        className="opacity-100 md:opacity-0 group-hover:opacity-100 text-p-coral hover:bg-p-rose/20 rounded p-1 transition-all"
       >
         <X size={14} />
       </button>
@@ -162,7 +163,7 @@ const MealPlan = () => {
   const [activeDragItem, setActiveDragItem] = useState<any | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
   );
 
