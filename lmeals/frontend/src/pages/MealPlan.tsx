@@ -210,6 +210,8 @@ const MealPlan = () => {
     const { active } = event;
     if (active.data.current) {
       setActiveDragItem(active.data.current);
+      // Auto-hide recipes drawer on mobile when dragging starts
+      setShowRecipes(false);
     }
   };
 
