@@ -19,7 +19,7 @@ const ServingScaler: React.FC<ServingScalerProps> = ({ originalServings, yieldUn
         { id: '0.5x', label: `${Math.round(basePeople * 0.5)}`, sub: 'Half' },
         { id: '1x', label: `${basePeople}`, sub: 'Orig' },
         { id: '2x', label: `${Math.round(basePeople * 2)}`, sub: 'Double' },
-        { id: 'custom', label: 'Custom', sub: '...' }
+        { id: 'custom', label: 'Custom', sub: '' }
     ];
 
     useEffect(() => {
@@ -62,11 +62,11 @@ const ServingScaler: React.FC<ServingScalerProps> = ({ originalServings, yieldUn
         <div className="mb-8">
             <div
                 ref={containerRef}
-                className="relative flex items-center bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner w-full sm:w-min min-w-[320px]"
+                className="relative flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner w-full sm:w-min min-w-[240px]"
             >
                 {/* Animated Background Marker */}
                 <div
-                    className="absolute h-[calc(100%-12px)] bg-white rounded-xl shadow-md transition-all duration-300 ease-out z-0"
+                    className="absolute h-[calc(100%-8px)] bg-white rounded-lg shadow-md transition-all duration-300 ease-out z-0"
                     style={{
                         left: `${markerStyle.left}px`,
                         width: `${markerStyle.width}px`
@@ -78,7 +78,7 @@ const ServingScaler: React.FC<ServingScalerProps> = ({ originalServings, yieldUn
                         key={opt.id}
                         data-id={opt.id}
                         onClick={() => handleSelect(opt.id)}
-                        className={`relative z-10 flex-1 px-4 py-2.5 flex flex-col items-center justify-center transition-colors duration-300 ${selected === opt.id ? 'text-slate-800' : 'text-slate-400 hover:text-slate-600'
+                        className={`relative z-10 flex-1 px-3 py-1.5 flex flex-col items-center justify-center transition-colors duration-300 ${selected === opt.id ? 'text-slate-800' : 'text-slate-400 hover:text-slate-600'
                             }`}
                     >
                         <span className="text-sm font-black uppercase tracking-tight leading-none mb-0.5">
