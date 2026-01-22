@@ -110,9 +110,62 @@ def extract_with_groq(html: str):
     except Exception as e:
         print(f"An error occurred with the Groq API call: {e}")
         return None
-    except Exception as e:
-        print(f"An error occurred with the Groq API call: {e}")
+
+def extract_recipe_from_text(text: str):
+    """
+    Uses Groq to extract recipe data from ANY raw text (html text or transcript).
+    """
+    client, model = get_groq_client()
+    if not client:
         return None
+
+    system_prompt = """
+    You are an expert recipe data extractor. Your task is to extract recipe data from the provided text and return ONLY a strict JSON object with the following keys: 
+    - "title": (string)
+    - "ingredients": (list of strings)
+    - "instructions": (list of strings)
+    - "prep_time": (string)
+    - "cook_time": (string)
+    - "servings": (string - just the numeric part if possible, e.g. "4")
+    - "yield_unit": (string - the unit of measurement, e.g. "servings", "cookies", "people", "bowls", "muffins"). Default to "servings" if unclear.
+    - "image_url": (string or null)
+
+    Do not include any introductory text, explanations, or markdown formatting around the JSON. Your output must be parsable by a standard JSON parser.
+    """
+
+    try:
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Extract recipe from this text:\n\n{text}"}
+            ],
+            model=model,
+            response_format={"type": "json_object"},
+        )
+        return json.loads(chat_completion.choices[0].message.content)
+    except Exception as e:
+        print(f"Error extracting recipe from text: {e}")
+        return None
+
+def transcribe_audio(file_path: str) -> str:
+    """
+    Transcribes an audio file using Groq's Whisper v3 large.
+    """
+    client, _ = get_groq_client()
+    if not client:
+        return ""
+
+    try:
+        with open(file_path, "rb") as file:
+            transcription = client.audio.transcriptions.create(
+                file=(os.path.basename(file_path), file.read()),
+                model="whisper-large-v3",
+                response_format="json",
+            )
+            return transcription.text
+    except Exception as e:
+        print(f"Error transcribing audio {file_path}: {e}")
+        return ""
 
 def get_groq_client():
     api_key = os.environ.get("GROQ_API_KEY")

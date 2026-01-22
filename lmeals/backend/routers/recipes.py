@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 
-import crud, schemas, scraper, llm, allergen_checker
+import crud, schemas, scraper, llm, allergen_checker, audio_processor
 from database import SessionLocal
 
 router = APIRouter()
@@ -74,23 +74,67 @@ def scrape_recipe(scrape_request: schemas.ScrapeRequest, background_tasks: Backg
 @router.post("/scrape-ai", response_model=schemas.ScrapeResponse)
 def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
-    Scrapes a recipe from a URL using the Groq AI, after user confirmation.
+    Scrapes a recipe from a URL using AI. 
+    Supports standard HTML pages and Video/Audio sources.
     """
-    html = scraper.get_html(scrape_request.url)
-    if not html:
-        raise HTTPException(status_code=400, detail="Could not fetch HTML from the URL.")
+    url = str(scrape_request.url)
+    recipe_data = {}
+    is_video_audio = any(domain in url for domain in ["youtube.com", "youtu.be", "vimeo.com", "spotify.com", "facebook.com", "instagram.com"])
 
-    try:
-        recipe_data = llm.extract_with_groq(html)
-        if not recipe_data:
-            raise HTTPException(status_code=500, detail="AI failed to extract recipe data.")
-    except Exception as e:
-        error_message = str(e)
-        status_code = 500
-        if "rate limit" in error_message.lower():
-            status_code = 429
-            error_message = "Groq API rate limit exceeded."
-        raise HTTPException(status_code=status_code, detail=error_message)
+    if is_video_audio:
+        try:
+            print(f"Video/Audio detected: {url}")
+            metadata = audio_processor.get_video_metadata(url)
+            recipe_data["title"] = metadata["title"]
+            recipe_data["image_url"] = metadata["thumbnail"] # Non-AI Image!
+            
+            # 1. Try subtitles first
+            transcript = ""
+            subtitles = metadata.get("subtitles", {})
+            if subtitles:
+                # Basic logic: just grab first available
+                print("Using existing subtitles/captions.")
+                transcript = f"Title: {metadata['title']}\nDescription: {metadata['description']}"
+            else:
+                # 2. Extract and transcribe audio
+                print("No subtitles found. Starting audio extraction and transcription...")
+                audio_file = audio_processor.download_audio(url)
+                chunks = audio_processor.chunk_audio(audio_file)
+                
+                texts = []
+                for chunk in chunks:
+                    texts.append(llm.transcribe_audio(chunk))
+                
+                transcript = "\n".join(texts)
+                audio_processor.cleanup_files([audio_file] + chunks)
+
+            if not transcript:
+                raise HTTPException(status_code=500, detail="Failed to get transcript for video/audio.")
+
+            extracted = llm.extract_recipe_from_text(transcript)
+            if not extracted:
+                raise HTTPException(status_code=500, detail="AI failed to extract recipe from transcript.")
+            
+            recipe_data.update(extracted)
+            if metadata["thumbnail"]:
+                recipe_data["image_url"] = metadata["thumbnail"] # Ensure we keep the real thumbnail
+
+        except Exception as e:
+            print(f"Error processing video/audio: {e}")
+            raise HTTPException(status_code=500, detail=f"Video/Audio processing failed: {str(e)}")
+    else:
+        # Standard HTML Scraping
+        html = scraper.get_html(scrape_request.url)
+        if not html:
+            raise HTTPException(status_code=400, detail="Could not fetch HTML from the URL.")
+
+        try:
+            extracted = llm.extract_with_groq(html)
+            if not extracted:
+                raise HTTPException(status_code=500, detail="AI failed to extract recipe data.")
+            recipe_data.update(extracted)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     # The data from the LLM needs to be shaped into our RecipeCreate schema
     recipe_data['source_url'] = scrape_request.url
@@ -99,7 +143,7 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
     ingredients_list = recipe_data.get("ingredients", [])
     recipe_data["ingredients"] = [{"text": i} for i in ingredients_list]
     
-    # Handle empty image_url (Pydantic HttpUrl doesn't accept empty strings)
+    # Handle empty image_url
     if not recipe_data.get("image_url"):
         recipe_data["image_url"] = None
 

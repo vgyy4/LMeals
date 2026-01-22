@@ -47,3 +47,5 @@ urllib3==2.6.3
 uvicorn==0.40.0
 w3lib==2.3.1
 webencodings==0.5.1
+yt-dlp==2025.1.15
+pydub==0.25.1

@@ -10,8 +10,8 @@ RUN npm run build
 FROM python:3.11-slim
 WORKDIR /app
 
-# Install build dependencies if needed (e.g. for some python packages)
-# RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
+# Install build dependencies and ffmpeg for audio processing
+RUN apt-get update && apt-get install -y gcc ffmpeg && rm -rf /var/lib/apt/lists/*
 
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

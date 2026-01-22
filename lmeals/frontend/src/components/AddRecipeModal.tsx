@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { scrapeRecipe, scrapeWithAi } from '../lib/api';
-import { X } from 'lucide-react';
+import { X, Youtube, Music, Facebook, Instagram, Video, Mic } from 'lucide-react';
 
 interface AddRecipeModalProps {
   onClose: () => void;
@@ -69,7 +69,26 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
 
         {!needsAiConfirmation ? (
           <div>
-            <p className="mb-4 text-slate-500">Enter the URL of the recipe you want to import.</p>
+            <div className="flex items-center gap-3 mb-4 p-3 bg-p-sky/30 rounded-2xl border border-p-sky/20">
+              <div className="flex -space-x-2">
+                <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center border-2 border-white">
+                  <Youtube size={16} className="text-red-600" />
+                </div>
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center border-2 border-white">
+                  <Music size={16} className="text-green-600" />
+                </div>
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white">
+                  <Facebook size={16} className="text-blue-600" />
+                </div>
+                <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center border-2 border-white">
+                  <Instagram size={16} className="text-pink-600" />
+                </div>
+              </div>
+              <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Supports Video, Audio & AI Extraction
+              </p>
+            </div>
+            <p className="mb-4 text-slate-500">Paste a link to a website, YouTube video, or audio file.</p>
             <input
               type="text"
               value={url}
@@ -83,7 +102,12 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
               className="w-full mt-6 bg-p-mint text-emerald-900 font-bold py-3 rounded-2xl hover:bg-emerald-100 transition-all shadow-sm active:scale-95 border border-p-mint/50"
               disabled={isLoading}
             >
-              {isLoading ? 'Importing...' : 'Import Recipe'}
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-emerald-900/30 border-t-emerald-900 rounded-full animate-spin" />
+                  <span>{url.includes('youtube') || url.includes('youtu.be') ? 'Transcribing Video...' : 'Importing...'}</span>
+                </div>
+              ) : 'Import Recipe'}
             </button>
           </div>
         ) : (
