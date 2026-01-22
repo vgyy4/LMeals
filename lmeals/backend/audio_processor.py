@@ -31,6 +31,59 @@ def get_video_metadata(url: str):
             "description": ""
         }
 
+def get_subtitle_text(url: str) -> str:
+    """Attempts to download and extract text from subtitles/captions."""
+    output_dir = "temp_subs"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        
+    file_id = str(uuid.uuid4())
+    ydl_opts = {
+        'skip_download': True,
+        'writesubtitles': True,
+        'writeautomaticsub': True,
+        'subtitleslangs': ['en.*', 'en'],
+        'outtmpl': os.path.join(output_dir, f"{file_id}.%(ext)s"),
+        'quiet': True,
+    }
+    
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+            
+        # Find the downloaded subtitle file
+        import re
+        for f in os.listdir(output_dir):
+            if f.startswith(file_id) and f.endswith(('.vtt', '.srt')):
+                file_path = os.path.join(output_dir, f)
+                with open(file_path, 'r', encoding='utf-8') as sf:
+                    content = sf.read()
+                    
+                # Clean up VTT/SRT tags and timestamps
+                # Remove WEBVTT header
+                content = re.sub(r'WEBVTT.*?\n', '', content, flags=re.DOTALL)
+                # Remove timestamps (00:00:00.000 -> 00:00:00.000)
+                content = re.sub(r'\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}.*?\n', '', content)
+                # Remove line numbers and tags
+                content = re.sub(r'<.*?>', '', content)
+                content = re.sub(r'^\d+\n', '', content, flags=re.MULTILINE)
+                
+                # Deduplicate repeated lines (common in YouTube auto-subs)
+                lines = content.splitlines()
+                clean_lines = []
+                for line in lines:
+                    line = line.strip()
+                    if line and (not clean_lines or line != clean_lines[-1]):
+                        clean_lines.append(line)
+                
+                # Cleanup temp file
+                os.remove(file_path)
+                return " ".join(clean_lines)
+    except Exception as e:
+        print(f"Error fetching subtitles: {e}")
+        
+    return ""
+
 def download_audio(url: str, output_dir: str = "temp_audio") -> str:
     """Downloads audio from a URL and returns the path to the MP3 file."""
     if not os.path.exists(output_dir):

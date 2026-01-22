@@ -92,12 +92,12 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
             transcript = ""
             subtitles = metadata.get("subtitles", {})
             if subtitles:
-                # Basic logic: just grab first available
-                print("Using existing subtitles/captions.")
-                transcript = f"Title: {metadata['title']}\nDescription: {metadata['description']}"
-            else:
-                # 2. Extract and transcribe audio
-                print("No subtitles found. Starting audio extraction and transcription...")
+                print("Fetching existing subtitles/captions...")
+                transcript = audio_processor.get_subtitle_text(url)
+                
+            # 2. Fallback to audio transcription if subtitles were empty or missing
+            if not transcript:
+                print("No active subtitles found or extraction failed. Falling back to audio transcription...")
                 audio_file = audio_processor.download_audio(url)
                 chunks = audio_processor.chunk_audio(audio_file)
                 
@@ -108,8 +108,9 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
                 transcript = "\n".join(texts)
                 audio_processor.cleanup_files([audio_file] + chunks)
 
+            # 3. Final fallback to description if everything else fails
             if not transcript:
-                raise HTTPException(status_code=500, detail="Failed to get transcript for video/audio.")
+                transcript = f"Title: {metadata['title']}\nDescription: {metadata['description']}"
 
             extracted = llm.extract_recipe_from_text(transcript)
             if not extracted:
