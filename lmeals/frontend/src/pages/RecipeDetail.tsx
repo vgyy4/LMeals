@@ -97,44 +97,41 @@ const RecipeDetailPage = () => {
           <img src={recipe.image_url} alt={recipe.title} className="w-full h-64 object-cover" />
         )}
         <div className="p-6 md:p-8">
-          <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
-            <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-4">{recipe.title}</h1>
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-slate-400 font-medium">
-                {totalMinutes > 0 && (
-                  <div className="flex items-center gap-2">
-                    <Clock size={20} />
-                    <span>{formatMinutes(totalMinutes)}</span>
-                  </div>
-                )}
-                {recipe.servings && (
-                  <div className="flex items-center gap-2">
-                    <Users size={20} />
-                    <span>{scaleServings(recipe.servings, multiplier)} {recipe.yield_unit || 'servings'}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-col items-end gap-3 shrink-0">
-              <button
-                onClick={handleUpdateWithAi}
-                className="flex items-center gap-2 px-6 py-2.5 bg-p-sky text-blue-900 font-bold rounded-xl hover:bg-blue-100 transition-all shadow-sm border border-p-sky/30"
-              >
-                <RefreshCw size={20} />
-                Re-create with AI
-              </button>
-
-              {/* Animated Serving Scaler */}
-              {recipe.servings && (
-                <ServingScaler
-                  originalServings={recipe.servings}
-                  yieldUnit={recipe.yield_unit}
-                  onScaleChange={setMultiplier}
-                />
-              )}
-            </div>
+          <div className="flex justify-between items-start">
+            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-4">{recipe.title}</h1>
+            <button
+              onClick={handleUpdateWithAi}
+              className="flex items-center gap-2 px-6 py-2.5 bg-p-sky text-blue-900 font-bold rounded-xl hover:bg-blue-100 transition-all shadow-sm border border-p-sky/30"
+            >
+              <RefreshCw size={20} />
+              Re-create with AI
+            </button>
           </div>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-slate-400 mb-6 font-medium">
+            {totalMinutes > 0 && (
+              <div className="flex items-center gap-2">
+                <Clock size={20} />
+                <span>{formatMinutes(totalMinutes)}</span>
+              </div>
+            )}
+            {recipe.servings && (
+              <div className="flex items-center gap-2">
+                <Users size={20} />
+                <span>{scaleServings(recipe.servings, multiplier)} {recipe.yield_unit || 'servings'}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Animated Serving Scaler */}
+          {recipe.servings && (
+            <div className="mb-8">
+              <ServingScaler
+                originalServings={recipe.servings}
+                yieldUnit={recipe.yield_unit}
+                onScaleChange={setMultiplier}
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-1">
