@@ -56,9 +56,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, isMobile
       <div className={`mb-8 flex items-center transition-all duration-300 ${isCollapsed && !isMobileOpen ? 'flex-col space-y-4 px-0 justify-center' : 'flex-row justify-between px-2'}`}>
         {/* Only show logo in full view or mobile */}
         {(!isCollapsed || isMobileOpen) && (
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-p-coral to-rose-600 bg-clip-text text-transparent">
-            LMeals
-          </h1>
+          <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-500">
+            <img src="/logo.png" alt="LMeals Logo" className="h-10 w-auto" />
+          </div>
         )}
 
         {/* Toggle / Close Button - Center it in collapsed mode */}
