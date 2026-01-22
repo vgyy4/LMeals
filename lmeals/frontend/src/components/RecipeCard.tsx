@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle, Clock, Heart, Users } from 'lucide-react';
 import { setFavoriteStatus } from '../lib/api';
 import { useState } from 'react';
+import { parseTimeToMinutes, formatMinutes } from '../lib/utils';
 
 interface RecipeCardProps {
   id: number;
@@ -16,7 +17,7 @@ interface RecipeCardProps {
 }
 
 const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, servings, isFavorite, onFavoriteChange }: RecipeCardProps) => {
-  const totalTime = (parseInt(prepTime || '0') || 0) + (parseInt(cookTime || '0') || 0);
+  const totalMinutes = parseTimeToMinutes(prepTime) + parseTimeToMinutes(cookTime);
   const [isFav, setIsFav] = useState(isFavorite);
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
@@ -66,15 +67,15 @@ const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, ser
       {/* Bottom Section: Info */}
       <div className="p-4 bg-white">
         <h3 className="text-lg font-bold text-slate-800 truncate group-hover:text-p-coral transition-colors">{title}</h3>
-        {(totalTime > 0 || servings) && (
+        {(totalMinutes > 0 || servings) && (
           <div className="flex items-center gap-3 mt-2 text-sm text-slate-400">
-            {totalTime > 0 && (
+            {totalMinutes > 0 && (
               <div className="flex items-center gap-1">
                 <Clock size={14} />
-                <span>{totalTime} min</span>
+                <span>{formatMinutes(totalMinutes)}</span>
               </div>
             )}
-            {totalTime > 0 && servings && <span className="w-1 h-1 rounded-full bg-slate-300" />}
+            {totalMinutes > 0 && servings && <span className="w-1 h-1 rounded-full bg-slate-300" />}
             {servings && (
               <div className="flex items-center gap-1">
                 <Users size={14} />
