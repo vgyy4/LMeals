@@ -7,7 +7,7 @@ import { updateRecipeWithAi, getAllergens } from '../lib/api';
 import { isRtlLang } from '../lib/utils';
 import { Allergen } from '../lib/types';
 import ServingScaler from '../components/ServingScaler';
-import { scaleIngredientText, scaleServings } from '../lib/scaling';
+import { scaleIngredientText, scaleServings, scaleTemplate } from '../lib/scaling';
 
 const RecipeDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -151,9 +151,11 @@ const RecipeDetailPage = () => {
             <div className="md:col-span-2">
               <h2 className="text-xl font-bold text-slate-800 mb-4 border-b border-p-sky pb-2">Instructions</h2>
               <ol className="space-y-4 list-decimal list-inside">
-                {recipe.instructions.map((instruction, index) => (
+                {(recipe.instruction_template || recipe.instructions).map((instruction, index) => (
                   <li key={index} className="text-slate-700 leading-relaxed">
-                    {instruction}
+                    {recipe.instruction_template
+                      ? scaleTemplate(instruction, multiplier)
+                      : instruction}
                   </li>
                 ))}
               </ol>

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -15,8 +15,26 @@ def get_db():
     finally:
         db.close()
 
+def background_generate_template(recipe_id: int):
+    """Background task to generate instruction template for a recipe."""
+    db = SessionLocal()
+    try:
+        recipe = crud.get_recipe(db, recipe_id=recipe_id)
+        if recipe and recipe.instructions and not recipe.instruction_template:
+            print(f"Background: Generating template for recipe {recipe_id}")
+            template = llm.generate_instruction_template(recipe.instructions)
+            if template:
+                # Update manually to avoid full schema validation if needed
+                recipe.instruction_template = template
+                db.commit()
+                print(f"Background: Template generated for recipe {recipe_id}")
+    except Exception as e:
+        print(f"Background Error: Failed to generate template for recipe {recipe_id}: {e}")
+    finally:
+        db.close()
+
 @router.post("/scrape", response_model=schemas.ScrapeResponse)
-def scrape_recipe(scrape_request: schemas.ScrapeRequest, db: Session = Depends(get_db)):
+def scrape_recipe(scrape_request: schemas.ScrapeRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
     Scrapes a recipe from a URL.
     1. Checks if the recipe already exists.
@@ -25,6 +43,9 @@ def scrape_recipe(scrape_request: schemas.ScrapeRequest, db: Session = Depends(g
     """
     existing_recipe = crud.get_recipe_by_source_url(db, source_url=str(scrape_request.url))
     if existing_recipe:
+        # Trigger template generation if it's missing (legacy recipes)
+        if not existing_recipe.instruction_template:
+            background_tasks.add_task(background_generate_template, existing_recipe.id)
         return {"status": "exists", "recipe": existing_recipe}
 
     try:
@@ -33,6 +54,9 @@ def scrape_recipe(scrape_request: schemas.ScrapeRequest, db: Session = Depends(g
         if recipe_data:
             recipe_create = schemas.RecipeCreate(**recipe_data)
             new_recipe = crud.create_recipe(db, recipe=recipe_create)
+            
+            # Start background templating
+            background_tasks.add_task(background_generate_template, new_recipe.id)
             
             # Manually construct and validate response to avoid hidden 500 errors in response validation
             response_obj = schemas.ScrapeResponse(status="success", recipe=new_recipe)
@@ -48,7 +72,7 @@ def scrape_recipe(scrape_request: schemas.ScrapeRequest, db: Session = Depends(g
 
 
 @router.post("/scrape-ai", response_model=schemas.ScrapeResponse)
-def scrape_ai(scrape_request: schemas.ScrapeRequest, db: Session = Depends(get_db)):
+def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
     Scrapes a recipe from a URL using the Groq AI, after user confirmation.
     """
@@ -81,6 +105,10 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, db: Session = Depends(get_d
 
     recipe_create = schemas.RecipeCreate(**recipe_data)
     new_recipe = crud.create_recipe(db, recipe=recipe_create)
+    
+    # Start background templating
+    background_tasks.add_task(background_generate_template, new_recipe.id)
+    
     return {"status": "success", "recipe": new_recipe}
 
 
@@ -111,10 +139,15 @@ def read_favorite_recipes(skip: int = 0, limit: int = 100, db: Session = Depends
     return recipes
 
 @router.get("/recipes/{recipe_id}", response_model=schemas.Recipe)
-def read_recipe(recipe_id: int, db: Session = Depends(get_db)):
+def read_recipe(recipe_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     db_recipe = crud.get_recipe(db, recipe_id=recipe_id)
     if db_recipe is None:
         raise HTTPException(status_code=404, detail="Recipe not found")
+    
+    # Auto-generate template if missing when reading
+    if db_recipe.instructions and not db_recipe.instruction_template:
+        background_tasks.add_task(background_generate_template, db_recipe.id)
+        
     return db_recipe
 
 @router.put("/recipes/{recipe_id}/favorite", response_model=schemas.Recipe)
@@ -125,7 +158,7 @@ def set_recipe_favorite(recipe_id: int, is_favorite: bool, db: Session = Depends
     return db_recipe
 
 @router.put("/recipes/{recipe_id}/scrape-ai", response_model=schemas.Recipe)
-def update_recipe_with_ai(recipe_id: int, db: Session = Depends(get_db)):
+def update_recipe_with_ai(recipe_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
     Re-scrapes a recipe's source URL using the Groq API and updates the existing recipe.
     """
@@ -145,8 +178,15 @@ def update_recipe_with_ai(recipe_id: int, db: Session = Depends(get_db)):
     ingredients_list = recipe_data.get("ingredients", [])
     recipe_data["ingredients"] = [{"text": i} for i in ingredients_list]
 
+    # Reset template so it regenerates
+    recipe_data["instruction_template"] = None
+
     recipe_update = schemas.RecipeCreate(**recipe_data)
     updated_recipe = crud.update_recipe(db, recipe_id=recipe_id, recipe=recipe_update)
+    
+    # Start background templating
+    background_tasks.add_task(background_generate_template, updated_recipe.id)
+    
     return updated_recipe
 
 @router.delete("/recipes/{recipe_id}", status_code=204)

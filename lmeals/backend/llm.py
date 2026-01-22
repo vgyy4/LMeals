@@ -220,6 +220,60 @@ def expand_allergen_keywords(allergen_name: str) -> list[str]:
         return [allergen_lower]
 
 
+def generate_instruction_template(instructions: list[str]) -> list[str]:
+    """
+    Uses Groq to create a 'Smart Template' for recipe instructions.
+    Identifies ingredient quantities and wraps them in [[qty:NUMBER]] while
+    strictly ignoring temperatures, times, and tool sizes.
+    """
+    client, model = get_groq_client()
+    if not client:
+        return instructions
+
+    system_prompt = """
+    You are an expert recipe editor. Your task is to transform recipe instructions into "Smart Templates" by tagging ONLY the ingredient quantities.
+    
+    RULES:
+    1. Wrap numerical ingredient quantities (and fractions) in [[qty:VALUE]]. 
+       Example: "Add 100g flour" -> "Add [[qty:100]]g flour".
+       Example: "Pour 1 1/2 cups water" -> "Pour [[qty:1.5]] cups water".
+    2. NEVER tag oven temperatures (e.g., 350°F, 200°C).
+    3. NEVER tag cooking durations (e.g., 20 minutes, 1 hour).
+    4. NEVER tag equipment sizes (e.g., 9-inch pan, 2-liter pot).
+    5. Return ONLY a JSON object with a single key "templated_instructions" containing the list of modified strings.
+    """
+
+    user_prompt = f"Recipe Instructions:\n" + "\n".join([f"{i+1}. {text}" for i, text in enumerate(instructions)])
+
+    try:
+        print(f"Calling Groq to generate instruction template for {len(instructions)} steps.")
+        completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            model=model,
+            response_format={"type": "json_object"}
+        )
+        
+        data = json.loads(completion.choices[0].message.content)
+        templated = data.get("templated_instructions", [])
+        
+        if len(templated) == len(instructions):
+            # Clean up potential list numbering if AI added it
+            cleaned = []
+            for t in templated:
+                import re
+                cleaned.append(re.sub(r'^\d+\.\s*', '', t))
+            return cleaned
+            
+        print(f"Warning: AI returned {len(templated)} steps but original had {len(instructions)}. Falling back.")
+        return instructions
+    except Exception as e:
+        print(f"Error generating instruction template: {e}")
+        return instructions
+
+
 def verify_allergens_with_ai(ingredient_text: str, allergens: list[str]) -> bool:
     """
     Uses Groq to verify if an ingredient text actually contains any of the specified allergens.

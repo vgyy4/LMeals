@@ -18,6 +18,7 @@ def create_recipe(db: Session, recipe: schemas.RecipeCreate):
         prep_time=recipe.prep_time,
         cook_time=recipe.cook_time,
         servings=recipe.servings,
+        instruction_template=recipe.instruction_template,
         image_url=str(recipe.image_url) if recipe.image_url else None,
         source_url=str(recipe.source_url),
         notes=recipe.notes

@@ -91,3 +91,20 @@ export const scaleServings = (servings: string, multiplier: number): string => {
 
     return servings.replace(match[0], scaledValue.toString());
 };
+
+/**
+ * Scales an instruction template by replacing [[qty:NUMBER]] with scaled values.
+ * Example: "Add [[qty:100]]ml" -> "Add 200ml" (if multiplier is 2)
+ */
+export const scaleTemplate = (template: string, multiplier: number): string => {
+    if (multiplier === 1) {
+        // Just strip the tags but keep the original numbers
+        return template.replace(/\[\[qty:([\d.]+)\]\]/g, '$1');
+    }
+
+    return template.replace(/\[\[qty:([\d.]+)\]\]/g, (_, qtyStr) => {
+        const qty = parseFloat(qtyStr);
+        if (isNaN(qty)) return qtyStr;
+        return formatNumber(qty * multiplier);
+    });
+};

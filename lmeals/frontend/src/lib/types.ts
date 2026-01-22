@@ -11,6 +11,7 @@ export interface Recipe {
   prep_time: string | null;
   cook_time: string | null;
   servings: string | null;
+  instruction_template: string[] | null;
   image_url: string | null;
   source_url: string;
   notes: string | null;
