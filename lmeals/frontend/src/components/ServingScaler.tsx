@@ -78,8 +78,9 @@ const ServingScaler: React.FC<ServingScalerProps> = ({ originalServings, yieldUn
                         key={opt.id}
                         data-id={opt.id}
                         onClick={() => handleSelect(opt.id)}
-                        className={`relative z-10 flex-1 px-4 py-2.5 flex flex-col items-center justify-center transition-colors duration-300 ${selected === opt.id ? 'text-slate-800' : 'text-slate-400 hover:text-slate-600'
+                        className={`relative z-10 flex-1 px-4 py-2.5 flex flex-col items-center justify-center transition-all duration-300 outline-none select-none active:bg-transparent focus:outline-none ${selected === opt.id ? 'text-slate-800' : 'text-slate-400 hover:text-slate-600'
                             }`}
+                        style={{ WebkitTapHighlightColor: 'transparent' }}
                     >
                         <span className="text-sm font-black uppercase tracking-tight leading-none mb-0.5">
                             {opt.label}
