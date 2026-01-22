@@ -6,6 +6,8 @@ import { CheckSquare, Square, Clock, Users, ArrowLeft, RefreshCw, AlertTriangle 
 import { updateRecipeWithAi, getAllergens } from '../lib/api';
 import { isRtlLang } from '../lib/utils';
 import { Allergen } from '../lib/types';
+import ServingScaler from '../components/ServingScaler';
+import { scaleIngredientText, scaleServings } from '../lib/scaling';
 
 const RecipeDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,6 +17,7 @@ const RecipeDetailPage = () => {
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [allergens, setAllergens] = useState<Allergen[]>([]);
   const [hasAllergens, setHasAllergens] = useState(false);
+  const [multiplier, setMultiplier] = useState(1);
 
   useEffect(() => {
     const fetchRecipeAndAllergens = async () => {
@@ -114,10 +117,19 @@ const RecipeDetailPage = () => {
             {recipe.servings && (
               <div className="flex items-center gap-2">
                 <Users size={20} />
-                <span>{recipe.servings}</span>
+                <span>{scaleServings(recipe.servings, multiplier)}</span>
               </div>
             )}
           </div>
+
+          {/* Animated Serving Scaler */}
+          {recipe.servings && (
+            <ServingScaler
+              originalServings={recipe.servings}
+              onScaleChange={setMultiplier}
+            />
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-1">
               <h2 className="text-xl font-bold text-slate-800 mb-4 border-b border-p-peach pb-2">Ingredients</h2>
@@ -130,7 +142,7 @@ const RecipeDetailPage = () => {
                   >
                     {checkedIngredients.has(ingredient.id) ? <CheckSquare className="text-p-mint" /> : <Square className="text-slate-300" />}
                     <span className={`text-slate-700 ${checkedIngredients.has(ingredient.id) ? 'line-through text-slate-400' : ''}`}>
-                      {ingredient.text}
+                      {scaleIngredientText(ingredient.text, multiplier)}
                     </span>
                   </li>
                 ))}
