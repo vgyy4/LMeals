@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Calendar, ShoppingCart, Settings, Heart } from 'lucide-react';
+import { LayoutDashboard, Calendar, ShoppingCart, Settings, Heart, ChefHat } from 'lucide-react';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -56,8 +56,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, isMobile
       <div className={`mb-8 flex items-center transition-all duration-300 ${isCollapsed && !isMobileOpen ? 'flex-col space-y-4 px-0 justify-center' : 'flex-row justify-between px-2'}`}>
         {/* Only show logo in full view or mobile */}
         {(!isCollapsed || isMobileOpen) && (
-          <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-500">
-            <img src="/logo.png" alt="LMeals Logo" className="h-10 w-auto" />
+          <div className="flex items-center gap-2 group cursor-default select-none animate-in fade-in slide-in-from-left-4 duration-500">
+            <div className="bg-p-mint/20 p-2 rounded-xl group-hover:rotate-12 transition-transform duration-300">
+              <ChefHat size={28} className="text-emerald-700" />
+            </div>
+            <h1 className="text-3xl font-black tracking-tightest">
+              <span className="text-slate-800">L</span>
+              <span className="bg-gradient-to-br from-p-coral to-rose-600 bg-clip-text text-transparent">Meals</span>
+            </h1>
           </div>
         )}
 

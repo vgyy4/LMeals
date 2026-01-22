@@ -24,9 +24,14 @@ app.include_router(shopping_list.router, prefix="/api", tags=["shopping_list"])
 from routers import settings
 app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
 
-# Serve frontend static files
-app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
+import os
 
+# Serve frontend static files
 @app.get("/{full_path:path}")
 async def serve_frontend(full_path: str):
+    # Check if the requested path corresponds to a real file in the static directory
+    static_file_path = os.path.join("static", full_path)
+    if full_path and os.path.isfile(static_file_path):
+        return FileResponse(static_file_path)
+    # Default to index.html for SPA routing
     return FileResponse("static/index.html")
