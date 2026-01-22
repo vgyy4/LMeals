@@ -56,14 +56,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, isMobile
       <div className={`mb-8 flex items-center transition-all duration-300 ${isCollapsed && !isMobileOpen ? 'flex-col space-y-4 px-0 justify-center' : 'flex-row justify-between px-2'}`}>
         {/* Only show logo in full view or mobile */}
         {(!isCollapsed || isMobileOpen) && (
-          <div className="flex items-center gap-3 group cursor-default select-none animate-in fade-in slide-in-from-left-4 duration-500">
-            <div className="relative flex items-center justify-center w-11 h-11 bg-slate-900 rounded-[14px] shadow-xl group-hover:rotate-3 transition-all duration-500">
-              <svg viewBox="0 0 24 24" className="w-6 h-6 fill-p-mint" xmlns="http://www.w3.org/2000/svg">
-                <path d="M5 3V17C5 18.1046 5.89543 19 7 19H19V21H7C4.79086 21 3 19.2091 3 17V3H5Z" />
-                <path d="M19 15V17H7C6.44772 17 6 16.5523 6 16V15H19Z" opacity="0.3" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-black tracking-tightest leading-none">
+          <div className="flex items-center group cursor-default select-none animate-in fade-in slide-in-from-left-4 duration-500">
+            <h1 className="text-3xl font-black tracking-tighter leading-none">
               <span className="text-slate-900">L</span>
               <span className="bg-gradient-to-r from-p-coral via-rose-500 to-rose-600 bg-clip-text text-transparent">Meals</span>
             </h1>
