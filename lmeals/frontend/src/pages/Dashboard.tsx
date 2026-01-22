@@ -5,6 +5,7 @@ import RecipeCard from '../components/RecipeCard';
 import AddRecipeModal from '../components/AddRecipeModal';
 import { getRecipes, getAllergens } from '../lib/api';
 import { Recipe, Allergen } from '../lib/types';
+import { parseTimeToMinutes, formatMinutes } from '../lib/utils';
 
 const Dashboard = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -71,13 +72,12 @@ const Dashboard = () => {
 
       if (!matchesSearch) return false;
 
-      const parseTime = (t: string | null) => parseInt(t || '0', 10);
-      const totalTime = parseTime(recipe.prep_time) + parseTime(recipe.cook_time);
+      const totalMinutes = parseTimeToMinutes(recipe.prep_time) + parseTimeToMinutes(recipe.cook_time);
       const titleLower = recipe.title.toLowerCase();
 
       if (activeFilter === 'Quick & Easy') {
         // Only include if time is known and short (< 30m)
-        return totalTime > 0 && totalTime <= 30;
+        return totalMinutes > 0 && totalMinutes <= 30;
       }
       if (activeFilter === 'Dessert') {
         return titleLower.includes('dessert') || titleLower.includes('cake') || titleLower.includes('cookie') || titleLower.includes('pie') || titleLower.includes('ice cream');
@@ -173,9 +173,7 @@ const Dashboard = () => {
           </div>
 
           {(() => {
-            const featuredPrep = parseInt(recipeOfTheDay.prep_time || '0') || 0;
-            const featuredCook = parseInt(recipeOfTheDay.cook_time || '0') || 0;
-            const featuredTotal = featuredPrep + featuredCook;
+            const featuredTotal = parseTimeToMinutes(recipeOfTheDay.prep_time) + parseTimeToMinutes(recipeOfTheDay.cook_time);
 
             return (
               <Link to={`/recipe/${recipeOfTheDay.id}`} className="block relative group overflow-hidden rounded-2xl md:rounded-3xl h-[360px] shadow-xl ring-1 ring-black/5 bg-slate-800">
@@ -194,13 +192,13 @@ const Dashboard = () => {
                     {featuredTotal > 0 && (
                       <div className="flex items-center gap-2">
                         <Clock size={18} className="text-p-peach" />
-                        <span>{featuredTotal} min</span>
+                        <span>{formatMinutes(featuredTotal)}</span>
                       </div>
                     )}
                     {recipeOfTheDay.servings && (
                       <div className="flex items-center gap-2">
                         <Users size={18} className="text-p-sky" />
-                        <span>{recipeOfTheDay.servings} people</span>
+                        <span>{recipeOfTheDay.servings} {recipeOfTheDay.yield_unit || 'people'}</span>
                       </div>
                     )}
                   </div>

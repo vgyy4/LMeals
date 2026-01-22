@@ -23,6 +23,7 @@ class RecipeBase(BaseModel):
     prep_time: Optional[str] = None
     cook_time: Optional[str] = None
     servings: Optional[str] = None
+    yield_unit: Optional[str] = "servings"
     instruction_template: Optional[List[str]] = None
     image_url: Optional[HttpUrl] = None
     source_url: HttpUrl

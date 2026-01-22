@@ -2,10 +2,11 @@ import React, { useRef, useEffect, useState } from 'react';
 
 interface ServingScalerProps {
     originalServings: string;
+    yieldUnit?: string;
     onScaleChange: (multiplier: number) => void;
 }
 
-const ServingScaler: React.FC<ServingScalerProps> = ({ originalServings, onScaleChange }) => {
+const ServingScaler: React.FC<ServingScalerProps> = ({ originalServings, yieldUnit, onScaleChange }) => {
     const [selected, setSelected] = useState<string>('1x');
     const [customValue, setCustomValue] = useState<string>('');
     const [markerStyle, setMarkerStyle] = useState({ left: 0, width: 0 });
@@ -105,7 +106,7 @@ const ServingScaler: React.FC<ServingScalerProps> = ({ originalServings, onScale
                         />
                         <div className="absolute inset-0 rounded-xl bg-p-mint/10 scale-0 group-focus-within:scale-110 transition-transform -z-10" />
                     </div>
-                    <span className="text-slate-500 font-bold">people</span>
+                    <span className="text-slate-500 font-bold">{yieldUnit || 'servings'}</span>
                 </div>
             )}
         </div>

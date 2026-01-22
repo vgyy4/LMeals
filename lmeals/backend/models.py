@@ -12,6 +12,7 @@ class Recipe(Base):
     prep_time = Column(String, nullable=True)
     cook_time = Column(String, nullable=True)
     servings = Column(String, nullable=True)
+    yield_unit = Column(String, nullable=True, server_default='servings')
     instruction_template = Column(JSON, nullable=True) # List of strings with [[qty:NUMBER]]
     image_url = Column(String, nullable=True)
     source_url = Column(String, unique=True, index=True)

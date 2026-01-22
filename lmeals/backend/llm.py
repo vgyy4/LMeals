@@ -36,7 +36,15 @@ def extract_with_groq(html: str):
     client = Groq(api_key=api_key)
 
     system_prompt = """
-    You are an expert recipe data extractor. Your task is to extract recipe data from the provided text and return ONLY a strict JSON object with the following keys: "title", "ingredients" (which must be a list of strings), "instructions" (also a list of strings), "prep_time" (as a string), "cook_time" (as a string), "servings" (as a string), and "image_url" (as a string).
+    You are an expert recipe data extractor. Your task is to extract recipe data from the provided text and return ONLY a strict JSON object with the following keys: 
+    - "title": (string)
+    - "ingredients": (list of strings)
+    - "instructions": (list of strings)
+    - "prep_time": (string)
+    - "cook_time": (string)
+    - "servings": (string - just the numeric part if possible, e.g. "4")
+    - "yield_unit": (string - the unit of measurement, e.g. "servings", "cookies", "people", "bowls", "muffins"). Default to "servings" if unclear.
+    - "image_url": (string)
 
     Do not include any introductory text, explanations, or markdown formatting around the JSON. Your output must be parsable by a standard JSON parser.
     """

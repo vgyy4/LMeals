@@ -4,7 +4,7 @@ import { getRecipe } from '../lib/api';
 import { Recipe } from '../lib/types';
 import { CheckSquare, Square, Clock, Users, ArrowLeft, RefreshCw, AlertTriangle } from 'lucide-react';
 import { updateRecipeWithAi, getAllergens } from '../lib/api';
-import { isRtlLang } from '../lib/utils';
+import { isRtlLang, parseTimeToMinutes, formatMinutes } from '../lib/utils';
 import { Allergen } from '../lib/types';
 import ServingScaler from '../components/ServingScaler';
 import { scaleIngredientText, scaleServings, scaleTemplate } from '../lib/scaling';
@@ -83,7 +83,7 @@ const RecipeDetailPage = () => {
     return <div className="text-center p-8">Recipe not found.</div>;
   }
 
-  const totalTime = (parseInt(recipe.prep_time || '0') || 0) + (parseInt(recipe.cook_time || '0') || 0);
+  const totalMinutes = parseTimeToMinutes(recipe.prep_time) + parseTimeToMinutes(recipe.cook_time);
   const isRtl = isRtlLang(recipe.title);
 
   return (
@@ -108,16 +108,16 @@ const RecipeDetailPage = () => {
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-slate-400 mb-6 font-medium">
-            {totalTime > 0 && (
+            {totalMinutes > 0 && (
               <div className="flex items-center gap-2">
                 <Clock size={20} />
-                <span>{totalTime} minutes</span>
+                <span>{formatMinutes(totalMinutes)}</span>
               </div>
             )}
             {recipe.servings && (
               <div className="flex items-center gap-2">
                 <Users size={20} />
-                <span>{scaleServings(recipe.servings, multiplier)}</span>
+                <span>{scaleServings(recipe.servings, multiplier)} {recipe.yield_unit || 'servings'}</span>
               </div>
             )}
           </div>
@@ -126,6 +126,7 @@ const RecipeDetailPage = () => {
           {recipe.servings && (
             <ServingScaler
               originalServings={recipe.servings}
+              yieldUnit={recipe.yield_unit}
               onScaleChange={setMultiplier}
             />
           )}
