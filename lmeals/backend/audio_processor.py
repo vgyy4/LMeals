@@ -169,10 +169,10 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
     clip_id = str(uuid.uuid4())
     clip_path = os.path.join(temp_clip_dir, f"clip_{clip_id}.mp4")
     
-    # 1. Download only the first 20 seconds in low quality
+    # 1. Download only the first 20 seconds
     print(f"DEBUG: Downloading 20s clip to {clip_path}")
     ydl_opts = {
-        'format': 'mp4[height<=360]/best[ext=mp4]/best',
+        'format': 'best', # Relaxed format to ensure it works for all videos
         'quiet': True,
         'no_warnings': True,
         'outtmpl': clip_path,

@@ -16,13 +16,16 @@ async def strip_double_slashes(request: Request, call_next):
 
 from routers import recipes, allergens, meal_plan, shopping_list
 
+from routers import settings
+import assets
+
 app.include_router(recipes.router, prefix="/api", tags=["recipes"])
 app.include_router(allergens.router, prefix="/api", tags=["allergens"])
 app.include_router(meal_plan.router, prefix="/api", tags=["meal_plan"])
 app.include_router(shopping_list.router, prefix="/api", tags=["shopping_list"])
-
-from routers import settings
 app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
+
+app.mount("/api/static", StaticFiles(directory=assets.STATIC_DIR), name="static")
 
 import os
 
