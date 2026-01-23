@@ -154,128 +154,92 @@ def chunk_audio(file_path: str, max_size_mb: int = 24) -> list[str]:
 
 def capture_frames(url: str, timestamps: list[int]) -> list[str]:
     """
-    Captures frames from a video URL using a multi-strategy approach:
-    1. Try yt-dlp with multiple client configurations
-    2. Fall back to pytubefix if yt-dlp fails
-    3. Return empty list if all methods fail (handled by graceful degradation)
+    REBUILT FROM SCRATCH: Simple, direct frame capture using pytubefix.
+    1. Download video with pytubefix to /app/static/images/recipes/candidates/
+    2. Extract frames directly from that location
+    3. Return paths to the frame images
+    4. Clean up video file
     """
     import subprocess
-    import assets
     
-    output_dir = os.path.join(assets.IMAGES_DIR, "candidates")
-    os.makedirs(output_dir, exist_ok=True)
-    print(f"DEBUG: Candidates output directory: {output_dir}")
-    print(f"DEBUG: Output directory exists: {os.path.exists(output_dir)}")
-    print(f"DEBUG: assets.STATIC_DIR = {assets.STATIC_DIR}")
-    print(f"DEBUG: assets.IMAGES_DIR = {assets.IMAGES_DIR}")
+    # Use absolute paths - no reliance on assets.py
+    static_base = "/app/static" if os.path.exists("/app/static") else os.path.join(os.path.dirname(__file__), "static")
+    candidates_dir = os.path.join(static_base, "images", "recipes", "candidates")
+    os.makedirs(candidates_dir, exist_ok=True)
     
-    temp_clip_dir = "temp_clips"
-    os.makedirs(temp_clip_dir, exist_ok=True)
+    print(f"DEBUG: [REBUILD] Static base: {static_base}")
+    print(f"DEBUG: [REBUILD] Candidates dir: {candidates_dir}")
+    print(f"DEBUG: [REBUILD] Candidates exists: {os.path.exists(candidates_dir)}")
     
-    clip_id = str(uuid.uuid4())
-    clip_path = os.path.join(temp_clip_dir, f"clip_{clip_id}.mp4")
+    video_id = str(uuid.uuid4())
+    video_path = os.path.join(candidates_dir, f"temp_video_{video_id}.mp4")
     
-    # Strategy 1: Try yt-dlp with multiple client configurations
-    clients_to_try = ['android', 'ios', 'web']
-    download_successful = False
-    
-    for client in clients_to_try:
-        print(f"DEBUG: Attempting yt-dlp download with {client} client...")
-        ydl_opts = {
-            'format': 'best[ext=mp4]/best',
-            'extractor_args': {'youtube': {'player_client': [client]}},
-            'merge_output_format': 'mp4',
-            'quiet': True,
-            'no_warnings': True,
-            'outtmpl': clip_path,
-            'download_sections': [{'start_time': 0, 'end_time': 20}],
-            'force_keyframes_at_cuts': True
-        }
+    # Download video with pytubefix
+    try:
+        print(f"DEBUG: [REBUILD] Downloading video with pytubefix...")
+        from pytubefix import YouTube
         
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([url])
-            
-            if os.path.exists(clip_path) and os.path.getsize(clip_path) > 0:
-                print(f"DEBUG: Successfully downloaded clip using yt-dlp ({client} client)")
-                download_successful = True
-                break
-        except Exception as e:
-            print(f"DEBUG: yt-dlp ({client}) failed: {str(e)[:100]}")
-            # Clean up any partial download
-            if os.path.exists(clip_path):
-                try:
-                    os.remove(clip_path)
-                except:
-                    pass
-    
-    # Strategy 2: Fall back to pytubefix if yt-dlp failed
-    if not download_successful:
-        print("DEBUG: All yt-dlp attempts failed, trying pytubefix...")
-        try:
-            from pytubefix import YouTube
-            from pytubefix.cli import on_progress
-            
-            yt = YouTube(url, on_progress_callback=on_progress)
-            # Get lowest resolution for faster download
-            stream = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').first()
-            
-            if stream:
-                print(f"DEBUG: Downloading with pytubefix (resolution: {stream.resolution})")
-                stream.download(output_path=temp_clip_dir, filename=f"clip_{clip_id}.mp4")
-                
-                if os.path.exists(clip_path) and os.path.getsize(clip_path) > 0:
-                    print(f"DEBUG: Successfully downloaded clip using pytubefix (size: {os.path.getsize(clip_path)} bytes)")
-                    download_successful = True
-                else:
-                    print("DEBUG: pytubefix download completed but file not found or empty")
-        except Exception as e:
-            print(f"DEBUG: pytubefix failed: {str(e)[:200]}")
-            import traceback
-            traceback.print_exc()
-    
-    # If no download method worked, return empty list
-    if not download_successful:
-        print("DEBUG: All download methods failed")
+        yt = YouTube(url)
+        # Get lowest quality stream for faster download
+        stream = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').first()
+        
+        if not stream:
+            print("DEBUG: [REBUILD] No suitable stream found")
+            return []
+        
+        print(f"DEBUG: [REBUILD] Downloading {stream.resolution} stream...")
+        stream.download(output_path=candidates_dir, filename=f"temp_video_{video_id}.mp4")
+        
+        if not os.path.exists(video_path):
+            print(f"DEBUG: [REBUILD] Video file not found at {video_path}")
+            return []
+        
+        print(f"DEBUG: [REBUILD] Video downloaded: {os.path.getsize(video_path)} bytes")
+        
+    except Exception as e:
+        print(f"DEBUG: [REBUILD] Download failed: {e}")
+        import traceback
+        traceback.print_exc()
         return []
     
-    # Extract frames from the downloaded clip
-    print(f"DEBUG: Starting frame extraction for {len(timestamps)} timestamps...")
-    captured_files = []
-    for timestamp in timestamps:
-        file_id = str(uuid.uuid4())
-        filename = f"{file_id}.jpg"
-        filepath = os.path.join(output_dir, filename)
+    # Extract frames
+    captured_frames = []
+    print(f"DEBUG: [REBUILD] Extracting {len(timestamps)} frames...")
+    
+    for ts in timestamps:
+        frame_id = str(uuid.uuid4())
+        frame_filename = f"{frame_id}.jpg"
+        frame_path = os.path.join(candidates_dir, frame_filename)
         
-        cmd = [
-            'ffmpeg', '-y', '-hide_banner', '-loglevel', 'error',
-            '-ss', str(timestamp), '-i', clip_path,
-            '-frames:v', '1', '-q:v', '2', filepath
+        ffmpeg_cmd = [
+            'ffmpeg', '-y', '-ss', str(ts), '-i', video_path,
+            '-frames:v', '1', '-q:v', '2', frame_path
         ]
         
         try:
-            print(f"DEBUG: Extracting frame at {timestamp}s...")
-            subprocess.run(cmd, check=True, capture_output=True, timeout=10)
-            if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
-                rel_path = f"images/recipes/candidates/{filename}"
-                captured_files.append(rel_path)
-                print(f"DEBUG: Successfully extracted frame {timestamp}s -> {rel_path} ({os.path.getsize(filepath)} bytes)")
+            result = subprocess.run(ffmpeg_cmd, capture_output=True, timeout=10)
+            
+            if os.path.exists(frame_path) and os.path.getsize(frame_path) > 0:
+                # Return relative path for frontend
+                rel_path = f"images/recipes/candidates/{frame_filename}"
+                captured_frames.append(rel_path)
+                print(f"DEBUG: [REBUILD] Frame {ts}s saved: {frame_path} ({os.path.getsize(frame_path)} bytes) -> {rel_path}")
             else:
-                print(f"DEBUG: Frame file missing or empty after extraction at {timestamp}s")
+                print(f"DEBUG: [REBUILD] Frame {ts}s failed - file missing or empty")
+                
         except Exception as e:
-            print(f"Frame extraction error at {timestamp}s: {e}")
+            print(f"DEBUG: [REBUILD] Frame {ts}s error: {e}")
     
-    print(f"DEBUG: Frame extraction complete. Captured {len(captured_files)} frames.")
-    
-    # Cleanup the clip
+    # Clean up video file
     try:
-        if os.path.exists(clip_path):
-            os.remove(clip_path)
-            print(f"DEBUG: Cleaned up temp clip")
+        if os.path.exists(video_path):
+            os.remove(video_path)
+            print(f"DEBUG: [REBUILD] Cleaned up video file")
     except Exception as e:
-        print(f"Error cleaning up temp clip: {e}")
+        print(f"DEBUG: [REBUILD] Cleanup error: {e}")
     
-    return captured_files
+    print(f"DEBUG: [REBUILD] Extraction complete. Captured {len(captured_frames)} frames")
+    return captured_frames
 
 def cleanup_files(files: list[str]):
     """Removes temporary files."""
