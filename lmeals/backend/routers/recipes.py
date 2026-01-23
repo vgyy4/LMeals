@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, File, UploadFile
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -126,9 +126,13 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
             recipe_data.update(extracted)
             
             # 4. Generate Thumbnail Gallery for Videos
+            # SIMPLIFIED: Using hardcoded timestamps as requested (0s, 5s, 10s, 15s)
             if metadata.get("duration", 0) > 0:
-                print("Identifying dish timestamps for gallery...")
-                timestamps = llm.identify_dish_timestamps(transcript, metadata["duration"])
+                print("Generating candidates using hardcoded timestamps...")
+                timestamps = [0, 5, 10, 15]
+                # Ensure timestamps are within duration
+                timestamps = [t for t in timestamps if t <= metadata["duration"]]
+                
                 candidate_images = audio_processor.capture_frames(url, timestamps)
                 # Keep original thumbnail as first option if it exists
                 if metadata["thumbnail"]:
@@ -209,8 +213,12 @@ def finalize_scrape(request: schemas.FinalizeScrapeRequest, background_tasks: Ba
             # External thumbnail chosen
             final_image_url = assets.download_image(chosen_image)
         else:
-            # Temporary candidate chosen - move to final dir
+            # Temporary candidate or uploaded image chosen - move to final dir
             import shutil
+            import uuid
+            import os
+            
+            # Extract filename and determine destination
             filename = os.path.basename(chosen_image)
             final_filename = f"{uuid.uuid4()}.jpg"
             src = os.path.join(assets.STATIC_DIR, chosen_image)
@@ -220,6 +228,7 @@ def finalize_scrape(request: schemas.FinalizeScrapeRequest, background_tasks: Ba
                 if os.path.exists(src):
                     shutil.copy2(src, dest)
                     final_image_url = f"images/recipes/{final_filename}"
+                    print(f"DEBUG: Moved chosen image {src} -> {dest}")
             except Exception as e:
                 print(f"Error moving chosen image: {e}")
 
@@ -240,6 +249,37 @@ def finalize_scrape(request: schemas.FinalizeScrapeRequest, background_tasks: Ba
     background_tasks.add_task(background_generate_template, new_recipe.id)
     
     return {"status": "success", "recipe": new_recipe}
+
+
+@router.post("/upload-temp-image")
+async def upload_temp_image(file: UploadFile = File(...)):
+    """
+    Uploads a temporary image to the candidates directory for the gallery.
+    """
+    import assets
+    import uuid
+    import shutil
+    import os
+    
+    output_dir = os.path.join(assets.IMAGES_DIR, "candidates")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    file_id = str(uuid.uuid4())
+    # Keep original extension if possible
+    ext = os.path.splitext(file.filename)[1] or ".jpg"
+    filename = f"upload_{file_id}{ext}"
+    filepath = os.path.join(output_dir, filename)
+    
+    try:
+        with open(filepath, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        relative_path = f"images/recipes/candidates/{filename}"
+        print(f"DEBUG: Manually uploaded image saved to {relative_path}")
+        return {"status": "success", "url": relative_path}
+    except Exception as e:
+        print(f"Error uploading temp image: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/recipes", response_model=List[schemas.Recipe])

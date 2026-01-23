@@ -37,6 +37,17 @@ export const finalizeScrape = async (recipeData: any, chosenImage: string, candi
     return response.data;
 };
 
+export const uploadTempImage = async (file: File): Promise<{ status: string; url: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/upload-temp-image', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
+};
+
 export const deleteRecipe = async (id: number): Promise<void> => {
     await api.delete(`/recipes/${id}`);
 };

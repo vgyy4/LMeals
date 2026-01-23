@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { scrapeRecipe, scrapeWithAi, finalizeScrape } from '../lib/api';
+import { scrapeRecipe, scrapeWithAi, finalizeScrape, uploadTempImage } from '../lib/api';
 import { X, Youtube, Music, Facebook, Instagram } from 'lucide-react';
 
 interface AddRecipeModalProps {
@@ -64,6 +64,29 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await uploadTempImage(file);
+      if (response.status === 'success') {
+        const newUrl = response.url;
+        setCandidateImages(prev => [...prev, newUrl]);
+        setSelectedImage(newUrl);
+      } else {
+        setError('Failed to upload image.');
+      }
+    } catch (err) {
+      setError('An error occurred during image upload.');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleFinalizeScrape = async () => {
     if (!selectedImage || !pendingRecipeData) return;
     setIsLoading(true);
@@ -102,7 +125,7 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
         {needsImageSelection ? (
           <div className="flex flex-col h-full">
             <p className="mb-4 text-sm text-slate-500">
-              We've found a few moments that might show the finished dish. Pick the best one for your gallery.
+              Pick the best picture for your gallery or upload your own screenshot.
             </p>
             <div className="grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {candidateImages.map((src, idx) => (
@@ -126,6 +149,23 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
                   )}
                 </div>
               ))}
+
+              {/* Upload Button */}
+              <label className="relative aspect-video rounded-xl overflow-hidden cursor-pointer border-4 border-dashed border-p-sky/30 hover:border-p-mint flex flex-col items-center justify-center bg-p-surface transition-all">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  disabled={isLoading}
+                />
+                <div className="text-p-sky flex flex-col items-center gap-1">
+                  <div className="p-2 bg-p-sky/10 rounded-full">
+                    <Music size={20} className="text-p-sky" /> {/* Using Music as a placeholder icon for "add" or change to something else if needed */}
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Upload Custom</span>
+                </div>
+              </label>
             </div>
             <div className="mt-8 flex gap-3">
               <button
