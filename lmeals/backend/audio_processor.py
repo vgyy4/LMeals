@@ -191,12 +191,14 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
         filepath = os.path.join(output_dir, filename)
         
         # ffmpeg command with specific headers to avoid 403 Forbidden from YouTube
-        # Added -timeout and improved header formatting
+        # Refined headers and seeking for better reliability
         cmd = [
             'ffmpeg',
             '-y',
+            '-hide_banner',
+            '-loglevel', 'error',
             '-user_agent', user_agent,
-            '-headers', f"Referer: https://www.youtube.com/\r\n",
+            '-headers', f"Referer: https://www.youtube.com/",
             '-ss', str(timestamp),
             '-i', stream_url,
             '-frames:v', '1',
@@ -206,12 +208,15 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
         
         try:
             print(f"DEBUG: Capturing frame at {timestamp}s")
-            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+            # Using a timeout to prevent hanging on stalled streams
+            result = subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=15)
             if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
                 captured_files.append(f"images/recipes/candidates/{filename}")
                 print(f"DEBUG: Successfully captured frame {filename}")
             else:
                 print(f"DEBUG: FFmpeg finished but file is missing or empty for timestamp {timestamp}s")
+        except subprocess.TimeoutExpired:
+            print(f"FFmpeg timeout at {timestamp}s for {url}")
         except subprocess.CalledProcessError as e:
             print(f"FFmpeg error at {timestamp}s: {e.stderr}")
             

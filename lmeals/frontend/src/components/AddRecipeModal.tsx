@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { scrapeRecipe, scrapeWithAi, finalizeScrape, uploadTempImage } from '../lib/api';
-import { X, Youtube, Music, Facebook, Instagram } from 'lucide-react';
+import { X, Youtube, Music, Facebook, Instagram, ImagePlus } from 'lucide-react';
 
 interface AddRecipeModalProps {
   onClose: () => void;
@@ -151,7 +151,7 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
               ))}
 
               {/* Upload Button */}
-              <label className="relative aspect-video rounded-xl overflow-hidden cursor-pointer border-4 border-dashed border-p-sky/30 hover:border-p-mint flex flex-col items-center justify-center bg-p-surface transition-all">
+              <label className="relative aspect-video rounded-xl overflow-hidden cursor-pointer border-4 border-dashed border-slate-200 hover:border-p-mint flex flex-col items-center justify-center bg-slate-50 transition-all group">
                 <input
                   type="file"
                   accept="image/*"
@@ -159,11 +159,11 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
                   onChange={handleImageUpload}
                   disabled={isLoading}
                 />
-                <div className="text-p-sky flex flex-col items-center gap-1">
-                  <div className="p-2 bg-p-sky/10 rounded-full">
-                    <Music size={20} className="text-p-sky" /> {/* Using Music as a placeholder icon for "add" or change to something else if needed */}
+                <div className="text-slate-500 flex flex-col items-center gap-2 group-hover:text-p-mint transition-colors">
+                  <div className="p-3 bg-white rounded-full shadow-sm">
+                    <ImagePlus size={24} />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider">Upload Custom</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider">Upload Custom</span>
                 </div>
               </label>
             </div>
