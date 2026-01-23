@@ -101,9 +101,9 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
                 print("Fetching existing subtitles/captions...")
                 transcript = audio_processor.get_subtitle_text(url)
                 
-            # 2. Fallback to audio transcription if subtitles were empty or missing, and mode is deep
-            if not transcript and scrape_request.mode == "deep":
-                print("No active subtitles found. Proceeding with Deep transcription...")
+            # 2. Fallback to audio transcription if subtitles were empty or missing
+            if not transcript:
+                print("No active subtitles found or extraction failed. Falling back to audio transcription...")
                 audio_file = audio_processor.download_audio(url)
                 chunks = audio_processor.chunk_audio(audio_file)
                 
@@ -113,8 +113,6 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
                 
                 transcript = "\n".join(texts)
                 audio_processor.cleanup_files([audio_file] + chunks)
-            elif not transcript:
-                print("Quick mode: Skipping audio transcription.")
 
             # 3. Final fallback to description if everything else fails
             if not transcript:
@@ -207,15 +205,6 @@ def read_recipe(recipe_id: int, background_tasks: BackgroundTasks, db: Session =
     if db_recipe.instructions and not db_recipe.instruction_template:
         background_tasks.add_task(background_generate_template, db_recipe.id)
         
-    # Progressive Image Migration: Download image if it's still a URL
-    if db_recipe.image_url and str(db_recipe.image_url).startswith("http"):
-        print(f"DEBUG: Migrating external image for recipe {recipe_id}")
-        local_path = assets.download_image(str(db_recipe.image_url))
-        if local_path:
-            db_recipe.image_url = local_path
-            db.commit()
-            print(f"DEBUG: Successfully migrated image for recipe {recipe_id}")
-
     return db_recipe
 
 @router.put("/recipes/{recipe_id}/favorite", response_model=schemas.Recipe)
