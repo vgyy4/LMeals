@@ -163,12 +163,14 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
     output_dir = os.path.join(assets.IMAGES_DIR, "candidates")
     os.makedirs(output_dir, exist_ok=True)
     
-    # Get the actual stream URL
+    # Get the actual stream URL and headers
     ydl_opts = {'format': 'bestvideo', 'quiet': True}
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             stream_url = info['url']
+            headers = info.get('http_headers', {})
+            user_agent = headers.get('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36')
     except Exception as e:
         print(f"Error getting stream URL: {e}")
         return []
@@ -179,9 +181,10 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
         filename = f"{file_id}.jpg"
         filepath = os.path.join(output_dir, filename)
         
-        # ffmpeg command to capture a single frame at a specific time
+        # ffmpeg command with headers to avoid 403 Forbidden from YouTube
         cmd = [
             'ffmpeg',
+            '-headers', f'User-Agent: {user_agent}\r\nReferer: {url}\r\n',
             '-ss', str(timestamp),
             '-i', stream_url,
             '-frames:v', '1',

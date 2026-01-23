@@ -158,7 +158,12 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
 
     # Ingredients from LLM are a list of strings, but our schema expects a list of objects
     ingredients_list = recipe_data.get("ingredients", [])
-    recipe_data["ingredients"] = [{"text": i} for i in ingredients_list]
+    if candidate_images:
+        # For the preview (schemas.Recipe), we need mock IDs
+        recipe_data["ingredients"] = [{"text": i, "id": 0, "recipe_id": 0} for i in ingredients_list]
+    else:
+        # For creation (schemas.RecipeCreate), we just need the text
+        recipe_data["ingredients"] = [{"text": i} for i in ingredients_list]
     
     # Handle empty image_url
     if not recipe_data.get("image_url"):
