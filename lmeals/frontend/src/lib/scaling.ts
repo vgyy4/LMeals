@@ -7,73 +7,82 @@
 const formatNumber = (num: number): string => {
     if (Number.isInteger(num)) return num.toString();
 
-    // Try to use common fractions if close enough
+    // Common fractions in cooking
     const fractions: [number, string][] = [
+        [0.125, '1/8'],
         [0.25, '1/4'],
-        [0.33, '1/3'],
+        [0.333, '1/3'],
+        [0.375, '3/8'],
         [0.5, '1/2'],
-        [0.66, '2/3'],
-        [0.75, '3/4']
+        [0.625, '5/8'],
+        [0.666, '2/3'],
+        [0.75, '3/4'],
+        [0.875, '7/8']
     ];
 
     const decimal = num % 1;
     const integer = Math.floor(num);
 
+    // If it's very close to zero or one after rounding
+    if (decimal < 0.01) return integer.toString();
+    if (decimal > 0.99) return (integer + 1).toString();
+
     for (const [val, label] of fractions) {
-        if (Math.abs(decimal - val) < 0.05) {
+        if (Math.abs(decimal - val) < 0.015) {
             return integer > 0 ? `${integer} ${label}` : label;
         }
     }
 
-    // Fallback to max 2 decimal places
+    // Fallback to max 2 decimal places, but remove trailing zeros
     return parseFloat(num.toFixed(2)).toString();
 };
 
 /**
- * Scales a quantity string by a multiplier.
- * Examples: 
- * "2 cups" -> "4 cups"
- * "1 1/2 tsp" -> "3 tsp"
- * "1/2 onion" -> "1 onion"
+ * Scales an ingredient string by a multiplier.
+ * Handles multiple quantities in a single line (e.g. volume and weight).
  */
 export const scaleIngredientText = (text: string, multiplier: number): string => {
-    if (multiplier === 1) return text;
-
-    // Regex to find numbers, fractions, or mixed numbers at the start of the string
-    // Matches: "2", "2.5", "1/2", "1 1/2", "1-1/2"
-    const quantityRegex = /^(\d+\s+\d\/\d|\d+\/\d|\d+\.\d+|\d+)/;
-    const match = text.match(quantityRegex);
-
-    if (!match) return text;
-
-    const rawQty = match[0];
-    const remaining = text.slice(rawQty.length);
-
-    let numericValue = 0;
-
-    // Case: "1 1/2" or "1-1/2" (Mixed number)
-    if (rawQty.includes(' ') || rawQty.includes('-')) {
-        const parts = rawQty.split(/[\s-]+/);
-        const whole = parseInt(parts[0]);
-        const fraction = parts[1].split('/');
-        numericValue = whole + (parseInt(fraction[0]) / parseInt(fraction[1]));
-    }
-    // Case: "1/2" (Fraction only)
-    else if (rawQty.includes('/')) {
-        const parts = rawQty.split('/');
-        numericValue = parseInt(parts[0]) / parseInt(parts[1]);
-    }
-    // Case: "2" or "2.5" (Simple number)
-    else {
-        numericValue = parseFloat(rawQty);
+    if (multiplier === 1) {
+        // Strip tags if any
+        return text.replace(/\[\[qty:([\d.]+)\]\]/g, '$1');
     }
 
-    if (isNaN(numericValue)) return text;
+    // Priority 1: Handle tagged quantities [[qty:NUMBER]]
+    // If the string contains tags, we ONLY scale the tags to avoid double-scaling
+    if (text.includes('[[qty:')) {
+        return text.replace(/\[\[qty:([\d.]+)\]\]/g, (_, qtyStr) => {
+            const qty = parseFloat(qtyStr);
+            return isNaN(qty) ? qtyStr : formatNumber(qty * multiplier);
+        });
+    }
 
-    const scaledValue = numericValue * multiplier;
-    const formattedValue = formatNumber(scaledValue);
+    // Priority 2: Use regex to find all raw numbers, fractions, and mixed numbers
+    // This handles "4 1/4 cups (281 g)" -> "8 1/2 cups (562 g)"
+    const rawQuantityRegex = /(\d+\s+\d\/\d|\d+\/\d|\d+\.\d+|\d+)/g;
 
-    return `${formattedValue}${remaining}`;
+    return text.replace(rawQuantityRegex, (match) => {
+        let numericValue = 0;
+
+        // Mixed number: "1 1/2" or "1-1/2"
+        if (match.includes(' ') || (match.includes('-') && match.includes('/'))) {
+            const parts = match.split(/[\s-]+/);
+            const whole = parseInt(parts[0]);
+            const fraction = parts[1].split('/');
+            numericValue = whole + (parseInt(fraction[0]) / parseInt(fraction[1]));
+        }
+        // Fraction: "1/2"
+        else if (match.includes('/')) {
+            const parts = match.split('/');
+            numericValue = parseInt(parts[0]) / parseInt(parts[1]);
+        }
+        // Decimal or Whole: "2" or "2.5"
+        else {
+            numericValue = parseFloat(match);
+        }
+
+        if (isNaN(numericValue)) return match;
+        return formatNumber(numericValue * multiplier);
+    });
 };
 
 /**

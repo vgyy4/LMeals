@@ -38,17 +38,19 @@ def extract_with_groq(html: str):
     system_prompt = """
     You are an expert recipe data extractor. Your task is to extract recipe data from the provided text and return ONLY a strict JSON object with the following keys: 
     - "title": (string)
-    - "ingredients": (list of strings)
-    - "instructions": (list of strings - BE HIGHLY DETAILED. Include specific techniques, temperatures, and durations mentioned.)
+    - "ingredients": (list of strings - TAG ALL QUANTITIES. For each ingredient, wrap the numerical quantity in [[qty:VALUE]]. Example: "[[qty:4.25]] cups (281g) all-purpose flour" or "[[qty:2]] tsp baking soda".)
+    - "instructions": (list of strings - BE HIGHLY DETAILED. Tag numerical quantities for ingredients only. Do NOT tag times/temps.)
     - "prep_time": (string)
     - "cook_time": (string)
     - "servings": (string - just the numeric part if possible, e.g. "4")
     - "yield_unit": (string - the unit of measurement, e.g. "servings", "cookies", "people", "bowls", "muffins"). Default to "servings" if unclear.
     - "image_url": (string)
 
-    CRITICAL: Be as granular and step-by-step as possible in the instructions. If the source mentions "bake for 20 mins at 180C", do not just say "bake". Include all specific details.
-
-    Do not include any introductory text, explanations, or markdown formatting around the JSON. Your output must be parsable by a standard JSON parser.
+    CRITICAL: 
+    1. For every number in the "ingredients" list that represents a quantity, volume, or weight, wrap it in [[qty:VALUE]]. 
+    2. Convert fractions to decimals inside the tag (e.g., 1/2 -> [[qty:0.5]], 4 1/4 -> [[qty:4.25]]).
+    3. Include both volume and weight if available in the text.
+    4. Be as granular and step-by-step as possible in the instructions.
     """
 
     # Extract only text from HTML to reduce tokens and improve accuracy
@@ -124,17 +126,19 @@ def extract_recipe_from_text(text: str):
     system_prompt = """
     You are an expert recipe data extractor. Your task is to extract recipe data from the provided text and return ONLY a strict JSON object with the following keys: 
     - "title": (string)
-    - "ingredients": (list of strings)
-    - "instructions": (list of strings - BE HIGHLY DETAILED. Include specific techniques, temperatures, and durations mentioned.)
+    - "ingredients": (list of strings - TAG ALL QUANTITIES. For each ingredient, wrap the numerical quantity in [[qty:VALUE]]. Example: "[[qty:4.25]] cups (281g) all-purpose flour" or "[[qty:2]] tsp baking soda".)
+    - "instructions": (list of strings - BE HIGHLY DETAILED. Tag numerical quantities for ingredients only. Do NOT tag times/temps.)
     - "prep_time": (string)
     - "cook_time": (string)
     - "servings": (string - just the numeric part if possible, e.g. "4")
     - "yield_unit": (string - the unit of measurement, e.g. "servings", "cookies", "people", "bowls", "muffins"). Default to "servings" if unclear.
     - "image_url": (string)
 
-    CRITICAL: Be as granular and step-by-step as possible in the instructions. If the text says "bake for 20 mins at 180C", do not just say "bake". Include the details.
-
-    Do not include any introductory text, explanations, or markdown formatting around the JSON. Your output must be parsable by a standard JSON parser.
+    CRITICAL: 
+    1. For every number in the "ingredients" list that represents a quantity, volume, or weight, wrap it in [[qty:VALUE]]. 
+    2. Convert fractions to decimals inside the tag (e.g., 1/2 -> [[qty:0.5]], 4 1/4 -> [[qty:4.25]]).
+    3. Include both volume and weight if available in the text.
+    4. Be as granular and step-by-step as possible in the instructions.
     """
 
     try:
