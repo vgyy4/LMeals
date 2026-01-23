@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
-import models, schemas
+import models, schemas, assets
 
 # Recipe CRUD operations
 def get_recipe(db: Session, recipe_id: int):
@@ -46,6 +46,9 @@ def update_recipe(db: Session, recipe_id: int, recipe: schemas.RecipeCreate):
 def delete_recipe(db: Session, recipe_id: int):
     db_recipe = get_recipe(db, recipe_id)
     if db_recipe:
+        # Cleanup local image if it exists
+        if db_recipe.image_url:
+            assets.delete_image(str(db_recipe.image_url))
         db.delete(db_recipe)
         db.commit()
     return db_recipe

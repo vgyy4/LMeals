@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 
-import crud, schemas, scraper, llm, allergen_checker, audio_processor
+import crud, schemas, scraper, llm, allergen_checker, audio_processor, assets
 from database import SessionLocal
 
 router = APIRouter()
@@ -52,6 +52,12 @@ def scrape_recipe(scrape_request: schemas.ScrapeRequest, background_tasks: Backg
         # Ensure url is a string before passing to scraper
         recipe_data = scraper.scrape_with_library(str(scrape_request.url))
         if recipe_data:
+            # Download image locally
+            if recipe_data.get("image_url"):
+                local_image = assets.download_image(str(recipe_data["image_url"]))
+                if local_image:
+                    recipe_data["image_url"] = local_image
+            
             recipe_create = schemas.RecipeCreate(**recipe_data)
             new_recipe = crud.create_recipe(db, recipe=recipe_create)
             
@@ -148,6 +154,12 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
     if not recipe_data.get("image_url"):
         recipe_data["image_url"] = None
 
+    # Download image locally
+    if recipe_data.get("image_url"):
+        local_image = assets.download_image(str(recipe_data["image_url"]))
+        if local_image:
+            recipe_data["image_url"] = local_image
+
     recipe_create = schemas.RecipeCreate(**recipe_data)
     new_recipe = crud.create_recipe(db, recipe=recipe_create)
     
@@ -225,6 +237,16 @@ def update_recipe_with_ai(recipe_id: int, background_tasks: BackgroundTasks, db:
 
     # Reset template so it regenerates
     recipe_data["instruction_template"] = None
+
+    # Download image locally
+    if recipe_data.get("image_url"):
+        # Cleanup old image if it was local
+        if db_recipe.image_url and not str(db_recipe.image_url).startswith("http"):
+            assets.delete_image(str(db_recipe.image_url))
+            
+        local_image = assets.download_image(str(recipe_data["image_url"]))
+        if local_image:
+            recipe_data["image_url"] = local_image
 
     recipe_update = schemas.RecipeCreate(**recipe_data)
     updated_recipe = crud.update_recipe(db, recipe_id=recipe_id, recipe=recipe_update)
