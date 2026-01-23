@@ -181,10 +181,12 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
         filename = f"{file_id}.jpg"
         filepath = os.path.join(output_dir, filename)
         
-        # ffmpeg command with headers to avoid 403 Forbidden from YouTube
+        # ffmpeg command with specific headers to avoid 403 Forbidden from YouTube
+        # Some FFmpeg versions prefer -user_agent specifically
         cmd = [
             'ffmpeg',
-            '-headers', f'User-Agent: {user_agent}\r\nReferer: {url}\r\n',
+            '-user_agent', user_agent,
+            '-headers', f'Referer: {url}\r\n',
             '-ss', str(timestamp),
             '-i', stream_url,
             '-frames:v', '1',

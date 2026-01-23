@@ -419,13 +419,15 @@ def identify_dish_timestamps(transcript: str, duration: int) -> list[int]:
         return [start + (i * (duration - start) // 4) for i in range(4)]
 
     system_prompt = f"""
-    You are an expert video editor. Analyzing a recipe video transcript, identify 3-5 specific timestamps (in seconds) where the finished dish is most likely being presented or served.
+    You are an expert video editor. Analyzing a recipe video transcript, identify 3-5 specific timestamps (in seconds) where the finished dish is most likely being presented or served beautifully.
     
     RULES:
-    1. Focus on the end of the transcript where common phrases like "ready to serve", "enjoy", "look at that", "plating" appear.
-    2. The video duration is {duration} seconds.
-    3. Return ONLY a JSON object: {{"timestamps": [sec1, sec2, sec3]}}
-    4. Ensure timestamps are within the video duration.
+    1. Search for "teaser" moments in the first 30 seconds where the end result is often shown.
+    2. Search for the main "reveal" or "tasting" at the end of the video (final 20%).
+    3. Look for keywords like: "look at that", "plating", "serve", "finished", "tasting", "delicious", "pod to bar", "ready to eat".
+    4. The video duration is {duration} seconds.
+    5. Return ONLY a JSON object: {{"timestamps": [sec1, sec2, sec3]}}
+    6. Ensure timestamps are within the video duration and distinct.
     """
 
     try:
