@@ -172,9 +172,9 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
     # 1. Download only the first 20 seconds
     print(f"DEBUG: Downloading 20s clip to {clip_path}")
     ydl_opts = {
-        # Removed explicit format to allow yt-dlp to choose best available
-        # 'format': 'best', 
-        'merge_output_format': 'mp4', # Ensure we get an MP4 container
+        'format': 'best[ext=mp4]/best', # Prefer MP4 for easier FFmpeg processing
+        'extractor_args': {'youtube': {'player_client': ['android']}}, # Impersonate Android to bypass nsig/throttling
+        'merge_output_format': 'mp4',
         'quiet': True,
         'no_warnings': True,
         'outtmpl': clip_path,
