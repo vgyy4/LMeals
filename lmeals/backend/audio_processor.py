@@ -154,90 +154,100 @@ def chunk_audio(file_path: str, max_size_mb: int = 24) -> list[str]:
 
 def capture_frames(url: str, timestamps: list[int]) -> list[str]:
     """
-    FINAL FIX: Return base64 data URLs instead of file paths.
-    This completely bypasses file serving issues in Home Assistant.
+    Copy the EXACT same approach as download_audio() which WORKS
+    Just download video instead of audio
     """
     import subprocess
     import base64
+    import tempfile
+    import shutil
     
-    # Use absolute paths - no reliance on assets.py
-    static_base = "/app/static" if os.path.exists("/app/static") else os.path.join(os.path.dirname(__file__), "static")
-    candidates_dir = os.path.join(static_base, "images", "recipes", "candidates")
-    os.makedirs(candidates_dir, exist_ok=True)
+    print(f"DEBUG: [YT-DLP-VIDEO] Starting frame capture")
     
-    print(f"DEBUG: [BASE64] Candidates dir: {candidates_dir}")
+    # Create temp directory  
+    temp_dir = tempfile.mkdtemp()
     
-    video_id = str(uuid.uuid4())
-    video_path = os.path.join(candidates_dir, f"temp_video_{video_id}.mp4")
-    
-    # Download video with pytubefix
     try:
-        print(f"DEBUG: [BASE64] Downloading video...")
-        from pytubefix import YouTube
+        # Download video using SAME approach as download_audio (which works!)
+        file_id = str(uuid.uuid4())
+        output_template = os.path.join(temp_dir, f"{file_id}.%(ext)s")
         
-        yt = YouTube(url)
-        stream = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').first()
+        ydl_opts = {
+            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',  # Prefer mp4
+            'merge_output_format': 'mp4',
+            'outtmpl': output_template,
+            'quiet': True,
+            'no_warnings': True,
+        }
         
-        if not stream:
-            print("DEBUG: [BASE64] No stream found")
+        print(f"DEBUG: [YT-DLP-VIDEO] Downloading with yt-dlp...")
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+        except Exception as e:
+            print(f"DEBUG: [YT-DLP-VIDEO] Download error: {e}")
             return []
         
-        print(f"DEBUG: [BASE64] Downloading {stream.resolution}...")
-        stream.download(output_path=candidates_dir, filename=f"temp_video_{video_id}.mp4")
+        # Find the downloaded file
+        video_path = os.path.join(temp_dir, f"{file_id}.mp4")
+        if not os.path.exists(video_path):
+            # Try webm or other formats
+            for ext in ['webm', 'mkv', 'avi']:
+                alt_path = os.path.join(temp_dir, f"{file_id}.{ext}")
+                if os.path.exists(alt_path):
+                    video_path = alt_path
+                    break
         
         if not os.path.exists(video_path):
-            print(f"DEBUG: [BASE64] Video not found")
+            print(f"DEBUG: [YT-DLP-VIDEO] No video file found in {temp_dir}")
+            print(f"DEBUG: [YT-DLP-VIDEO] Directory contents: {os.listdir(temp_dir)}")
             return []
         
-        print(f"DEBUG: [BASE64] Video downloaded: {os.path.getsize(video_path)} bytes")
+        if os.path.getsize(video_path) == 0:
+            print(f"DEBUG: [YT-DLP-VIDEO] Video file is empty")
+            return []
         
-    except Exception as e:
-        print(f"DEBUG: [BASE64] Download failed: {e}")
-        return []
-    
-    # Extract frames and convert to base64
-    captured_frames = []
-    print(f"DEBUG: [BASE64] Extracting {len(timestamps)} frames...")
-    
-    for ts in timestamps:
-        frame_id = str(uuid.uuid4())
-        frame_path = os.path.join(candidates_dir, f"{frame_id}.jpg")
+        print(f"DEBUG: [YT-DLP-VIDEO] Downloaded {os.path.getsize(video_path)} bytes")
         
-        ffmpeg_cmd = [
-            'ffmpeg', '-y', '-ss', str(ts), '-i', video_path,
-            '-frames:v', '1', '-q:v', '2', frame_path
-        ]
+        # Extract frames
+        captured_frames = []
+        print(f"DEBUG: [YT-DLP-VIDEO] Extracting {len(timestamps)} frames...")
         
-        try:
-            subprocess.run(ffmpeg_cmd, capture_output=True, timeout=10)
+        for ts in timestamps:
+            frame_path = os.path.join(temp_dir, f"frame_{ts}.jpg")
             
-            if os.path.exists(frame_path) and os.path.getsize(frame_path) > 0:
-                # Read frame and convert to base64
-                with open(frame_path, 'rb') as f:
-                    img_data = f.read()
-                    base64_data = base64.b64encode(img_data).decode('utf-8')
-                    data_url = f"data:image/jpeg;base64,{base64_data}"
-                    captured_frames.append(data_url)
-                    print(f"DEBUG: [BASE64] Frame {ts}s -> {len(base64_data)} chars")
+            ffmpeg_cmd = [
+                'ffmpeg', '-y', '-ss', str(ts), '-i', video_path,
+                '-frames:v', '1', '-q:v', '2', frame_path
+            ]
+            
+            try:
+                subprocess.run(ffmpeg_cmd, capture_output=True, timeout=10)
                 
-                # Clean up frame file
-                os.remove(frame_path)
-            else:
-                print(f"DEBUG: [BASE64] Frame {ts}s failed")
-                
-        except Exception as e:
-            print(f"DEBUG: [BASE64] Frame {ts}s error: {e}")
-    
-    # Clean up video
-    try:
-        if os.path.exists(video_path):
-            os.remove(video_path)
-            print(f"DEBUG: [BASE64] Cleaned up video")
-    except Exception as e:
-        print(f"DEBUG: [BASE64] Cleanup error: {e}")
-    
-    print(f"DEBUG: [BASE64] Complete. Captured {len(captured_frames)} base64 frames")
-    return captured_frames
+                if os.path.exists(frame_path) and os.path.getsize(frame_path) > 0:
+                    # Convert to base64
+                    with open(frame_path, 'rb') as f:
+                        img_data = f.read()
+                        base64_data = base64.b64encode(img_data).decode('utf-8')
+                        data_url = f"data:image/jpeg;base64,{base64_data}"
+                        captured_frames.append(data_url)
+                        print(f"DEBUG: [YT-DLP-VIDEO] Frame {ts}s OK")
+                else:
+                    print(f"DEBUG: [YT-DLP-VIDEO] Frame {ts}s failed")
+                    
+            except Exception as e:
+                print(f"DEBUG: [YT-DLP-VIDEO] Frame {ts}s error: {e}")
+        
+        print(f"DEBUG: [YT-DLP-VIDEO] Complete. Captured {len(captured_frames)} frames")
+        return captured_frames
+        
+    finally:
+        # Cleanup
+        try:
+            shutil.rmtree(temp_dir)
+            print(f"DEBUG: [YT-DLP-VIDEO] Cleaned up temp dir")
+        except:
+            pass
 
 def cleanup_files(files: list[str]):
     """Removes temporary files."""
