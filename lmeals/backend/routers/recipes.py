@@ -134,8 +134,13 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
                 timestamps = [t for t in timestamps if t <= metadata["duration"]]
                 
                 candidate_images = audio_processor.capture_frames(url, timestamps)
-                # Keep original thumbnail as first option if it exists
-                if metadata["thumbnail"]:
+                
+                # GRACEFUL DEGRADATION: If frame capture failed, just use the thumbnail
+                if not candidate_images and metadata["thumbnail"]:
+                    print("DEBUG: Frame capture failed, using only the default thumbnail")
+                    candidate_images = [metadata["thumbnail"]]
+                elif metadata["thumbnail"]:
+                    # Keep original thumbnail as first option if it exists
                     candidate_images.insert(0, metadata["thumbnail"])
 
         except Exception as e:
