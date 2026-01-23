@@ -59,7 +59,8 @@ class Allergen(AllergenBase):
 
 # Scraping Schemas
 class ScrapeRequest(BaseModel):
-    url: HttpUrl
+    url: str
+    mode: Optional[str] = "deep" # 'quick' or 'deep'
 
 class ScrapeResponse(BaseModel):
     status: str

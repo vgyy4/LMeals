@@ -101,9 +101,9 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
                 print("Fetching existing subtitles/captions...")
                 transcript = audio_processor.get_subtitle_text(url)
                 
-            # 2. Fallback to audio transcription if subtitles were empty or missing
-            if not transcript:
-                print("No active subtitles found or extraction failed. Falling back to audio transcription...")
+            # 2. Fallback to audio transcription if subtitles were empty or missing, and mode is deep
+            if not transcript and scrape_request.mode == "deep":
+                print("No active subtitles found. Proceeding with Deep transcription...")
                 audio_file = audio_processor.download_audio(url)
                 chunks = audio_processor.chunk_audio(audio_file)
                 
@@ -113,6 +113,8 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
                 
                 transcript = "\n".join(texts)
                 audio_processor.cleanup_files([audio_file] + chunks)
+            elif not transcript:
+                print("Quick mode: Skipping audio transcription.")
 
             # 3. Final fallback to description if everything else fails
             if not transcript:

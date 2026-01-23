@@ -23,8 +23,8 @@ export const scrapeRecipe = async (url: string): Promise<ScrapeResponse> => {
     return response.data;
 };
 
-export const scrapeWithAi = async (url: string): Promise<ScrapeResponse> => {
-    const response = await api.post('/scrape-ai', { url });
+export const scrapeWithAi = async (url: string, mode: string = 'deep'): Promise<ScrapeResponse> => {
+    const response = await api.post('/scrape-ai', { url, mode });
     return response.data;
 };
 

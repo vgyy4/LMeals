@@ -12,6 +12,11 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsAiConfirmation, setNeedsAiConfirmation] = useState(false);
+  const [mode, setMode] = useState<'quick' | 'deep'>('deep');
+
+  const isVideo = url.toLowerCase().includes('youtube.com') ||
+    url.toLowerCase().includes('youtu.be') ||
+    url.toLowerCase().includes('vimeo.com');
 
   const handleInitialScrape = async () => {
     setIsLoading(true);
@@ -39,7 +44,7 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await scrapeWithAi(url);
+      const response = await scrapeWithAi(url, mode);
       if (response.status === 'success') {
         onRecipeAdded();
         onClose();
@@ -88,6 +93,7 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
                 Supports Video, Audio & AI Extraction
               </p>
             </div>
+
             <p className="mb-4 text-slate-500">Paste a link to a website, YouTube video, or audio file.</p>
             <input
               type="text"
@@ -97,6 +103,38 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
               placeholder="https://example.com/recipe"
               disabled={isLoading}
             />
+
+            {isVideo && (
+              <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                <p className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                  <Video size={16} className="text-p-sky" />
+                  Video Processing Mode
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setMode('quick')}
+                    className={`px-4 py-3 rounded-xl text-sm font-bold transition-all border ${mode === 'quick'
+                        ? 'bg-p-sky text-blue-900 border-p-sky shadow-sm'
+                        : 'bg-white text-slate-500 border-slate-200 hover:border-p-sky'
+                      }`}
+                  >
+                    Quick
+                    <span className="block text-[10px] font-normal opacity-70">Subtitles only</span>
+                  </button>
+                  <button
+                    onClick={() => setMode('deep')}
+                    className={`px-4 py-3 rounded-xl text-sm font-bold transition-all border ${mode === 'deep'
+                        ? 'bg-p-mint text-emerald-900 border-p-mint shadow-sm'
+                        : 'bg-white text-slate-500 border-slate-200 hover:border-p-mint'
+                      }`}
+                  >
+                    Deep
+                    <span className="block text-[10px] font-normal opacity-70">AI Transcription</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <button
               onClick={handleInitialScrape}
               className="w-full mt-6 bg-p-mint text-emerald-900 font-bold py-3 rounded-2xl hover:bg-emerald-100 transition-all shadow-sm active:scale-95 border border-p-mint/50"
@@ -105,9 +143,9 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2">
                   <div className="w-4 h-4 border-2 border-emerald-900/30 border-t-emerald-900 rounded-full animate-spin" />
-                  <span>{url.includes('youtube') || url.includes('youtu.be') ? 'Transcribing Video...' : 'Importing...'}</span>
+                  <span>{url.includes('youtube') || url.includes('youtu.be') ? (mode === 'deep' ? 'Transcribing Video...' : 'Fetching Subtitles...') : 'Importing...'}</span>
                 </div>
-              ) : 'Import Recipe'}
+              ) : (isVideo ? 'Import Video Recipe' : 'Import Recipe')}
             </button>
           </div>
         ) : (
