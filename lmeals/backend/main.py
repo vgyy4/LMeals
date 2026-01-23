@@ -38,6 +38,19 @@ app.include_router(meal_plan.router, prefix="/api", tags=["meal_plan"])
 app.include_router(shopping_list.router, prefix="/api", tags=["shopping_list"])
 app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
 
+# Dedicated endpoint for candidate images (bypasses static mount issues)
+@app.get("/api/static/images/recipes/candidates/{filename}")
+async def serve_candidate_image(filename: str):
+    """Serve candidate images directly to bypass StaticFiles mount issues in containers"""
+    candidates_dir = os.path.join(static_dir, "images", "recipes", "candidates")
+    file_path = os.path.join(candidates_dir, filename)
+    print(f"DEBUG: [IMAGE REQUEST] {filename} -> {file_path} (exists: {os.path.exists(file_path)})")
+    if os.path.exists(file_path):
+        return FileResponse(file_path)
+    else:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"Image not found: {filename}")
+
 app.mount("/api/static", StaticFiles(directory=static_dir), name="static")
 print(f"DEBUG: Mounted /api/static -> {static_dir}")
 
