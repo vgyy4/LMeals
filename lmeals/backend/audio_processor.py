@@ -172,7 +172,9 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
     # 1. Download only the first 20 seconds
     print(f"DEBUG: Downloading 20s clip to {clip_path}")
     ydl_opts = {
-        'format': 'best', # Relaxed format to ensure it works for all videos
+        # Removed explicit format to allow yt-dlp to choose best available
+        # 'format': 'best', 
+        'merge_output_format': 'mp4', # Ensure we get an MP4 container
         'quiet': True,
         'no_warnings': True,
         'outtmpl': clip_path,
