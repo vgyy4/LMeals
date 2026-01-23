@@ -212,27 +212,22 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
             from pytubefix.cli import on_progress
             
             yt = YouTube(url, on_progress_callback=on_progress)
-            stream = yt.streams.filter(file_extension='mp4').first()
+            # Get lowest resolution for faster download
+            stream = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').first()
             
             if stream:
-                # Download full video first, then trim to 20s
-                temp_full = os.path.join(temp_clip_dir, f"full_{clip_id}.mp4")
-                stream.download(output_path=temp_clip_dir, filename=f"full_{clip_id}.mp4")
+                print(f"DEBUG: Downloading with pytubefix (resolution: {stream.resolution})")
+                stream.download(output_path=temp_clip_dir, filename=f"clip_{clip_id}.mp4")
                 
-                # Trim to 20 seconds using FFmpeg
-                if os.path.exists(temp_full):
-                    trim_cmd = [
-                        'ffmpeg', '-y', '-i', temp_full,
-                        '-t', '20', '-c', 'copy', clip_path
-                    ]
-                    subprocess.run(trim_cmd, check=True, capture_output=True)
-                    os.remove(temp_full)  # Remove full video
-                    
-                    if os.path.exists(clip_path) and os.path.getsize(clip_path) > 0:
-                        print("DEBUG: Successfully downloaded clip using pytubefix")
-                        download_successful = True
+                if os.path.exists(clip_path) and os.path.getsize(clip_path) > 0:
+                    print(f"DEBUG: Successfully downloaded clip using pytubefix (size: {os.path.getsize(clip_path)} bytes)")
+                    download_successful = True
+                else:
+                    print("DEBUG: pytubefix download completed but file not found or empty")
         except Exception as e:
-            print(f"DEBUG: pytubefix failed: {str(e)[:100]}")
+            print(f"DEBUG: pytubefix failed: {str(e)[:200]}")
+            import traceback
+            traceback.print_exc()
     
     # If no download method worked, return empty list
     if not download_successful:
@@ -240,6 +235,7 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
         return []
     
     # Extract frames from the downloaded clip
+    print(f"DEBUG: Starting frame extraction for {len(timestamps)} timestamps...")
     captured_files = []
     for timestamp in timestamps:
         file_id = str(uuid.uuid4())
@@ -253,11 +249,18 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
         ]
         
         try:
+            print(f"DEBUG: Extracting frame at {timestamp}s...")
             subprocess.run(cmd, check=True, capture_output=True, timeout=10)
             if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
-                captured_files.append(f"images/recipes/candidates/{filename}")
+                rel_path = f"images/recipes/candidates/{filename}"
+                captured_files.append(rel_path)
+                print(f"DEBUG: Successfully extracted frame {timestamp}s -> {rel_path} ({os.path.getsize(filepath)} bytes)")
+            else:
+                print(f"DEBUG: Frame file missing or empty after extraction at {timestamp}s")
         except Exception as e:
             print(f"Frame extraction error at {timestamp}s: {e}")
+    
+    print(f"DEBUG: Frame extraction complete. Captured {len(captured_files)} frames.")
     
     # Cleanup the clip
     try:
