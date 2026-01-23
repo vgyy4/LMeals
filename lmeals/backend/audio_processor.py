@@ -242,12 +242,14 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
         return captured_frames
         
     finally:
-        # Cleanup
-        try:
-            shutil.rmtree(temp_dir)
-            print(f"DEBUG: [YT-DLP-VIDEO] Cleaned up temp dir")
-        except:
-            pass
+        # Cleanup - DISABLED FOR DEBUGGING
+        # try:
+        #     shutil.rmtree(temp_dir)
+        #     print(f"DEBUG: [YT-DLP-VIDEO] Cleaned up temp dir")
+        # except:
+        #     pass
+        print(f"DEBUG: [YT-DLP-VIDEO] Keeping temp dir for debugging: {temp_dir}")
+        pass
 
 def cleanup_files(files: list[str]):
     """Removes temporary files."""
