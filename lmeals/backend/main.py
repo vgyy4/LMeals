@@ -23,14 +23,23 @@ import os
 # Determine static directory (backend/static in dev, /app/static in container)
 static_dir = assets.STATIC_DIR if os.path.exists(assets.STATIC_DIR) else "/app/static"
 print(f"DEBUG: Using static directory: {static_dir}")
+print(f"DEBUG: Static directory exists: {os.path.exists(static_dir)}")
+if os.path.exists(static_dir):
+    print(f"DEBUG: Static directory contents: {os.listdir(static_dir)}")
+    images_dir = os.path.join(static_dir, "images", "recipes", "candidates")
+    print(f"DEBUG: Candidates directory: {images_dir}")
+    print(f"DEBUG: Candidates exists: {os.path.exists(images_dir)}")
+    if os.path.exists(images_dir):
+        print(f"DEBUG: Candidates listing: {os.listdir(images_dir)[:5] if os.listdir(images_dir) else 'empty'}")
 
 app.include_router(recipes.router, prefix="/api", tags=["recipes"])
 app.include_router(allergens.router, prefix="/api", tags=["allergens"])
 app.include_router(meal_plan.router, prefix="/api", tags=["meal_plan"])
-app.include_router(shopping_list.router, prefix="/api", tags=[" shopping_list"])
+app.include_router(shopping_list.router, prefix="/api", tags=["shopping_list"])
 app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
 
 app.mount("/api/static", StaticFiles(directory=static_dir), name="static")
+print(f"DEBUG: Mounted /api/static -> {static_dir}")
 
 import os
 
