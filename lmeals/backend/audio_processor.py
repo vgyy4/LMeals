@@ -164,13 +164,22 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
     os.makedirs(output_dir, exist_ok=True)
     
     # Get the actual stream URL and headers
-    ydl_opts = {'format': 'bestvideo', 'quiet': True}
+    # Using 'bestvideo[ext=mp4]/best' to ensure a more compatible format that often allows direct streaming
+    ydl_opts = {
+        'format': 'bestvideo[ext=mp4]/best',
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': False
+    }
+    
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            print(f"DEBUG: Extracting stream info for {url}")
             info = ydl.extract_info(url, download=False)
             stream_url = info['url']
             headers = info.get('http_headers', {})
             user_agent = headers.get('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36')
+            print(f"DEBUG: Found stream URL (length: {len(stream_url)})")
     except Exception as e:
         print(f"Error getting stream URL: {e}")
         return []
@@ -182,25 +191,29 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
         filepath = os.path.join(output_dir, filename)
         
         # ffmpeg command with specific headers to avoid 403 Forbidden from YouTube
-        # Some FFmpeg versions prefer -user_agent specifically
+        # Added -timeout and improved header formatting
         cmd = [
             'ffmpeg',
+            '-y',
             '-user_agent', user_agent,
-            '-headers', f'Referer: {url}\r\n',
+            '-headers', f"Referer: https://www.youtube.com/\r\n",
             '-ss', str(timestamp),
             '-i', stream_url,
             '-frames:v', '1',
             '-q:v', '2',
-            '-y',
             filepath
         ]
         
         try:
             print(f"DEBUG: Capturing frame at {timestamp}s")
-            subprocess.run(cmd, check=True, capture_output=True)
-            captured_files.append(f"images/recipes/candidates/{filename}")
+            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+            if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
+                captured_files.append(f"images/recipes/candidates/{filename}")
+                print(f"DEBUG: Successfully captured frame {filename}")
+            else:
+                print(f"DEBUG: FFmpeg finished but file is missing or empty for timestamp {timestamp}s")
         except subprocess.CalledProcessError as e:
-            print(f"FFmpeg error at {timestamp}s: {e.stderr.decode()}")
+            print(f"FFmpeg error at {timestamp}s: {e.stderr}")
             
     return captured_files
 

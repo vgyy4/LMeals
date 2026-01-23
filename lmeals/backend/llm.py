@@ -449,8 +449,11 @@ def identify_dish_timestamps(transcript: str, duration: int) -> list[int]:
         if not valid_timestamps:
             # Fallback
             start = int(duration * 0.8)
-            return [start + (i * (duration - start) // 4) for i in range(4)]
+            fallback = [start + (i * (duration - start) // 4) for i in range(4)]
+            print(f"DEBUG: No valid timestamps found by AI, using fallback: {fallback}")
+            return fallback
             
+        print(f"DEBUG: AI identified timestamps: {valid_timestamps[:5]}")
         return valid_timestamps[:5]
     except Exception as e:
         print(f"Error identifying timestamps: {e}")
