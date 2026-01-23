@@ -172,13 +172,13 @@ const Dashboard = () => {
               key={recipe.id}
               id={recipe.id}
               title={recipe.title}
-              imageUrl={recipe.image_url}
+              imageUrl={recipe.image_url ?? undefined}
               hasAllergens={recipe.has_allergens || false}
-              cookTime={recipe.cook_time}
-              prepTime={recipe.prep_time}
+              cookTime={recipe.cook_time ?? undefined}
+              prepTime={recipe.prep_time ?? undefined}
               servings={recipe.servings}
               yieldUnit={recipe.yield_unit}
-              isFavorite={recipe.is_favorite}
+              isFavorite={recipe.is_favorite || false}
               onFavoriteChange={() => fetchRecipesAndAllergens()}
             />
           ))}
