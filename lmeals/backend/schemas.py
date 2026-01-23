@@ -66,12 +66,6 @@ class ScrapeResponse(BaseModel):
     recipe: Optional[Recipe] = None
     message: Optional[str] = None
     html: Optional[str] = None # To send to Groq if needed
-    candidate_images: Optional[List[str]] = None
-
-class FinalizeScrapeRequest(BaseModel):
-    recipe_data: RecipeCreate
-    chosen_image: str
-    candidates_to_cleanup: List[str]
 
 # Groq Settings Schema
 class GroqSettings(BaseModel):
