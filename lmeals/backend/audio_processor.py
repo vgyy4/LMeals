@@ -113,7 +113,14 @@ def download_audio(url: str, output_dir: str = "temp_audio") -> str:
         return ""
         
     final_path = os.path.join(output_dir, f"{file_id}.mp3")
-    return final_path if os.path.exists(final_path) else ""
+    if os.path.exists(final_path):
+        if os.path.getsize(final_path) == 0:
+            print(f"ERROR: Downloaded audio file is empty: {final_path}")
+            os.remove(final_path)
+            return ""
+        return final_path
+    else:
+        return ""
 
 def chunk_audio(file_path: str, max_size_mb: int = 24) -> list[str]:
     """Splits an audio file into chunks smaller than max_size_mb."""
@@ -191,3 +198,19 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
             print(f"FFmpeg error at {timestamp}s: {e.stderr.decode()}")
             
     return captured_files
+
+def cleanup_files(files: list[str]):
+    """Removes temporary files."""
+    for f in files:
+        if not f: continue
+        # Handle both relative paths and absolute paths
+        if not f.startswith('/') and not (len(f) > 1 and f[1] == ':'):
+            import assets
+            f = os.path.join(assets.STATIC_DIR, f)
+            
+        if os.path.exists(f):
+            try:
+                os.remove(f)
+                print(f"DEBUG: Cleaned up temp file {f}")
+            except:
+                pass

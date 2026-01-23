@@ -135,8 +135,10 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
                     candidate_images.insert(0, metadata["thumbnail"])
 
         except Exception as e:
-            print(f"Error processing video/audio: {e}")
-            raise HTTPException(status_code=500, detail=f"Video/Audio processing failed: {str(e)}")
+            print(f"ERROR: Video/Audio processing failed for {url}")
+            import traceback
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Video/Audio processing error: {str(e)}")
     else:
         # Standard HTML Scraping
         html = scraper.get_html(scrape_request.url)

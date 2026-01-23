@@ -104,4 +104,4 @@ class SettingCreate(SettingBase):
 
 class Setting(SettingBase):
     class Config:
-        orm_mode = True
+        from_attributes = True
