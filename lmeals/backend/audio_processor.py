@@ -154,12 +154,13 @@ def chunk_audio(file_path: str, max_size_mb: int = 24) -> list[str]:
 
 def capture_frames(url: str, timestamps: list[int]) -> list[str]:
     """
-    Captures frames from a video URL by downloading a small 20s clip locally first.
-    This is much more robust than streaming from YouTube in FFmpeg.
+    Captures frames from a video URL using a multi-strategy approach:
+    1. Try yt-dlp with multiple client configurations
+    2. Fall back to pytubefix if yt-dlp fails
+    3. Return empty list if all methods fail (handled by graceful degradation)
     """
     import subprocess
-    import assets # For path configuration
-    import shutil
+    import assets
     
     output_dir = os.path.join(assets.IMAGES_DIR, "candidates")
     os.makedirs(output_dir, exist_ok=True)
@@ -169,69 +170,103 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
     clip_id = str(uuid.uuid4())
     clip_path = os.path.join(temp_clip_dir, f"clip_{clip_id}.mp4")
     
-    # 1. Download only the first 20 seconds
-    print(f"DEBUG: Downloading 20s clip to {clip_path}")
-    ydl_opts = {
-        'format': 'best[ext=mp4]/best', # Prefer MP4 for easier FFmpeg processing
-        'extractor_args': {'youtube': {'player_client': ['android']}}, # Impersonate Android to bypass nsig/throttling
-        'merge_output_format': 'mp4',
-        'quiet': True,
-        'no_warnings': True,
-        'outtmpl': clip_path,
-        'download_sections': [{'start_time': 0, 'end_time': 20}],
-        'force_keyframes_at_cuts': True
-    }
+    # Strategy 1: Try yt-dlp with multiple client configurations
+    clients_to_try = ['android', 'ios', 'web']
+    download_successful = False
     
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-    except Exception as e:
-        print(f"Error downloading clip for frames: {e}")
-        # Cleanup if something was partially created
-        if os.path.exists(clip_path): os.remove(clip_path)
+    for client in clients_to_try:
+        print(f"DEBUG: Attempting yt-dlp download with {client} client...")
+        ydl_opts = {
+            'format': 'best[ext=mp4]/best',
+            'extractor_args': {'youtube': {'player_client': [client]}},
+            'merge_output_format': 'mp4',
+            'quiet': True,
+            'no_warnings': True,
+            'outtmpl': clip_path,
+            'download_sections': [{'start_time': 0, 'end_time': 20}],
+            'force_keyframes_at_cuts': True
+        }
+        
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+            
+            if os.path.exists(clip_path) and os.path.getsize(clip_path) > 0:
+                print(f"DEBUG: Successfully downloaded clip using yt-dlp ({client} client)")
+                download_successful = True
+                break
+        except Exception as e:
+            print(f"DEBUG: yt-dlp ({client}) failed: {str(e)[:100]}")
+            # Clean up any partial download
+            if os.path.exists(clip_path):
+                try:
+                    os.remove(clip_path)
+                except:
+                    pass
+    
+    # Strategy 2: Fall back to pytubefix if yt-dlp failed
+    if not download_successful:
+        print("DEBUG: All yt-dlp attempts failed, trying pytubefix...")
+        try:
+            from pytubefix import YouTube
+            from pytubefix.cli import on_progress
+            
+            yt = YouTube(url, on_progress_callback=on_progress)
+            stream = yt.streams.filter(file_extension='mp4').first()
+            
+            if stream:
+                # Download full video first, then trim to 20s
+                temp_full = os.path.join(temp_clip_dir, f"full_{clip_id}.mp4")
+                stream.download(output_path=temp_clip_dir, filename=f"full_{clip_id}.mp4")
+                
+                # Trim to 20 seconds using FFmpeg
+                if os.path.exists(temp_full):
+                    trim_cmd = [
+                        'ffmpeg', '-y', '-i', temp_full,
+                        '-t', '20', '-c', 'copy', clip_path
+                    ]
+                    subprocess.run(trim_cmd, check=True, capture_output=True)
+                    os.remove(temp_full)  # Remove full video
+                    
+                    if os.path.exists(clip_path) and os.path.getsize(clip_path) > 0:
+                        print("DEBUG: Successfully downloaded clip using pytubefix")
+                        download_successful = True
+        except Exception as e:
+            print(f"DEBUG: pytubefix failed: {str(e)[:100]}")
+    
+    # If no download method worked, return empty list
+    if not download_successful:
+        print("DEBUG: All download methods failed")
         return []
-
-    if not os.path.exists(clip_path):
-        print(f"DEBUG: Clip file not found after download: {clip_path}")
-        return []
-
+    
+    # Extract frames from the downloaded clip
     captured_files = []
     for timestamp in timestamps:
         file_id = str(uuid.uuid4())
         filename = f"{file_id}.jpg"
         filepath = os.path.join(output_dir, filename)
         
-        # 2. Extract frame from the LOCAL clip
         cmd = [
-            'ffmpeg',
-            '-y',
-            '-hide_banner',
-            '-loglevel', 'error',
-            '-ss', str(timestamp),
-            '-i', clip_path,
-            '-frames:v', '1',
-            '-q:v', '2',
-            filepath
+            'ffmpeg', '-y', '-hide_banner', '-loglevel', 'error',
+            '-ss', str(timestamp), '-i', clip_path,
+            '-frames:v', '1', '-q:v', '2', filepath
         ]
         
         try:
-            print(f"DEBUG: Extracting local frame at {timestamp}s")
             subprocess.run(cmd, check=True, capture_output=True, timeout=10)
             if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
                 captured_files.append(f"images/recipes/candidates/{filename}")
-            else:
-                print(f"DEBUG: Frame extraction failed or empty for {timestamp}s")
         except Exception as e:
             print(f"Frame extraction error at {timestamp}s: {e}")
-
-    # 3. CRITICAL: Cleanup the 20s clip
+    
+    # Cleanup the clip
     try:
         if os.path.exists(clip_path):
             os.remove(clip_path)
-            print(f"DEBUG: Cleaned up temp clip {clip_path}")
+            print(f"DEBUG: Cleaned up temp clip")
     except Exception as e:
         print(f"Error cleaning up temp clip: {e}")
-            
+    
     return captured_files
 
 def cleanup_files(files: list[str]):
