@@ -62,33 +62,38 @@ const ServingScaler: React.FC<ServingScalerProps> = ({ originalServings, yieldUn
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div
                 ref={containerRef}
-                className="relative flex items-center bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner w-full sm:w-min min-w-[320px]"
+                className="relative flex items-center bg-slate-50 p-1.5 rounded-2xl border border-slate-200 shadow-inner w-full sm:w-min min-w-[320px]"
             >
                 {/* Animated Background Marker */}
                 <div
-                    className="absolute h-[calc(100%-12px)] bg-white rounded-xl shadow-md transition-all duration-300 ease-out z-0"
+                    className="absolute bg-white rounded-xl shadow-sm transition-all duration-300 ease-out z-0"
                     style={{
                         left: `${markerStyle.left}px`,
-                        width: `${markerStyle.width}px`
+                        top: '6px',
+                        width: `${markerStyle.width}px`,
+                        height: 'calc(100% - 12px)'
                     }}
                 />
 
                 {options.map((opt) => (
-                    <button
+                    <div
                         key={opt.id}
                         data-id={opt.id}
+                        role="button"
+                        tabIndex={0}
                         onClick={() => handleSelect(opt.id)}
-                        className={`relative z-10 flex-1 px-4 py-2.5 flex flex-col items-center justify-center transition-all duration-300 outline-none select-none active:bg-transparent focus:outline-none ${selected === opt.id ? 'text-slate-800' : 'text-slate-400 hover:text-slate-600'
+                        onKeyDown={(e) => e.key === 'Enter' && handleSelect(opt.id)}
+                        className={`relative z-10 flex-1 px-4 py-2.5 flex flex-col items-center justify-center transition-all duration-300 outline-none select-none cursor-pointer ${selected === opt.id ? 'text-slate-800' : 'text-slate-400 hover:text-slate-600'
                             }`}
                         style={{ WebkitTapHighlightColor: 'transparent' }}
                     >
-                        <span className="text-sm font-black uppercase tracking-tight leading-none mb-0.5">
+                        <span className="text-sm font-black uppercase tracking-tight leading-none mb-0.5 pointer-events-none">
                             {opt.label}
                         </span>
-                        <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest leading-none">
+                        <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest leading-none pointer-events-none">
                             {opt.sub}
                         </span>
-                    </button>
+                    </div>
                 ))}
             </div>
 
