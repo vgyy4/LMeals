@@ -239,6 +239,21 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
         print(f"DEBUG: [REBUILD] Cleanup error: {e}")
     
     print(f"DEBUG: [REBUILD] Extraction complete. Captured {len(captured_frames)} frames")
+    
+    # VERIFICATION: Prove files still exist after extraction
+    print(f"DEBUG: [REBUILD] VERIFICATION - Listing candidates directory:")
+    try:
+        files_in_dir = os.listdir(candidates_dir)
+        print(f"DEBUG: [REBUILD] Files in {candidates_dir}: {files_in_dir}")
+        for frame_file in [f.split('/')[-1] for f in captured_frames]:
+            full_path = os.path.join(candidates_dir, frame_file)
+            if os.path.exists(full_path):
+                print(f"DEBUG: [REBUILD] ✓ {frame_file} exists ({os.path.getsize(full_path)} bytes)")
+            else:
+                print(f"DEBUG: [REBUILD] ✗ {frame_file} MISSING!")
+    except Exception as e:
+        print(f"DEBUG: [REBUILD] Verification error: {e}")
+    
     return captured_frames
 
 def cleanup_files(files: list[str]):
