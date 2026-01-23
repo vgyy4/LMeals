@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { getRecipe } from '../lib/api';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { getRecipe, deleteRecipe } from '../lib/api';
 import { Recipe } from '../lib/types';
-import { CheckSquare, Square, Clock, Users, ArrowLeft, RefreshCw, AlertTriangle } from 'lucide-react';
+import { CheckSquare, Square, Clock, Users, ArrowLeft, RefreshCw, AlertTriangle, Trash2, X } from 'lucide-react';
 import { updateRecipeWithAi, getAllergens } from '../lib/api';
 import { isRtlLang, parseTimeToMinutes, formatMinutes } from '../lib/utils';
 import { Allergen } from '../lib/types';
@@ -11,6 +11,7 @@ import { scaleIngredientText, formatServings, scaleTemplate } from '../lib/scali
 
 const RecipeDetailPage = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,6 +19,7 @@ const RecipeDetailPage = () => {
   const [allergens, setAllergens] = useState<Allergen[]>([]);
   const [hasAllergens, setHasAllergens] = useState(false);
   const [multiplier, setMultiplier] = useState(1);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     const fetchRecipeAndAllergens = async () => {
@@ -71,6 +73,20 @@ const RecipeDetailPage = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      setLoading(true);
+      await deleteRecipe(Number(id));
+      navigate('/');
+    } catch (err) {
+      setError('Failed to delete recipe.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return <div className="text-center p-8">Loading recipe...</div>;
   }
@@ -88,10 +104,49 @@ const RecipeDetailPage = () => {
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-8" dir={isRtl ? 'rtl' : 'ltr'}>
-      <Link to="/" className="flex items-center gap-2 text-p-coral font-bold mb-6 hover:underline">
-        <ArrowLeft size={20} />
-        Back to Dashboard
-      </Link>
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2rem] shadow-2xl p-10 max-w-md w-full border border-p-sky/10 text-center">
+            <div className="w-20 h-20 bg-p-rose/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 size={40} className="text-p-coral" />
+            </div>
+            <h2 className="text-3xl font-bold text-slate-800 mb-4">Are you sure?</h2>
+            <p className="text-slate-500 mb-8 leading-relaxed">
+              This will permanently delete <strong>{recipe.title}</strong>. This action cannot be undone.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 py-4 bg-p-surface text-slate-600 font-bold rounded-2xl hover:bg-slate-100 transition-colors"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 py-4 bg-p-coral text-white font-bold rounded-2xl hover:bg-red-500 transition-all shadow-lg shadow-p-coral/20 active:scale-95"
+                disabled={loading}
+              >
+                {loading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-between items-center mb-6">
+        <Link to="/" className="flex items-center gap-2 text-p-coral font-bold hover:underline">
+          <ArrowLeft size={20} />
+          Back to Dashboard
+        </Link>
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-p-coral transition-colors font-bold"
+        >
+          <Trash2 size={20} />
+          Delete Recipe
+        </button>
+      </div>
       <div className="bg-white rounded-3xl shadow-sm border border-p-sky/10 overflow-hidden">
         {recipe.image_url && (
           <img src={recipe.image_url} alt={recipe.title} className="w-full h-64 object-cover" />
