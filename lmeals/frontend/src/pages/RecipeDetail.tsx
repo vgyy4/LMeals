@@ -118,12 +118,20 @@ const RecipeDetailPage = () => {
               <div className="flex items-center gap-2">
                 <Users size={20} />
                 <span>
-                  {scaleServings(recipe.servings, multiplier)}
-                  {recipe.yield_unit
-                    ? ` ${recipe.yield_unit}`
-                    : (!recipe.servings.toLowerCase().includes('serving') && !recipe.servings.toLowerCase().includes('yield')
-                      ? ' servings'
-                      : '')}
+                  {(() => {
+                    const scaled = scaleServings(recipe.servings, multiplier);
+                    const unit = recipe.yield_unit || 'servings';
+                    const sLower = scaled.toLowerCase();
+                    const uLower = unit.toLowerCase();
+
+                    // Logic to avoid double units
+                    if (sLower.includes(uLower) ||
+                      (uLower === 'servings' && sLower.includes('serving')) ||
+                      (uLower === 'servings' && sLower.includes('yield'))) {
+                      return scaled;
+                    }
+                    return `${scaled} ${unit}`;
+                  })()}
                 </span>
               </div>
             )}
