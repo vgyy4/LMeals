@@ -87,12 +87,13 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
     recipe_data = {}
     is_video_audio = any(domain in url for domain in ["youtube.com", "youtu.be", "vimeo.com", "spotify.com", "facebook.com", "instagram.com"])
 
+    candidate_images = []
     if is_video_audio:
         try:
             print(f"Video/Audio detected: {url}")
             metadata = audio_processor.get_video_metadata(url)
             recipe_data["title"] = metadata["title"]
-            recipe_data["image_url"] = metadata["thumbnail"] # Non-AI Image!
+            recipe_data["image_url"] = metadata["thumbnail"] 
             
             # 1. Try subtitles first
             transcript = ""
@@ -103,7 +104,7 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
                 
             # 2. Fallback to audio transcription if subtitles were empty or missing
             if not transcript:
-                print("No active subtitles found or extraction failed. Falling back to audio transcription...")
+                print("No active subtitles found. Proceeding with transcription...")
                 audio_file = audio_processor.download_audio(url)
                 chunks = audio_processor.chunk_audio(audio_file)
                 
@@ -123,8 +124,15 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
                 raise HTTPException(status_code=500, detail="AI failed to extract recipe from transcript.")
             
             recipe_data.update(extracted)
-            if metadata["thumbnail"]:
-                recipe_data["image_url"] = metadata["thumbnail"] # Ensure we keep the real thumbnail
+            
+            # 4. Generate Thumbnail Gallery for Videos
+            if metadata.get("duration", 0) > 0:
+                print("Identifying dish timestamps for gallery...")
+                timestamps = llm.identify_dish_timestamps(transcript, metadata["duration"])
+                candidate_images = audio_processor.capture_frames(url, timestamps)
+                # Keep original thumbnail as first option if it exists
+                if metadata["thumbnail"]:
+                    candidate_images.insert(0, metadata["thumbnail"])
 
         except Exception as e:
             print(f"Error processing video/audio: {e}")
@@ -154,7 +162,15 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
     if not recipe_data.get("image_url"):
         recipe_data["image_url"] = None
 
-    # Download image locally
+    # For videos with gallery, don't create yet - let user choose first
+    if candidate_images:
+        return schemas.ScrapeResponse(
+            status="needs_image_selection", 
+            recipe=schemas.Recipe(**{**recipe_data, "id": 0, "created_at": "2024-01-01T00:00:00"}), # Mock ID for schema
+            candidate_images=candidate_images
+        )
+
+    # Standard download and create path for non-videos or videos without gallery
     if recipe_data.get("image_url"):
         local_image = assets.download_image(str(recipe_data["image_url"]))
         if local_image:
@@ -163,6 +179,56 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
     recipe_create = schemas.RecipeCreate(**recipe_data)
     new_recipe = crud.create_recipe(db, recipe=recipe_create)
     
+    # Start background templating
+    background_tasks.add_task(background_generate_template, new_recipe.id)
+    
+    return {"status": "success", "recipe": new_recipe}
+
+
+@router.post("/finalize-scrape", response_model=schemas.ScrapeResponse)
+def finalize_scrape(request: schemas.FinalizeScrapeRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """
+    Creates a recipe after the user has selected an image from the gallery.
+    Moves the chosen image to final storage and cleans up others.
+    """
+    recipe_dict = request.recipe_data.dict()
+    
+    # Process the chosen image
+    chosen_image = request.chosen_image
+    final_image_url = None
+    
+    if chosen_image:
+        if chosen_image.startswith("http"):
+            # External thumbnail chosen
+            final_image_url = assets.download_image(chosen_image)
+        else:
+            # Temporary candidate chosen - move to final dir
+            import shutil
+            filename = os.path.basename(chosen_image)
+            final_filename = f"{uuid.uuid4()}.jpg"
+            src = os.path.join(assets.STATIC_DIR, chosen_image)
+            dest = os.path.join(assets.IMAGES_DIR, final_filename)
+            
+            try:
+                if os.path.exists(src):
+                    shutil.copy2(src, dest)
+                    final_image_url = f"images/recipes/{final_filename}"
+            except Exception as e:
+                print(f"Error moving chosen image: {e}")
+
+    recipe_dict["image_url"] = final_image_url
+    recipe_create = schemas.RecipeCreate(**recipe_dict)
+    new_recipe = crud.create_recipe(db, recipe=recipe_create)
+    
+    # Cleanup all candidates
+    for cand in request.candidates_to_cleanup:
+        try:
+            full_path = os.path.join(assets.STATIC_DIR, cand)
+            if os.path.exists(full_path):
+                os.remove(full_path)
+        except:
+            pass
+            
     # Start background templating
     background_tasks.add_task(background_generate_template, new_recipe.id)
     

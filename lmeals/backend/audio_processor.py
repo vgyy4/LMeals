@@ -20,7 +20,8 @@ def get_video_metadata(url: str):
                 "title": info.get("title", "Video Recipe"),
                 "thumbnail": info.get("thumbnail"),
                 "subtitles": info.get("subtitles", {}),
-                "description": info.get("description", "")
+                "description": info.get("description", ""),
+                "duration": info.get("duration", 0)
             }
     except Exception as e:
         print(f"Error extracting metadata: {e}")
@@ -28,7 +29,8 @@ def get_video_metadata(url: str):
             "title": "Video Recipe",
             "thumbnail": None,
             "subtitles": {},
-            "description": ""
+            "description": "",
+            "duration": 0
         }
 
 def get_subtitle_text(url: str) -> str:
@@ -143,11 +145,49 @@ def chunk_audio(file_path: str, max_size_mb: int = 24) -> list[str]:
         
     return chunks
 
-def cleanup_files(files: list[str]):
-    """Removes temporary files."""
-    for f in files:
-        if os.path.exists(f):
-            try:
-                os.remove(f)
-            except:
-                pass
+def capture_frames(url: str, timestamps: list[int]) -> list[str]:
+    """
+    Captures frames from a video URL at specific timestamps using ffmpeg.
+    Returns a list of local relative paths to the captured images.
+    """
+    import subprocess
+    import assets # For path configuration
+    
+    output_dir = os.path.join(assets.IMAGES_DIR, "candidates")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Get the actual stream URL
+    ydl_opts = {'format': 'bestvideo', 'quiet': True}
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            stream_url = info['url']
+    except Exception as e:
+        print(f"Error getting stream URL: {e}")
+        return []
+
+    captured_files = []
+    for timestamp in timestamps:
+        file_id = str(uuid.uuid4())
+        filename = f"{file_id}.jpg"
+        filepath = os.path.join(output_dir, filename)
+        
+        # ffmpeg command to capture a single frame at a specific time
+        cmd = [
+            'ffmpeg',
+            '-ss', str(timestamp),
+            '-i', stream_url,
+            '-frames:v', '1',
+            '-q:v', '2',
+            '-y',
+            filepath
+        ]
+        
+        try:
+            print(f"DEBUG: Capturing frame at {timestamp}s")
+            subprocess.run(cmd, check=True, capture_output=True)
+            captured_files.append(f"images/recipes/candidates/{filename}")
+        except subprocess.CalledProcessError as e:
+            print(f"FFmpeg error at {timestamp}s: {e.stderr.decode()}")
+            
+    return captured_files

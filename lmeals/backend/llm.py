@@ -406,3 +406,52 @@ def verify_allergens_with_ai(ingredient_text: str, allergens: list[str]) -> bool
         print(f"Error in AI allergen verification: {e}")
         return True # Fallback to True on error
 
+
+def identify_dish_timestamps(transcript: str, duration: int) -> list[int]:
+    """
+    Uses Groq to identify 3-5 timestamps (in seconds) where the finished dish 
+    is likely presented in the video based on the transcript.
+    """
+    client, model = get_groq_client()
+    if not client:
+        # Fallback: Just pick points in the last 20% of the video
+        start = int(duration * 0.8)
+        return [start + (i * (duration - start) // 4) for i in range(4)]
+
+    system_prompt = f"""
+    You are an expert video editor. Analyzing a recipe video transcript, identify 3-5 specific timestamps (in seconds) where the finished dish is most likely being presented or served.
+    
+    RULES:
+    1. Focus on the end of the transcript where common phrases like "ready to serve", "enjoy", "look at that", "plating" appear.
+    2. The video duration is {duration} seconds.
+    3. Return ONLY a JSON object: {{"timestamps": [sec1, sec2, sec3]}}
+    4. Ensure timestamps are within the video duration.
+    """
+
+    try:
+        completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Transcript:\n\n{transcript}"}
+            ],
+            model=model,
+            response_format={"type": "json_object"}
+        )
+        
+        data = json.loads(completion.choices[0].message.content)
+        timestamps = data.get("timestamps", [])
+        
+        # Validation
+        valid_timestamps = [int(t) for t in timestamps if isinstance(t, (int, float)) and 0 <= t <= duration]
+        
+        if not valid_timestamps:
+            # Fallback
+            start = int(duration * 0.8)
+            return [start + (i * (duration - start) // 4) for i in range(4)]
+            
+        return valid_timestamps[:5]
+    except Exception as e:
+        print(f"Error identifying timestamps: {e}")
+        start = int(duration * 0.8)
+        return [start + (i * (duration - start) // 4) for i in range(4)]
+

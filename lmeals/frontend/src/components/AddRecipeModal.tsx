@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { scrapeRecipe, scrapeWithAi } from '../lib/api';
+import { scrapeRecipe, scrapeWithAi, finalizeScrape } from '../lib/api';
 import { X, Youtube, Music, Facebook, Instagram } from 'lucide-react';
 
 interface AddRecipeModalProps {
@@ -12,6 +12,10 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsAiConfirmation, setNeedsAiConfirmation] = useState(false);
+  const [needsImageSelection, setNeedsImageSelection] = useState(false);
+  const [candidateImages, setCandidateImages] = useState<string[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [pendingRecipeData, setPendingRecipeData] = useState<any>(null);
 
   const handleInitialScrape = async () => {
     setIsLoading(true);
@@ -43,6 +47,11 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
       if (response.status === 'success') {
         onRecipeAdded();
         onClose();
+      } else if (response.status === 'needs_image_selection') {
+        setPendingRecipeData(response.recipe);
+        setCandidateImages(response.candidate_images || []);
+        setSelectedImage(response.candidate_images?.[0] || null);
+        setNeedsImageSelection(true);
       } else {
         setError(response.message || 'The AI scraper failed to import the recipe.');
       }
@@ -55,11 +64,34 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
     }
   };
 
+  const handleFinalizeScrape = async () => {
+    if (!selectedImage || !pendingRecipeData) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const cleanupList = candidateImages.filter(img => img !== selectedImage);
+      const response = await finalizeScrape(pendingRecipeData, selectedImage, cleanupList);
+      if (response.status === 'success') {
+        onRecipeAdded();
+        onClose();
+      } else {
+        setError(response.message || 'Failed to save the recipe.');
+      }
+    } catch (err) {
+      setError('Failed to finalize the recipe import.');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center z-50 animate-in fade-in duration-300">
-      <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full border border-p-sky/10">
+      <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full border border-p-sky/10 overflow-hidden">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-slate-800">Add a New Recipe</h2>
+          <h2 className="text-2xl font-bold text-slate-800">
+            {needsImageSelection ? 'Choose Cover Photo' : 'Add a New Recipe'}
+          </h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
             <X size={24} />
           </button>
@@ -67,7 +99,59 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
 
         {error && <div className="bg-p-rose/30 border-l-4 border-p-coral text-red-800 px-4 py-3 rounded-lg mb-4 text-sm font-medium">{error}</div>}
 
-        {!needsAiConfirmation ? (
+        {needsImageSelection ? (
+          <div className="flex flex-col h-full">
+            <p className="mb-4 text-sm text-slate-500">
+              We've found a few moments that might show the finished dish. Pick the best one for your gallery.
+            </p>
+            <div className="grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+              {candidateImages.map((src, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => setSelectedImage(src)}
+                  className={`relative aspect-video rounded-xl overflow-hidden cursor-pointer border-4 transition-all ${selectedImage === src ? 'border-p-mint scale-95' : 'border-transparent hover:border-p-sky/30'
+                    }`}
+                >
+                  <img
+                    src={src.startsWith('http') ? src : `/api/static/${src}`}
+                    alt={`Candidate ${idx}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {selectedImage === src && (
+                    <div className="absolute inset-0 bg-p-mint/20 flex items-center justify-center">
+                      <div className="bg-p-mint text-white rounded-full p-1 shadow-lg">
+                        <X size={16} className="rotate-45" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="mt-8 flex gap-3">
+              <button
+                onClick={() => setNeedsImageSelection(false)}
+                className="flex-1 py-3 bg-p-surface text-slate-600 font-bold rounded-2xl hover:bg-slate-100 transition-all border border-p-sky/10"
+                disabled={isLoading}
+              >
+                Back
+              </button>
+              <button
+                onClick={handleFinalizeScrape}
+                className="flex-[2] bg-p-mint text-emerald-900 font-bold py-3 rounded-2xl hover:bg-emerald-100 transition-all shadow-lg active:scale-95 border border-p-mint/50 flex items-center justify-center gap-2"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-emerald-900/30 border-t-emerald-900 rounded-full animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <span>Save Recipe</span>
+                )}
+              </button>
+            </div>
+          </div>
+        ) : !needsAiConfirmation ? (
           <div>
             <div className="flex items-center gap-3 mb-4 p-3 bg-p-sky/30 rounded-2xl border border-p-sky/20">
               <div className="flex -space-x-2">

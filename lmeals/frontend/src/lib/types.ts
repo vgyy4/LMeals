@@ -34,10 +34,11 @@ export interface ScrapeRequest {
 }
 
 export interface ScrapeResponse {
-  status: 'success' | 'exists' | 'ai_required' | 'failed';
+  status: 'success' | 'exists' | 'ai_required' | 'failed' | 'needs_image_selection';
   recipe?: Recipe;
   message?: string;
   html?: string;
+  candidate_images?: string[];
 }
 
 export interface GroqSettings {

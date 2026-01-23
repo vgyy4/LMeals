@@ -28,6 +28,15 @@ export const scrapeWithAi = async (url: string): Promise<ScrapeResponse> => {
     return response.data;
 };
 
+export const finalizeScrape = async (recipeData: any, chosenImage: string, candidatesToCleanup: string[]): Promise<ScrapeResponse> => {
+    const response = await api.post('/finalize-scrape', {
+        recipe_data: recipeData,
+        chosen_image: chosenImage,
+        candidates_to_cleanup: candidatesToCleanup
+    });
+    return response.data;
+};
+
 export const deleteRecipe = async (id: number): Promise<void> => {
     await api.delete(`/recipes/${id}`);
 };
