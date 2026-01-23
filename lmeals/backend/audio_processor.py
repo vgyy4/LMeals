@@ -154,34 +154,43 @@ def chunk_audio(file_path: str, max_size_mb: int = 24) -> list[str]:
 
 def capture_frames(url: str, timestamps: list[int]) -> list[str]:
     """
-    Captures frames from a video URL at specific timestamps using ffmpeg.
-    Returns a list of local relative paths to the captured images.
+    Captures frames from a video URL by downloading a small 20s clip locally first.
+    This is much more robust than streaming from YouTube in FFmpeg.
     """
     import subprocess
     import assets # For path configuration
+    import shutil
     
     output_dir = os.path.join(assets.IMAGES_DIR, "candidates")
     os.makedirs(output_dir, exist_ok=True)
+    temp_clip_dir = "temp_clips"
+    os.makedirs(temp_clip_dir, exist_ok=True)
     
-    # Get the actual stream URL and headers
-    # Using 'bestvideo[ext=mp4]/best' to ensure a more compatible format that often allows direct streaming
+    clip_id = str(uuid.uuid4())
+    clip_path = os.path.join(temp_clip_dir, f"clip_{clip_id}.mp4")
+    
+    # 1. Download only the first 20 seconds in low quality
+    print(f"DEBUG: Downloading 20s clip to {clip_path}")
     ydl_opts = {
-        'format': 'bestvideo[ext=mp4]/best',
+        'format': 'mp4[height<=360]/best[ext=mp4]/best',
         'quiet': True,
         'no_warnings': True,
-        'extract_flat': False
+        'outtmpl': clip_path,
+        'download_sections': [{'start_time': 0, 'end_time': 20}],
+        'force_keyframes_at_cuts': True
     }
     
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            print(f"DEBUG: Extracting stream info for {url}")
-            info = ydl.extract_info(url, download=False)
-            stream_url = info['url']
-            headers = info.get('http_headers', {})
-            user_agent = headers.get('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36')
-            print(f"DEBUG: Found stream URL (length: {len(stream_url)})")
+            ydl.download([url])
     except Exception as e:
-        print(f"Error getting stream URL: {e}")
+        print(f"Error downloading clip for frames: {e}")
+        # Cleanup if something was partially created
+        if os.path.exists(clip_path): os.remove(clip_path)
+        return []
+
+    if not os.path.exists(clip_path):
+        print(f"DEBUG: Clip file not found after download: {clip_path}")
         return []
 
     captured_files = []
@@ -190,35 +199,36 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
         filename = f"{file_id}.jpg"
         filepath = os.path.join(output_dir, filename)
         
-        # ffmpeg command with specific headers to avoid 403 Forbidden from YouTube
-        # Refined headers and seeking for better reliability
+        # 2. Extract frame from the LOCAL clip
         cmd = [
             'ffmpeg',
             '-y',
             '-hide_banner',
             '-loglevel', 'error',
-            '-user_agent', user_agent,
-            '-headers', f"Referer: https://www.youtube.com/",
             '-ss', str(timestamp),
-            '-i', stream_url,
+            '-i', clip_path,
             '-frames:v', '1',
             '-q:v', '2',
             filepath
         ]
         
         try:
-            print(f"DEBUG: Capturing frame at {timestamp}s")
-            # Using a timeout to prevent hanging on stalled streams
-            result = subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=15)
+            print(f"DEBUG: Extracting local frame at {timestamp}s")
+            subprocess.run(cmd, check=True, capture_output=True, timeout=10)
             if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
                 captured_files.append(f"images/recipes/candidates/{filename}")
-                print(f"DEBUG: Successfully captured frame {filename}")
             else:
-                print(f"DEBUG: FFmpeg finished but file is missing or empty for timestamp {timestamp}s")
-        except subprocess.TimeoutExpired:
-            print(f"FFmpeg timeout at {timestamp}s for {url}")
-        except subprocess.CalledProcessError as e:
-            print(f"FFmpeg error at {timestamp}s: {e.stderr}")
+                print(f"DEBUG: Frame extraction failed or empty for {timestamp}s")
+        except Exception as e:
+            print(f"Frame extraction error at {timestamp}s: {e}")
+
+    # 3. CRITICAL: Cleanup the 20s clip
+    try:
+        if os.path.exists(clip_path):
+            os.remove(clip_path)
+            print(f"DEBUG: Cleaned up temp clip {clip_path}")
+    except Exception as e:
+        print(f"Error cleaning up temp clip: {e}")
             
     return captured_files
 
