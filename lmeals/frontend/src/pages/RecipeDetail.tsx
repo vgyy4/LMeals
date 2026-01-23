@@ -117,7 +117,14 @@ const RecipeDetailPage = () => {
             {recipe.servings && (
               <div className="flex items-center gap-2">
                 <Users size={20} />
-                <span>{scaleServings(recipe.servings, multiplier)} {recipe.yield_unit || 'servings'}</span>
+                <span>
+                  {scaleServings(recipe.servings, multiplier)}
+                  {recipe.yield_unit
+                    ? ` ${recipe.yield_unit}`
+                    : (!recipe.servings.toLowerCase().includes('serving') && !recipe.servings.toLowerCase().includes('yield')
+                      ? ' servings'
+                      : '')}
+                </span>
               </div>
             )}
           </div>
