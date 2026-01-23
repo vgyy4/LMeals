@@ -164,6 +164,11 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
     
     output_dir = os.path.join(assets.IMAGES_DIR, "candidates")
     os.makedirs(output_dir, exist_ok=True)
+    print(f"DEBUG: Candidates output directory: {output_dir}")
+    print(f"DEBUG: Output directory exists: {os.path.exists(output_dir)}")
+    print(f"DEBUG: assets.STATIC_DIR = {assets.STATIC_DIR}")
+    print(f"DEBUG: assets.IMAGES_DIR = {assets.IMAGES_DIR}")
+    
     temp_clip_dir = "temp_clips"
     os.makedirs(temp_clip_dir, exist_ok=True)
     
