@@ -205,6 +205,15 @@ def read_recipe(recipe_id: int, background_tasks: BackgroundTasks, db: Session =
     if db_recipe.instructions and not db_recipe.instruction_template:
         background_tasks.add_task(background_generate_template, db_recipe.id)
         
+    # Progressive Image Migration: Download image if it's still a URL
+    if db_recipe.image_url and str(db_recipe.image_url).startswith("http"):
+        print(f"DEBUG: Migrating external image for recipe {recipe_id}")
+        local_path = assets.download_image(str(db_recipe.image_url))
+        if local_path:
+            db_recipe.image_url = local_path
+            db.commit()
+            print(f"DEBUG: Successfully migrated image for recipe {recipe_id}")
+
     return db_recipe
 
 @router.put("/recipes/{recipe_id}/favorite", response_model=schemas.Recipe)

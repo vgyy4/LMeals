@@ -27,11 +27,16 @@ def download_image(url: str) -> Optional[str]:
             
         print(f"DEBUG: Downloading image from {url}")
         
-        response = requests.get(url, stream=True, timeout=10)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+        }
+        
+        response = requests.get(url, headers=headers, stream=True, timeout=10)
         response.raise_for_status()
         
         # Determine file extension (default to jpg if unknown)
-        content_type = response.headers.get("content-type", "")
+        content_type = response.headers.get("content-type", "").lower()
         ext = ".jpg"
         if "png" in content_type:
             ext = ".png"
@@ -39,6 +44,8 @@ def download_image(url: str) -> Optional[str]:
             ext = ".webp"
         elif "gif" in content_type:
             ext = ".gif"
+        elif "jpeg" in content_type:
+            ext = ".jpg"
             
         # Generate unique filename
         filename = f"{uuid.uuid4()}{ext}"
@@ -46,7 +53,7 @@ def download_image(url: str) -> Optional[str]:
         
         # Save file
         with open(filepath, "wb") as f:
-            for chunk in response.iter_content(CHUNK_SIZE=8192):
+            for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
                 
         # Return the relative path for the frontend
@@ -55,7 +62,9 @@ def download_image(url: str) -> Optional[str]:
         return relative_path
         
     except Exception as e:
-        print(f"DEBUG: Failed to download image from {url}: {e}")
+        print(f"DEBUG: Failed to download image from {url}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def delete_image(relative_path: str):
