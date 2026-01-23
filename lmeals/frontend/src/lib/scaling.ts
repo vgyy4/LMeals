@@ -93,6 +93,25 @@ export const scaleServings = (servings: string, multiplier: number): string => {
 };
 
 /**
+ * Robustly formats a servings string with a unit, avoiding duplicates.
+ * Handles cases where unit is already in the string or provided separately.
+ */
+export const formatServings = (servings: string, multiplier: number, yieldUnit?: string): string => {
+    const scaled = scaleServings(servings, multiplier);
+    const unit = yieldUnit || 'servings';
+    const sLower = scaled.toLowerCase();
+    const uLower = unit.toLowerCase();
+
+    // Logic to avoid double units
+    if (sLower.includes(uLower) ||
+        (uLower === 'servings' && sLower.includes('serving')) ||
+        (uLower === 'servings' && sLower.includes('yield'))) {
+        return scaled;
+    }
+    return `${scaled} ${unit}`;
+};
+
+/**
  * Scales an instruction template by replacing [[qty:NUMBER]] with scaled values.
  * Example: "Add [[qty:100]]ml" -> "Add 200ml" (if multiplier is 2)
  */

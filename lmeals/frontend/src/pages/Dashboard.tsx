@@ -1,101 +1,45 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Filter, Clock, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import RecipeCard from '../components/RecipeCard';
-import AddRecipeModal from '../components/AddRecipeModal';
+import { Search, Plus, Filter, Clock, Users, ArrowRight } from 'lucide-react';
 import { getRecipes, getAllergens } from '../lib/api';
 import { Recipe, Allergen } from '../lib/types';
+import RecipeCard from '../components/RecipeCard';
+import AddRecipeModal from '../components/AddRecipeModal';
 import { parseTimeToMinutes, formatMinutes } from '../lib/utils';
+import { formatServings } from '../lib/scaling';
 
 const Dashboard = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [allergens, setAllergens] = useState<Allergen[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
-
-  const fetchRecipesAndAllergens = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const [recipesData, allergensData] = await Promise.all([getRecipes(), getAllergens()]);
-      setRecipes(recipesData);
-      setAllergens(allergensData);
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-      setError("Could not load recipes. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRecipesAndAllergens();
   }, []);
 
-  const checkForAllergens = (recipe: Recipe): boolean => {
-    // Use backend-computed has_allergens field if available (includes multilingual translation)
-    if (recipe.has_allergens !== undefined && recipe.has_allergens !== null) {
-      return recipe.has_allergens;
+  const fetchRecipesAndAllergens = async () => {
+    try {
+      setLoading(true);
+      const data = await getRecipes();
+      setRecipes(data);
+    } catch (err) {
+      setError('Failed to load recipes.');
+    } finally {
+      setLoading(false);
     }
-
-    // Fallback to client-side checking (for backwards compatibility or if backend check not available)
-    if (!allergens.length) return false;
-
-    const recipeIngredients = recipe.ingredients.map(i => i.text.toLowerCase());
-
-    return allergens.some(allergen => {
-      // Collect all keywords (name + keyword variants)
-      const checks = [allergen.name.toLowerCase(), ...(allergen.keywords || []).map(k => k.toLowerCase())];
-
-      // Check if any ingredient contains any of the allergen keywords
-      const hasMatch = recipeIngredients.some(ingredient => {
-        // Check all keyword variants
-        return checks.some(check => ingredient.includes(check));
-      });
-
-      if (hasMatch) {
-        console.log(`Allergen '${allergen.name}' detected in recipe '${recipe.title}'`);
-      }
-
-      return hasMatch;
-    });
   };
 
   const filteredRecipes = useMemo(() => {
     return recipes.filter(recipe => {
-      const searchTermLower = searchTerm.toLowerCase();
-      const matchesSearch = recipe.title.toLowerCase().includes(searchTermLower) ||
-        recipe.ingredients.some(i => i.text.toLowerCase().includes(searchTermLower));
+      const matchesSearch = recipe.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        recipe.ingredients.some(i => i.text.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      if (!matchesSearch) return false;
-
-      const totalMinutes = parseTimeToMinutes(recipe.prep_time) + parseTimeToMinutes(recipe.cook_time);
-      const titleLower = recipe.title.toLowerCase();
-
-      if (activeFilter === 'Quick & Easy') {
-        // Only include if time is known and short (< 30m)
-        return totalMinutes > 0 && totalMinutes <= 30;
-      }
-      if (activeFilter === 'Dessert') {
-        return titleLower.includes('dessert') || titleLower.includes('cake') || titleLower.includes('cookie') || titleLower.includes('pie') || titleLower.includes('ice cream');
-      }
-      if (activeFilter === 'Breakfast') {
-        return titleLower.includes('breakfast') || titleLower.includes('pancake') || titleLower.includes('egg') || titleLower.includes('waffle') || titleLower.includes('oat') || titleLower.includes('morning');
-      }
-      if (activeFilter === 'Lunch') {
-        // Heuristic: sandwich, salad, wrap, etc.
-        return titleLower.includes('lunch') || titleLower.includes('sandwich') || titleLower.includes('salad') || titleLower.includes('wrap') || titleLower.includes('burger');
-      }
-      if (activeFilter === 'Dinner') {
-        // Broad catch, or maybe items that are main dishes? Hard to classify without tags.
-        // For now, exclude obvious desserts/breakfasts if possible, or just look for "dinner", "steak", "pasta", "chicken"
-        return titleLower.includes('dinner') || titleLower.includes('steak') || titleLower.includes('pasta') || titleLower.includes('chicken') || titleLower.includes('beef') || titleLower.includes('stew') || titleLower.includes('soup');
-      }
-
-      return true;
+      if (activeFilter === 'All') return matchesSearch;
+      // Basic category matching logic (can be expanded)
+      return matchesSearch;
     });
   }, [recipes, searchTerm, activeFilter]);
 
@@ -107,7 +51,7 @@ const Dashboard = () => {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const seed = today.split('-').reduce((acc, val) => acc + parseInt(val), 0);
 
-    // Filterfavorites first
+    // Filter favorites first
     const favorites = recipes.filter(r => r.is_favorite);
     const pool = favorites.length > 0 ? favorites : recipes;
 
@@ -124,8 +68,8 @@ const Dashboard = () => {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight">What to cook today?</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Discover your next favorite meal.</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">What to cook today?</h1>
+          <p className="text-slate-500 mt-1">Discover your next favorite meal.</p>
         </div>
 
         <button onClick={() => setIsModalOpen(true)} className="bg-p-mint text-emerald-900 font-bold py-2.5 px-5 rounded-full flex items-center gap-2 hover:bg-emerald-100 transition-all shadow-sm active:scale-95 border border-p-mint/50">
@@ -198,7 +142,7 @@ const Dashboard = () => {
                     {recipeOfTheDay.servings && (
                       <div className="flex items-center gap-2">
                         <Users size={18} className="text-p-sky" />
-                        <span>{recipeOfTheDay.servings} {recipeOfTheDay.yield_unit || 'people'}</span>
+                        <span>{formatServings(recipeOfTheDay.servings, 1, recipeOfTheDay.yield_unit)}</span>
                       </div>
                     )}
                   </div>
@@ -209,38 +153,35 @@ const Dashboard = () => {
         </div>
       )}
 
-      {error && <div className="bg-p-rose/30 border-l-4 border-p-coral text-red-800 px-4 py-3 rounded-r mb-6 shadow-sm" role="alert">{error}</div>}
+      {/* All Recipes Grid */}
+      <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center justify-between">
+        All Recipes
+        <span className="text-sm font-normal text-slate-400">{filteredRecipes.length} results</span>
+      </h2>
 
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{activeFilter === 'All' ? 'All Recipes' : `${activeFilter} Recipes`}</h2>
-        <span className="text-slate-400 text-sm font-medium">{filteredRecipes.length} results</span>
-      </div>
-
-      {loading && !recipes.length ? (
+      {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-64 bg-slate-100 dark:bg-slate-800 rounded-2xl animate-pulse"></div>)}
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-64 rounded-2xl bg-slate-100 animate-pulse" />
+          ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredRecipes.map(recipe => (
             <RecipeCard
               key={recipe.id}
               id={recipe.id}
               title={recipe.title}
-              imageUrl={recipe.image_url || undefined}
-              hasAllergens={checkForAllergens(recipe)}
-              cookTime={recipe.cook_time || undefined}
-              prepTime={recipe.prep_time || undefined}
-              servings={recipe.servings || undefined}
-              isFavorite={recipe.is_favorite || false}
+              imageUrl={recipe.image_url}
+              hasAllergens={recipe.has_allergens || false}
+              cookTime={recipe.cook_time}
+              prepTime={recipe.prep_time}
+              servings={recipe.servings}
+              yieldUnit={recipe.yield_unit}
+              isFavorite={recipe.is_favorite}
+              onFavoriteChange={() => fetchRecipesAndAllergens()}
             />
           ))}
-          {filteredRecipes.length === 0 && (
-            <div className="col-span-full py-12 text-center text-slate-400">
-              <p>No recipes match your criteria.</p>
-              <button onClick={() => { setSearchTerm(''); setActiveFilter('All'); }} className="text-p-coral font-bold mt-2 hover:underline">Clear filters</button>
-            </div>
-          )}
         </div>
       )}
     </div>

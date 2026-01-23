@@ -7,7 +7,7 @@ import { updateRecipeWithAi, getAllergens } from '../lib/api';
 import { isRtlLang, parseTimeToMinutes, formatMinutes } from '../lib/utils';
 import { Allergen } from '../lib/types';
 import ServingScaler from '../components/ServingScaler';
-import { scaleIngredientText, scaleServings, scaleTemplate } from '../lib/scaling';
+import { scaleIngredientText, formatServings, scaleTemplate } from '../lib/scaling';
 
 const RecipeDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -118,20 +118,7 @@ const RecipeDetailPage = () => {
               <div className="flex items-center gap-2">
                 <Users size={20} />
                 <span>
-                  {(() => {
-                    const scaled = scaleServings(recipe.servings, multiplier);
-                    const unit = recipe.yield_unit || 'servings';
-                    const sLower = scaled.toLowerCase();
-                    const uLower = unit.toLowerCase();
-
-                    // Logic to avoid double units
-                    if (sLower.includes(uLower) ||
-                      (uLower === 'servings' && sLower.includes('serving')) ||
-                      (uLower === 'servings' && sLower.includes('yield'))) {
-                      return scaled;
-                    }
-                    return `${scaled} ${unit}`;
-                  })()}
+                  {formatServings(recipe.servings, multiplier, recipe.yield_unit)}
                 </span>
               </div>
             )}

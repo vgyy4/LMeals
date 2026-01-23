@@ -3,6 +3,7 @@ import { AlertTriangle, Clock, Heart, Users } from 'lucide-react';
 import { setFavoriteStatus } from '../lib/api';
 import { useState } from 'react';
 import { parseTimeToMinutes, formatMinutes } from '../lib/utils';
+import { formatServings } from '../lib/scaling';
 
 interface RecipeCardProps {
   id: number;
@@ -12,11 +13,12 @@ interface RecipeCardProps {
   cookTime?: string;
   prepTime?: string;
   servings?: string;
+  yieldUnit?: string;
   isFavorite: boolean;
   onFavoriteChange?: (id: number, isFavorite: boolean) => void;
 }
 
-const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, servings, isFavorite, onFavoriteChange }: RecipeCardProps) => {
+const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, servings, yieldUnit, isFavorite, onFavoriteChange }: RecipeCardProps) => {
   const totalMinutes = parseTimeToMinutes(prepTime) + parseTimeToMinutes(cookTime);
   const [isFav, setIsFav] = useState(isFavorite);
 
@@ -79,7 +81,7 @@ const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, ser
             {servings && (
               <div className="flex items-center gap-1">
                 <Users size={14} />
-                <span>{servings}</span>
+                <span>{formatServings(servings, 1, yieldUnit)}</span>
               </div>
             )}
           </div>
