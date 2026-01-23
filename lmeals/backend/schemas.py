@@ -25,8 +25,8 @@ class RecipeBase(BaseModel):
     servings: Optional[str] = None
     yield_unit: Optional[str] = "servings"
     instruction_template: Optional[List[str]] = None
-    image_url: Optional[HttpUrl] = None
-    source_url: HttpUrl
+    image_url: Optional[str] = None
+    source_url: str
     notes: Optional[str] = None
     is_favorite: bool = False
 
