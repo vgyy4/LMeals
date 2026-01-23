@@ -154,62 +154,54 @@ def chunk_audio(file_path: str, max_size_mb: int = 24) -> list[str]:
 
 def capture_frames(url: str, timestamps: list[int]) -> list[str]:
     """
-    REBUILT FROM SCRATCH: Simple, direct frame capture using pytubefix.
-    1. Download video with pytubefix to /app/static/images/recipes/candidates/
-    2. Extract frames directly from that location
-    3. Return paths to the frame images
-    4. Clean up video file
+    FINAL FIX: Return base64 data URLs instead of file paths.
+    This completely bypasses file serving issues in Home Assistant.
     """
     import subprocess
+    import base64
     
     # Use absolute paths - no reliance on assets.py
     static_base = "/app/static" if os.path.exists("/app/static") else os.path.join(os.path.dirname(__file__), "static")
     candidates_dir = os.path.join(static_base, "images", "recipes", "candidates")
     os.makedirs(candidates_dir, exist_ok=True)
     
-    print(f"DEBUG: [REBUILD] Static base: {static_base}")
-    print(f"DEBUG: [REBUILD] Candidates dir: {candidates_dir}")
-    print(f"DEBUG: [REBUILD] Candidates exists: {os.path.exists(candidates_dir)}")
+    print(f"DEBUG: [BASE64] Candidates dir: {candidates_dir}")
     
     video_id = str(uuid.uuid4())
     video_path = os.path.join(candidates_dir, f"temp_video_{video_id}.mp4")
     
     # Download video with pytubefix
     try:
-        print(f"DEBUG: [REBUILD] Downloading video with pytubefix...")
+        print(f"DEBUG: [BASE64] Downloading video...")
         from pytubefix import YouTube
         
         yt = YouTube(url)
-        # Get lowest quality stream for faster download
         stream = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').first()
         
         if not stream:
-            print("DEBUG: [REBUILD] No suitable stream found")
+            print("DEBUG: [BASE64] No stream found")
             return []
         
-        print(f"DEBUG: [REBUILD] Downloading {stream.resolution} stream...")
+        print(f"DEBUG: [BASE64] Downloading {stream.resolution}...")
         stream.download(output_path=candidates_dir, filename=f"temp_video_{video_id}.mp4")
         
         if not os.path.exists(video_path):
-            print(f"DEBUG: [REBUILD] Video file not found at {video_path}")
+            print(f"DEBUG: [BASE64] Video not found")
             return []
         
-        print(f"DEBUG: [REBUILD] Video downloaded: {os.path.getsize(video_path)} bytes")
+        print(f"DEBUG: [BASE64] Video downloaded: {os.path.getsize(video_path)} bytes")
         
     except Exception as e:
-        print(f"DEBUG: [REBUILD] Download failed: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"DEBUG: [BASE64] Download failed: {e}")
         return []
     
-    # Extract frames
+    # Extract frames and convert to base64
     captured_frames = []
-    print(f"DEBUG: [REBUILD] Extracting {len(timestamps)} frames...")
+    print(f"DEBUG: [BASE64] Extracting {len(timestamps)} frames...")
     
     for ts in timestamps:
         frame_id = str(uuid.uuid4())
-        frame_filename = f"{frame_id}.jpg"
-        frame_path = os.path.join(candidates_dir, frame_filename)
+        frame_path = os.path.join(candidates_dir, f"{frame_id}.jpg")
         
         ffmpeg_cmd = [
             'ffmpeg', '-y', '-ss', str(ts), '-i', video_path,
@@ -217,43 +209,34 @@ def capture_frames(url: str, timestamps: list[int]) -> list[str]:
         ]
         
         try:
-            result = subprocess.run(ffmpeg_cmd, capture_output=True, timeout=10)
+            subprocess.run(ffmpeg_cmd, capture_output=True, timeout=10)
             
             if os.path.exists(frame_path) and os.path.getsize(frame_path) > 0:
-                # Return relative path for frontend
-                rel_path = f"images/recipes/candidates/{frame_filename}"
-                captured_frames.append(rel_path)
-                print(f"DEBUG: [REBUILD] Frame {ts}s saved: {frame_path} ({os.path.getsize(frame_path)} bytes) -> {rel_path}")
+                # Read frame and convert to base64
+                with open(frame_path, 'rb') as f:
+                    img_data = f.read()
+                    base64_data = base64.b64encode(img_data).decode('utf-8')
+                    data_url = f"data:image/jpeg;base64,{base64_data}"
+                    captured_frames.append(data_url)
+                    print(f"DEBUG: [BASE64] Frame {ts}s -> {len(base64_data)} chars")
+                
+                # Clean up frame file
+                os.remove(frame_path)
             else:
-                print(f"DEBUG: [REBUILD] Frame {ts}s failed - file missing or empty")
+                print(f"DEBUG: [BASE64] Frame {ts}s failed")
                 
         except Exception as e:
-            print(f"DEBUG: [REBUILD] Frame {ts}s error: {e}")
+            print(f"DEBUG: [BASE64] Frame {ts}s error: {e}")
     
-    # Clean up video file
+    # Clean up video
     try:
         if os.path.exists(video_path):
             os.remove(video_path)
-            print(f"DEBUG: [REBUILD] Cleaned up video file")
+            print(f"DEBUG: [BASE64] Cleaned up video")
     except Exception as e:
-        print(f"DEBUG: [REBUILD] Cleanup error: {e}")
+        print(f"DEBUG: [BASE64] Cleanup error: {e}")
     
-    print(f"DEBUG: [REBUILD] Extraction complete. Captured {len(captured_frames)} frames")
-    
-    # VERIFICATION: Prove files still exist after extraction
-    print(f"DEBUG: [REBUILD] VERIFICATION - Listing candidates directory:")
-    try:
-        files_in_dir = os.listdir(candidates_dir)
-        print(f"DEBUG: [REBUILD] Files in {candidates_dir}: {files_in_dir}")
-        for frame_file in [f.split('/')[-1] for f in captured_frames]:
-            full_path = os.path.join(candidates_dir, frame_file)
-            if os.path.exists(full_path):
-                print(f"DEBUG: [REBUILD] ✓ {frame_file} exists ({os.path.getsize(full_path)} bytes)")
-            else:
-                print(f"DEBUG: [REBUILD] ✗ {frame_file} MISSING!")
-    except Exception as e:
-        print(f"DEBUG: [REBUILD] Verification error: {e}")
-    
+    print(f"DEBUG: [BASE64] Complete. Captured {len(captured_frames)} base64 frames")
     return captured_frames
 
 def cleanup_files(files: list[str]):
