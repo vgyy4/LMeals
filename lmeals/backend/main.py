@@ -18,14 +18,19 @@ from routers import recipes, allergens, meal_plan, shopping_list
 
 from routers import settings
 import assets
+import os
+
+# Determine static directory (backend/static in dev, /app/static in container)
+static_dir = assets.STATIC_DIR if os.path.exists(assets.STATIC_DIR) else "/app/static"
+print(f"DEBUG: Using static directory: {static_dir}")
 
 app.include_router(recipes.router, prefix="/api", tags=["recipes"])
 app.include_router(allergens.router, prefix="/api", tags=["allergens"])
 app.include_router(meal_plan.router, prefix="/api", tags=["meal_plan"])
-app.include_router(shopping_list.router, prefix="/api", tags=["shopping_list"])
+app.include_router(shopping_list.router, prefix="/api", tags=[" shopping_list"])
 app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
 
-app.mount("/api/static", StaticFiles(directory=assets.STATIC_DIR), name="static")
+app.mount("/api/static", StaticFiles(directory=static_dir), name="static")
 
 import os
 

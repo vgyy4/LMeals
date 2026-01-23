@@ -5,7 +5,13 @@ from typing import Optional
 
 # Path configuration
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_DIR = os.path.join(BASE_DIR, "static")
+
+# Use /app/static in containers (where files are copied), backend/static locally
+if os.path.exists("/app/static"):
+    STATIC_DIR = "/app/static"
+else:
+    STATIC_DIR = os.path.join(BASE_DIR, "static")
+
 IMAGES_DIR = os.path.join(STATIC_DIR, "images", "recipes")
 
 # Ensure directory exists
