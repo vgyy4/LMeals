@@ -12,6 +12,7 @@ def get_video_metadata(url: str):
         'skip_download': True,
         'writesubtitles': True,
         'allsubtitles': True,
+        'noplaylist': True,
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -103,6 +104,7 @@ def download_audio(url: str, output_dir: str = "temp_audio") -> str:
         }],
         'outtmpl': output_template,
         'quiet': True,
+        'noplaylist': True,
     }
     
     try:
