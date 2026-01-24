@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
-import { scrapeRecipe, scrapeWithAi, uploadTempImage, finalizeScrape } from '../lib/api';
-import { X, Youtube, Music, Facebook, Instagram, ImagePlus, Check } from 'lucide-react';
+import { scrapeRecipe, scrapeWithAi, uploadTempImage, finalizeScrape, cleanupImages } from '../lib/api';
+import { X, Youtube, Music, Facebook, Instagram, ImagePlus, Check, ArrowRight, Loader2, Upload } from 'lucide-react';
+import { Recipe } from '../lib/types';
 
 interface AddRecipeModalProps {
   onClose: () => void;
@@ -14,6 +15,12 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
   const [needsAiConfirmation, setNeedsAiConfirmation] = useState(false);
   const [customImageUrl, setCustomImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const customUploadRef = useRef<HTMLInputElement>(null);
+
+  // New state for selection flow
+  const [imageCandidates, setImageCandidates] = useState<string[]>([]);
+  const [pendingRecipe, setPendingRecipe] = useState<Recipe | null>(null);
+  const [selectedCandidateIndex, setSelectedCandidateIndex] = useState<number>(0);
 
   const handleInitialScrape = async () => {
     setIsLoading(true);
@@ -42,10 +49,17 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
     setError(null);
     try {
       const response = await scrapeWithAi(url);
-      if (response.status === 'success') {
-        // If the user uploaded a custom image, we need to "finalize" it to apply it
-        // since the backend just created a recipe with a default thumbnail
-        if (customImageUrl && response.recipe) {
+      if (response.status === 'success' && response.recipe) {
+
+        // If we have multiple image candidates, show selection screen
+        if (response.image_candidates && response.image_candidates.length > 0) {
+          setImageCandidates(response.image_candidates);
+          setPendingRecipe(response.recipe);
+          return; // Stop here, don't close modal yet
+        }
+
+        // Otherwise proceed as normal
+        if (customImageUrl) {
           await finalizeScrape(response.recipe, customImageUrl, []);
         }
         onRecipeAdded();
@@ -62,7 +76,7 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isSelectionFlow = false) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -71,7 +85,14 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
     try {
       const response = await uploadTempImage(file);
       if (response.status === 'success') {
-        setCustomImageUrl(response.url);
+        if (isSelectionFlow) {
+          // In selection flow, we set this new image as the specific selection
+          // We can add it to the candidates list to show it selected
+          setImageCandidates(prev => [...prev, response.url]);
+          setSelectedCandidateIndex(imageCandidates.length); // It will be the new last item
+        } else {
+          setCustomImageUrl(response.url);
+        }
       } else {
         setError('Failed to upload image.');
       }
@@ -83,6 +104,107 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
     }
   };
 
+  const handleFinalSelection = async () => {
+    if (!pendingRecipe) return;
+
+    setIsLoading(true);
+    try {
+      const selectedImage = imageCandidates[selectedCandidateIndex];
+
+      // Update the recipe with the selected image if it's different
+      await finalizeScrape(pendingRecipe, selectedImage, []);
+
+      // Cleanup: Delete all OTHER candidates that are NOT the selected one
+      // We pass the full list of candidates (which are the files created)
+      // and tell backend to keep the 'selectedImage'
+      cleanupImages(imageCandidates, selectedImage);
+
+      onRecipeAdded();
+      onClose();
+    } catch (err) {
+      console.error("Error finalizing selection:", err);
+      setError("Failed to save selection.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // RENDER: Image Selection Step
+  // ---------------------------------------------------------------------------
+  if (pendingRecipe && imageCandidates.length > 0) {
+    return (
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-50 animate-in fade-in zoom-in duration-300">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-4xl w-full border border-p-sky/10 flex flex-col max-h-[90vh]">
+
+          <div className="mb-6 text-center">
+            <h2 className="text-2xl font-bold text-slate-800">Select Cover Image</h2>
+            <p className="text-slate-500">Choose the best frame for your recipe</p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto min-h-0 mb-6 p-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {imageCandidates.map((img, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => setSelectedCandidateIndex(idx)}
+                  className={`relative group cursor-pointer rounded-2xl overflow-hidden aspect-video border-4 transition-all ${selectedCandidateIndex === idx ? 'border-p-mint ring-4 ring-p-mint/20 scale-[1.02]' : 'border-transparent hover:border-slate-200'
+                    }`}
+                >
+                  <img
+                    src={`/api/static/${img}`}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  {selectedCandidateIndex === idx && (
+                    <div className="absolute top-2 right-2 bg-p-mint text-white p-1 rounded-full shadow-lg">
+                      <Check size={16} strokeWidth={3} />
+                    </div>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-white text-xs font-medium"> Option {idx + 1}</span>
+                  </div>
+                </div>
+              ))}
+
+              {/* Upload Custom Option */}
+              <div
+                onClick={() => customUploadRef.current?.click()}
+                className="relative cursor-pointer rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-p-sky/50 transition-all flex flex-col items-center justify-center aspect-video group"
+              >
+                <div className="bg-white p-3 rounded-full shadow-sm mb-2 group-hover:scale-110 transition-transform">
+                  <Upload size={24} className="text-p-sky" />
+                </div>
+                <span className="text-sm font-bold text-slate-600">Upload Custom</span>
+                <span className="text-xs text-slate-400 mt-1">From your device</span>
+                <input
+                  type="file"
+                  ref={customUploadRef}
+                  className="hidden"
+                  onChange={(e) => handleImageUpload(e, true)}
+                  accept="image/*"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <button
+              onClick={handleFinalSelection}
+              className="px-8 py-3 bg-p-mint text-emerald-900 font-bold rounded-xl hover:bg-emerald-100 transition-all shadow-lg shadow-p-mint/20 active:scale-95 flex items-center gap-2"
+              disabled={isLoading}
+            >
+              {isLoading ? <Loader2 className="animate-spin" /> : <>Confirm Selection <ArrowRight size={18} /></>}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // RENDER: Initial Input Step
+  // ---------------------------------------------------------------------------
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center z-50 animate-in fade-in duration-300">
       <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full border border-p-sky/10 overflow-hidden">
@@ -138,7 +260,7 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
                   type="file"
                   ref={fileInputRef}
                   className="hidden"
-                  onChange={handleImageUpload}
+                  onChange={(e) => handleImageUpload(e)}
                   accept="image/*"
                 />
                 {customImageUrl ? (
@@ -171,7 +293,7 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
             >
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-emerald-900/30 border-t-emerald-900 rounded-full animate-spin" />
+                  <Loader2 className="animate-spin" size={20} />
                   <span>{url.includes('youtube') || url.includes('youtu.be') ? 'Transcribing Video...' : 'Importing...'}</span>
                 </div>
               ) : 'Import Recipe'}
@@ -192,10 +314,10 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
               </button>
               <button
                 onClick={handleAiScrape}
-                className="px-6 py-2.5 bg-p-coral text-white font-bold rounded-xl hover:bg-red-500 transition-colors shadow-lg shadow-p-coral/20 active:scale-95"
+                className="px-6 py-2.5 bg-p-coral text-white font-bold rounded-xl hover:bg-red-500 transition-colors shadow-lg shadow-p-coral/20 active:scale-95 flex items-center gap-2"
                 disabled={isLoading}
               >
-                {isLoading ? 'Processing...' : 'Use AI Importer'}
+                {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Use AI Importer'}
               </button>
             </div>
           </div>

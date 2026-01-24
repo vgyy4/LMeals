@@ -170,3 +170,80 @@ def cleanup_files(files: list[str]):
                 print(f"DEBUG: Cleaned up temp file {f}")
             except:
                 pass
+
+def capture_video_frames(url: str, timestamps: list[int] = [0, 5, 10, 15]) -> list[str]:
+    """
+    Downloads the first 20 seconds of a video and extracts frames at specified timestamps.
+    Returns a list of relative paths to the extracted images.
+    """
+    import subprocess
+    import shutil
+    
+    # 1. Setup paths
+    candidates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "images", "recipes", "candidates")
+    os.makedirs(candidates_dir, exist_ok=True)
+    
+    temp_video_dir = "temp_video_capture"
+    os.makedirs(temp_video_dir, exist_ok=True)
+    
+    unique_id = str(uuid.uuid4())
+    video_path_template = os.path.join(temp_video_dir, f"{unique_id}.%(ext)s")
+    
+    # 2. Download first 20 seconds of video
+    # Note: yt-dlp's --download-sections is useful here
+    ydl_opts = {
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+        'outtmpl': video_path_template,
+        'quiet': True,
+        'noplaylist': True,
+        'download_ranges': lambda _, __: [{'start_time': 0, 'end_time': 20}],
+        'force_keyframes_at_cuts': True,
+    }
+    
+    downloaded_video_path = None
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+            
+        # Find the downloaded file
+        for f in os.listdir(temp_video_dir):
+            if f.startswith(unique_id):
+                downloaded_video_path = os.path.join(temp_video_dir, f)
+                break
+                
+        if not downloaded_video_path:
+            print("DEBUG: Could not find downloaded video clip.")
+            return []
+
+        # 3. Extract frames using ffmpeg
+        extracted_paths = []
+        for i, ts in enumerate(timestamps):
+            output_filename = f"{unique_id}_frame_{ts}s.jpg"
+            output_path = os.path.join(candidates_dir, output_filename)
+            
+            # ffmpeg command: -ss [time] -i [input] -frames:v 1 [output]
+            cmd = [
+                'ffmpeg',
+                '-ss', str(ts),
+                '-i', downloaded_video_path,
+                '-frames:v', '1',
+                '-q:v', '2',  # High quality jpeg
+                '-y',         # Overwrite
+                output_path
+            ]
+            
+            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            
+            if os.path.exists(output_path):
+                relative_path = f"images/recipes/candidates/{output_filename}"
+                extracted_paths.append(relative_path)
+                
+        return extracted_paths
+        
+    except Exception as e:
+        print(f"Error capturing video frames: {e}")
+        return []
+    finally:
+        # 4. Cleanup temp video
+        if os.path.exists(temp_video_dir):
+            shutil.rmtree(temp_video_dir, ignore_errors=True)

@@ -128,6 +128,13 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
             if metadata.get("thumbnail"):
                 recipe_data["image_url"] = metadata["thumbnail"]
 
+            # 5. Capture additional frames for selection
+            print("Capturing video frames for selection...")
+            candidates = audio_processor.capture_video_frames(url)
+            if candidates:
+                # Add the original thumbnail to candidates if specific
+                recipe_data["image_candidates"] = candidates
+            
         except Exception as e:
             print(f"ERROR: Video/Audio processing failed for {url}")
             import traceback
@@ -182,10 +189,20 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
         recipe_data["image_url"] = None
 
     # Standard download and create path
+    # NOTE: If we have candidates, we might want to defer this download until the user chooses?
+    # BUT for now, let's keep the default behavior: download the one the AI picked (thumbnail)
+    # The frontend will allow overriding this.
     if recipe_data.get("image_url"):
         local_image = assets.download_image(str(recipe_data["image_url"]))
         if local_image:
             recipe_data["image_url"] = local_image
+            
+            # If we have candidates, add the downloaded thumbnail to the list if it's not already there
+            # (Though candidates are usually distinct from the thumbnail URL, so we can just append)
+            if recipe_data.get("image_candidates"):
+                 # Make sure we don't duplicate
+                 if local_image not in recipe_data["image_candidates"]:
+                     recipe_data["image_candidates"].insert(0, local_image)
 
     recipe_create = schemas.RecipeCreate(**recipe_data)
     new_recipe = crud.create_recipe(db, recipe=recipe_create)
@@ -193,7 +210,12 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
     # Start background templating
     background_tasks.add_task(background_generate_template, new_recipe.id)
     
-    return {"status": "success", "recipe": new_recipe}
+    response_obj = schemas.ScrapeResponse(
+        status="success", 
+        recipe=new_recipe, 
+        image_candidates=recipe_data.get("image_candidates")
+    )
+    return response_obj
 
 
 @router.post("/upload-temp-image")
@@ -225,6 +247,31 @@ async def upload_temp_image(file: UploadFile = File(...)):
     except Exception as e:
         print(f"Error uploading temp image: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+def delayed_cleanup_files(files_to_delete: List[str], keep_file: Optional[str] = None):
+    """
+    Waits 10 seconds and deletes files.
+    """
+    import time
+    import assets
+    time.sleep(10)
+    print(f"Background: Starting cleanup of {len(files_to_delete)} candidates...")
+    
+    for f in files_to_delete:
+        if not f: continue
+        # Don't delete the one we want to keep!
+        if keep_file and f == keep_file:
+            continue
+            
+        assets.delete_image(f)
+
+@router.post("/cleanup-images")
+def cleanup_images_endpoint(payload: schemas.CleanupRequest, background_tasks: BackgroundTasks):
+    """
+    Triggers background deletion of rejected image candidates.
+    """
+    background_tasks.add_task(delayed_cleanup_files, payload.files_to_delete, payload.keep_file)
+    return {"status": "queued"}
 
 
 @router.get("/recipes", response_model=List[schemas.Recipe])

@@ -67,6 +67,14 @@ export const setFavoriteStatus = async (id: number, isFavorite: boolean): Promis
     return response.data;
 };
 
+export const cleanupImages = async (filesToDelete: string[], keepFile?: string): Promise<{ status: string }> => {
+    const response = await api.post('/cleanup-images', {
+        files_to_delete: filesToDelete,
+        keep_file: keepFile
+    });
+    return response.data;
+};
+
 // Allergen Endpoints
 export const getAllergens = async (): Promise<Allergen[]> => {
     const response = await api.get('/allergens');

@@ -38,7 +38,7 @@ export interface ScrapeResponse {
   recipe?: Recipe;
   message?: string;
   html?: string;
-  candidate_images?: string[];
+  image_candidates?: string[];
 }
 
 export interface GroqSettings {
