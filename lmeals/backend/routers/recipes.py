@@ -152,7 +152,30 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
 
     # Ingredients from LLM are a list of strings, but our schema expects a list of objects
     ingredients_list = recipe_data.get("ingredients", [])
-    recipe_data["ingredients"] = [{"text": i} for i in ingredients_list]
+    sanitized_ingredients = []
+    for i in ingredients_list:
+        if isinstance(i, list):
+            # If AI returns a list (e.g. [['qty:1']]), join it or take the first element
+            sanitized_ingredients.append(" ".join(str(x) for x in i))
+        elif isinstance(i, dict):
+            # If AI returns a dict, try to get a 'text' or 'name' field, or stringify
+            sanitized_ingredients.append(i.get("text", i.get("name", str(i))))
+        else:
+            sanitized_ingredients.append(str(i))
+            
+    recipe_data["ingredients"] = [{"text": i} for i in sanitized_ingredients]
+    
+    # Sanitize instructions to ensure they are all strings
+    instructions_list = recipe_data.get("instructions", [])
+    sanitized_instructions = []
+    for inst in instructions_list:
+        if isinstance(inst, list):
+             sanitized_instructions.append(" ".join(str(x) for x in inst))
+        elif isinstance(inst, dict):
+             sanitized_instructions.append(inst.get("text", str(inst)))
+        else:
+             sanitized_instructions.append(str(inst))
+    recipe_data["instructions"] = sanitized_instructions
     
     # Handle empty image_url
     if not recipe_data.get("image_url"):
