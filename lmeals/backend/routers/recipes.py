@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, File, UploadFile
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 import crud, schemas, scraper, llm, allergen_checker, audio_processor, assets
 from database import SessionLocal
