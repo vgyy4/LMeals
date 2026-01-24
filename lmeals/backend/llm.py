@@ -51,6 +51,12 @@ def extract_with_groq(html: str):
     2. Convert fractions to decimals inside the tag (e.g., 1/2 -> [[qty:0.5]], 4 1/4 -> [[qty:4.25]]).
     3. Include both volume and weight if available in the text.
     4. Be as granular and step-by-step as possible in the instructions.
+    
+    IMPORTANT JSON FORMATTING RULES:
+    - Use strict JSON format.
+    - All property names and string values MUST be enclosed in standard double quotes (").
+    - DO NOT use smart quotes / curly quotes (“ or ”) anywhere in the JSON keys or values.
+    - Escape internal quotes properly.
     """
 
     # Extract only text from HTML to reduce tokens and improve accuracy
@@ -139,6 +145,12 @@ def extract_recipe_from_text(text: str):
     2. Convert fractions to decimals inside the tag (e.g., 1/2 -> [[qty:0.5]], 4 1/4 -> [[qty:4.25]]).
     3. Include both volume and weight if available in the text.
     4. Be as granular and step-by-step as possible in the instructions.
+    
+    IMPORTANT JSON FORMATTING RULES:
+    - Use strict JSON format.
+    - All property names and string values MUST be enclosed in standard double quotes (").
+    - DO NOT use smart quotes / curly quotes (“ or ”) anywhere in the JSON keys or values.
+    - Escape internal quotes properly.
     """
 
     try:
