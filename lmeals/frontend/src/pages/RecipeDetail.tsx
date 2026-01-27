@@ -201,10 +201,14 @@ const RecipeDetailPage = () => {
                 {recipe.ingredients.map((ingredient) => (
                   <li
                     key={ingredient.id}
-                    className="flex items-center gap-3 cursor-pointer hover:bg-p-surface p-2 rounded-xl transition-colors"
+                    className="flex items-start gap-3 cursor-pointer hover:bg-p-surface p-2 rounded-xl transition-colors"
                     onClick={() => handleIngredientToggle(ingredient.id)}
                   >
-                    {checkedIngredients.has(ingredient.id) ? <CheckSquare className="text-p-mint" /> : <Square className="text-slate-300" />}
+                    {checkedIngredients.has(ingredient.id) ? (
+                      <CheckSquare className="text-p-mint mt-0.5 flex-shrink-0" />
+                    ) : (
+                      <Square className="text-slate-300 mt-0.5 flex-shrink-0" />
+                    )}
                     <span className={`text-slate-700 ${checkedIngredients.has(ingredient.id) ? 'line-through text-slate-400' : ''}`}>
                       {scaleIngredientText(ingredient.text, multiplier)}
                     </span>
