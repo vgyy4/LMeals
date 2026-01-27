@@ -51,16 +51,19 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
       const response = await scrapeWithAi(url);
       if (response.status === 'success' && response.recipe) {
 
-        // Show selection screen (always for AI scrape, to allow custom upload or verify image)
-        const candidates = response.image_candidates || [];
-        // Ensure the primary scraped image is included if candidates failed
-        if (candidates.length === 0 && response.recipe.image_url) {
-          candidates.push(response.recipe.image_url);
+        // If we have multiple image candidates, show selection screen
+        if (response.image_candidates && response.image_candidates.length > 0) {
+          setImageCandidates(response.image_candidates);
+          setPendingRecipe(response.recipe);
+          return; // Stop here, don't close modal yet
         }
 
-        setImageCandidates(candidates);
-        setPendingRecipe(response.recipe);
-        return; // Stop here, show selection UI
+        // Otherwise proceed as normal
+        if (customImageUrl) {
+          await finalizeScrape(response.recipe, customImageUrl, []);
+        }
+        onRecipeAdded();
+        onClose();
       } else {
         setError(response.message || 'The AI scraper failed to import the recipe.');
       }

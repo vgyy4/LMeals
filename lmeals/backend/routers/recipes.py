@@ -285,12 +285,11 @@ def cleanup_images_endpoint(payload: schemas.CleanupRequest, background_tasks: B
 def finalize_scrape(payload: schemas.FinalizeScrapeRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
     Finalizes a scrape by setting the chosen image and cleaning up candidates.
-    If a video frame was chosen, it re-captures it at 1080p.
+    Moves the chosen image from candidates/ to images/ to make it permanent.
     """
     import shutil
     import os
     import assets
-    import re
     
     recipe_id = payload.recipe_data.id
     chosen_image = payload.chosen_image
@@ -300,51 +299,13 @@ def finalize_scrape(payload: schemas.FinalizeScrapeRequest, background_tasks: Ba
     if not db_recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
 
+    # 2. If chosen image is in candidates, move it to permanent storage
     final_image_path = chosen_image
-
-    # 2. Logic for high-res re-capture
-    # Check if the chosen image is one of our generated frames (e.g. "..._frame_15s.jpg")
-    # and NOT a manual upload (e.g. "upload_...")
-    if "candidates/" in chosen_image and "_frame_" in chosen_image:
-        try:
-            # Parse timestamp from filename
-            # Format: {unique_id}_frame_{ts}s.jpg
-            filename = os.path.basename(chosen_image)
-            match = re.search(r"_frame_([0-9.]+)s\.jpg", filename)
-            
-            if match:
-                timestamp = float(match.group(1))
-                print(f"DEBUG: Selected frame at timestamp {timestamp}s. Attempting high-res recapture...")
-                
-                # Re-capture at 1080p
-                high_res_path = audio_processor.capture_high_res_frame(db_recipe.source_url, timestamp)
-                
-                if high_res_path:
-                    final_image_path = high_res_path
-                    # Fix path separators for DB if needed (though relative path usually fine)
-                    final_image_path = final_image_path.replace("\\", "/")
-                else:
-                    print("WARNING: High-res capture failed, falling back to moving the low-res candidate.")
-            else:
-                print("DEBUG: Could not parse timestamp, falling back to move.")
-                
-        except Exception as e:
-            print(f"ERROR in high-res recapture: {e}")
-            # Fallback to move logic below
-
-    # 3. Fallback: If high-res failed OR it wasn't a frame (e.g. manual upload),
-    # move the candidate file to permanent storage if it's still in candidates
-    if final_image_path == chosen_image and "candidates/" in chosen_image:
+    if "candidates/" in chosen_image:
         try:
             filename = os.path.basename(chosen_image)
             source_path = os.path.join(assets.IMAGES_DIR, "candidates", filename)
-            
-            # Create a clean name
-            if "upload_" in filename:
-                dest_filename = filename.replace("upload_", "custom_")
-            else:
-                dest_filename = filename.replace("frame_", "selected_")
-                
+            dest_filename = filename.replace("upload_", "").replace("frame_", "selected_")
             dest_path = os.path.join(assets.IMAGES_DIR, dest_filename)
             
             if os.path.exists(source_path):
@@ -353,6 +314,7 @@ def finalize_scrape(payload: schemas.FinalizeScrapeRequest, background_tasks: Ba
                 print(f"DEBUG: Moved candidate image to permanent storage: {final_image_path}")
         except Exception as e:
             print(f"ERROR moving candidate image: {e}")
+            # Fallback: keep the original path if move fails
             pass
 
     # Update DB
@@ -360,8 +322,12 @@ def finalize_scrape(payload: schemas.FinalizeScrapeRequest, background_tasks: Ba
     db.commit()
     db.refresh(db_recipe)
     
-    # 4. Trigger cleanup for other candidates
+    # 3. Trigger cleanup for other candidates
     if payload.candidates_to_cleanup:
+        # We pass the full list and the original chosen path (before move) to keep
+        # Wait, if we moved it, the source path doesn't exist anymore anyway.
+        # But delayed_cleanup uses delete_image which prepends IMAGES_DIR...
+        # Let's ensure candidate cleanup works.
         background_tasks.add_task(delayed_cleanup_files, payload.candidates_to_cleanup, chosen_image)
         
     return schemas.ScrapeResponse(status="success", recipe=db_recipe)

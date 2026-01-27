@@ -179,23 +179,21 @@ def capture_video_frames(url: str, timestamps: list[float] = [1.0, 5, 10, 15]) -
     import subprocess
     import shutil
     import assets
-    import tempfile
     
     # 1. Setup paths
     candidates_dir = os.path.join(assets.STATIC_DIR, "images", "recipes", "candidates")
     os.makedirs(candidates_dir, exist_ok=True)
     
-    # Use tempfile for robust temp directory creation
-    temp_video_dir = tempfile.mkdtemp(prefix="lmeals_frames_")
+    temp_video_dir = os.path.join(os.getcwd(), f"temp_video_{uuid.uuid4()}")
+    os.makedirs(temp_video_dir, exist_ok=True)
     
     unique_id = str(uuid.uuid4())
     video_path_template = os.path.join(temp_video_dir, f"{unique_id}.%(ext)s")
-
     
     # 2. Download first 20 seconds of video
-    # Using 480p to be extremely safe against OOM/resource limits
+    # Increasing height to <=720 to improve resolution while remaining safe
     ydl_opts = {
-        'format': 'best[height<=480]/best',
+        'format': 'best[height<=720]/best',
         'outtmpl': video_path_template,
         'quiet': True,
         'no_warnings': True,
@@ -262,82 +260,3 @@ def capture_video_frames(url: str, timestamps: list[float] = [1.0, 5, 10, 15]) -
         if os.path.exists(temp_video_dir):
             shutil.rmtree(temp_video_dir, ignore_errors=True)
 
-
-def capture_high_res_frame(url: str, timestamp: float) -> str:
-    """
-    Downloads a tiny clip around the specific timestamp at 1080p and extracts a high-quality frame.
-    Returns the relative path to the new high-res image.
-    """
-    import subprocess
-    import shutil
-    import assets
-    import tempfile
-    
-    # 1. Setup paths
-    # We save this directly to the main images folder since it's the "selected" one
-    images_dir = os.path.join(assets.STATIC_DIR, "images", "recipes")
-    os.makedirs(images_dir, exist_ok=True)
-    
-    temp_video_dir = tempfile.mkdtemp(prefix="lmeals_hires_")
-    
-    unique_id = str(uuid.uuid4())
-    video_path_template = os.path.join(temp_video_dir, f"{unique_id}.%(ext)s")
-    
-    # Calculate download range (short buffer around timestamp)
-    start_time = max(0, timestamp - 2)
-    end_time = timestamp + 2
-    
-    # 2. Download clip at 1080p
-    ydl_opts = {
-        'format': 'best[height<=1080]/best',
-        'outtmpl': video_path_template,
-        'quiet': True,
-        'no_warnings': True,
-        'noplaylist': True,
-        'download_ranges': lambda _, __: [{'start_time': start_time, 'end_time': end_time}],
-        'force_keyframes_at_cuts': True,
-    }
-    
-    downloaded_video_path = None
-    try:
-        print(f"DEBUG: capturing high-res frame at {timestamp}s from {url}")
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-            
-        for f in os.listdir(temp_video_dir):
-            if f.startswith(unique_id) and not f.endswith(".part"):
-                downloaded_video_path = os.path.join(temp_video_dir, f)
-                break
-                
-        if not downloaded_video_path:
-            print("ERROR: High-res video download failed.")
-            return None
-
-        # 3. Extract exact frame
-        output_filename = f"selected_{unique_id}.jpg"
-        output_path = os.path.join(images_dir, output_filename)
-        
-        cmd = [
-            'ffmpeg',
-            '-ss', str(timestamp),
-            '-i', downloaded_video_path,
-            '-frames:v', '1',
-            '-q:v', '2', # High quality
-            '-y',
-            output_path
-        ]
-        
-        subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-        
-        if os.path.exists(output_path):
-            relative_path = f"images/recipes/{output_filename}"
-            print(f"DEBUG: Captured high-res frame: {relative_path}")
-            return relative_path
-            
-    except Exception as e:
-        print(f"ERROR capturing high-res frame: {e}")
-        return None
-    finally:
-        if os.path.exists(temp_video_dir):
-            shutil.rmtree(temp_video_dir, ignore_errors=True)
-    return None
