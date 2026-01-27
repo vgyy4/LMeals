@@ -205,9 +205,9 @@ const RecipeDetailPage = () => {
                     onClick={() => handleIngredientToggle(ingredient.id)}
                   >
                     {checkedIngredients.has(ingredient.id) ? (
-                      <CheckSquare className="text-p-mint mt-0.5 flex-shrink-0" />
+                      <CheckSquare className="text-p-mint mt-0.5 flex-shrink-0 w-6 h-6" />
                     ) : (
-                      <Square className="text-slate-300 mt-0.5 flex-shrink-0" />
+                      <Square className="text-slate-300 mt-0.5 flex-shrink-0 w-6 h-6" />
                     )}
                     <span className={`text-slate-700 ${checkedIngredients.has(ingredient.id) ? 'line-through text-slate-400' : ''}`}>
                       {scaleIngredientText(ingredient.text, multiplier)}
