@@ -281,6 +281,58 @@ def cleanup_images_endpoint(payload: schemas.CleanupRequest, background_tasks: B
     background_tasks.add_task(delayed_cleanup_files, payload.files_to_delete, payload.keep_file)
     return {"status": "queued"}
 
+@router.post("/finalize-scrape", response_model=schemas.ScrapeResponse)
+def finalize_scrape(payload: schemas.FinalizeScrapeRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """
+    Finalizes a scrape by setting the chosen image and cleaning up candidates.
+    Moves the chosen image from candidates/ to images/ to make it permanent.
+    """
+    import shutil
+    import os
+    import assets
+    
+    recipe_id = payload.recipe_data.id
+    chosen_image = payload.chosen_image
+    
+    # 1. Update the recipe in DB
+    db_recipe = crud.get_recipe(db, recipe_id=recipe_id)
+    if not db_recipe:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+
+    # 2. If chosen image is in candidates, move it to permanent storage
+    final_image_path = chosen_image
+    if "candidates/" in chosen_image:
+        try:
+            filename = os.path.basename(chosen_image)
+            source_path = os.path.join(assets.IMAGES_DIR, "candidates", filename)
+            dest_filename = filename.replace("upload_", "").replace("frame_", "selected_")
+            dest_path = os.path.join(assets.IMAGES_DIR, dest_filename)
+            
+            if os.path.exists(source_path):
+                shutil.move(source_path, dest_path)
+                final_image_path = f"images/recipes/{dest_filename}"
+                print(f"DEBUG: Moved candidate image to permanent storage: {final_image_path}")
+        except Exception as e:
+            print(f"ERROR moving candidate image: {e}")
+            # Fallback: keep the original path if move fails
+            pass
+
+    # Update DB
+    db_recipe.image_url = final_image_path
+    db.commit()
+    db.refresh(db_recipe)
+    
+    # 3. Trigger cleanup for other candidates
+    if payload.candidates_to_cleanup:
+        # We pass the full list and the original chosen path (before move) to keep
+        # Wait, if we moved it, the source path doesn't exist anymore anyway.
+        # But delayed_cleanup uses delete_image which prepends IMAGES_DIR...
+        # Let's ensure candidate cleanup works.
+        background_tasks.add_task(delayed_cleanup_files, payload.candidates_to_cleanup, chosen_image)
+        
+    return schemas.ScrapeResponse(status="success", recipe=db_recipe)
+
+
 
 @router.get("/recipes", response_model=List[schemas.Recipe])
 def read_recipes(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

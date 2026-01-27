@@ -171,7 +171,7 @@ def cleanup_files(files: list[str]):
             except:
                 pass
 
-def capture_video_frames(url: str, timestamps: list[int] = [0, 5, 10, 15]) -> list[str]:
+def capture_video_frames(url: str, timestamps: list[float] = [0.05, 5, 10, 15]) -> list[str]:
     """
     Downloads the first 20 seconds of a video and extracts frames at specified timestamps.
     Returns a list of relative paths to the extracted images.

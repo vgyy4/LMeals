@@ -72,6 +72,12 @@ class CleanupRequest(BaseModel):
     files_to_delete: List[str]
     keep_file: Optional[str] = None
 
+class FinalizeScrapeRequest(BaseModel):
+    recipe_data: Recipe
+    chosen_image: str
+    candidates_to_cleanup: List[str]
+
+
 # Groq Settings Schema
 class GroqSettings(BaseModel):
     api_key: str
