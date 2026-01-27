@@ -184,18 +184,19 @@ def capture_video_frames(url: str, timestamps: list[int] = [0, 5, 10, 15]) -> li
     candidates_dir = os.path.join(assets.STATIC_DIR, "images", "recipes", "candidates")
     os.makedirs(candidates_dir, exist_ok=True)
     
-    temp_video_dir = "temp_video_capture"
+    temp_video_dir = os.path.join(os.getcwd(), f"temp_video_{uuid.uuid4()}")
     os.makedirs(temp_video_dir, exist_ok=True)
     
     unique_id = str(uuid.uuid4())
     video_path_template = os.path.join(temp_video_dir, f"{unique_id}.%(ext)s")
     
     # 2. Download first 20 seconds of video
-    # Note: yt-dlp's --download-sections is useful here
+    # Using lower quality format to save memory and bandwidth in restricted environments
     ydl_opts = {
-        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+        'format': 'best[height<=360]/worst',  # Prefer low res for frames
         'outtmpl': video_path_template,
         'quiet': True,
+        'no_warnings': True,
         'noplaylist': True,
         'download_ranges': lambda _, __: [{'start_time': 0, 'end_time': 20}],
         'force_keyframes_at_cuts': True,
@@ -203,48 +204,57 @@ def capture_video_frames(url: str, timestamps: list[int] = [0, 5, 10, 15]) -> li
     
     downloaded_video_path = None
     try:
+        print(f"DEBUG: Attempting to download video clip for frames: {url}")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
             
         # Find the downloaded file
         for f in os.listdir(temp_video_dir):
-            if f.startswith(unique_id):
+            if f.startswith(unique_id) and not f.endswith(".part"):
                 downloaded_video_path = os.path.join(temp_video_dir, f)
                 break
                 
         if not downloaded_video_path:
-            print("DEBUG: Could not find downloaded video clip.")
+            print("ERROR: Could not find downloaded video clip (or download failed).")
             return []
 
         # 3. Extract frames using ffmpeg
         extracted_paths = []
-        for i, ts in enumerate(timestamps):
+        for ts in timestamps:
             output_filename = f"{unique_id}_frame_{ts}s.jpg"
             output_path = os.path.join(candidates_dir, output_filename)
             
-            # ffmpeg command: -ss [time] -i [input] -frames:v 1 [output]
+            # Use -ss BEFORE -i for faster seeking and lower resource usage
             cmd = [
                 'ffmpeg',
                 '-ss', str(ts),
                 '-i', downloaded_video_path,
                 '-frames:v', '1',
-                '-q:v', '2',  # High quality jpeg
-                '-y',         # Overwrite
+                '-q:v', '4',  # Decent quality but smaller size
+                '-y',
                 output_path
             ]
             
-            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            
-            if os.path.exists(output_path):
-                relative_path = f"images/recipes/candidates/{output_filename}"
-                extracted_paths.append(relative_path)
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                if result.returncode != 0:
+                    print(f"WARNING: ffmpeg failed for timestamp {ts}s: {result.stderr}")
+                
+                if os.path.exists(output_path):
+                    relative_path = f"images/recipes/candidates/{output_filename}"
+                    extracted_paths.append(relative_path)
+            except subprocess.TimeoutExpired:
+                print(f"WARNING: ffmpeg timed out for timestamp {ts}s")
+            except Exception as fe:
+                print(f"WARNING: ffmpeg error: {fe}")
                 
         return extracted_paths
         
     except Exception as e:
-        print(f"Error capturing video frames: {e}")
+        print(f"ERROR capturing video frames: {e}")
         return []
     finally:
-        # 4. Cleanup temp video
+        # 4. Cleanup temp video directory
         if os.path.exists(temp_video_dir):
             shutil.rmtree(temp_video_dir, ignore_errors=True)
+

@@ -83,6 +83,14 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
     Scrapes a recipe from a URL using AI. 
     Supports standard HTML pages and Video/Audio sources.
     """
+    # Check if URL already exists to avoid IntegrityError
+    existing_recipe = crud.get_recipe_by_source_url(db, source_url=str(scrape_request.url))
+    if existing_recipe:
+        # Trigger template generation if missing
+        if not existing_recipe.instruction_template:
+            background_tasks.add_task(background_generate_template, existing_recipe.id)
+        return schemas.ScrapeResponse(status="exists", recipe=existing_recipe, message="Recipe already exists.")
+
     url = str(scrape_request.url)
     recipe_data = {}
     is_video_audio = any(domain in url for domain in ["youtube.com", "youtu.be", "vimeo.com", "spotify.com", "facebook.com", "instagram.com"])
