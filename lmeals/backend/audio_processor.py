@@ -179,16 +179,18 @@ def capture_video_frames(url: str, timestamps: list[float] = [1.0, 5, 10, 15]) -
     import subprocess
     import shutil
     import assets
+    import tempfile
     
     # 1. Setup paths
     candidates_dir = os.path.join(assets.STATIC_DIR, "images", "recipes", "candidates")
     os.makedirs(candidates_dir, exist_ok=True)
     
-    temp_video_dir = os.path.join(os.getcwd(), f"temp_video_{uuid.uuid4()}")
-    os.makedirs(temp_video_dir, exist_ok=True)
+    # Use tempfile for robust temp directory creation
+    temp_video_dir = tempfile.mkdtemp(prefix="lmeals_frames_")
     
     unique_id = str(uuid.uuid4())
     video_path_template = os.path.join(temp_video_dir, f"{unique_id}.%(ext)s")
+
     
     # 2. Download first 20 seconds of video
     # Using 480p to be extremely safe against OOM/resource limits
@@ -269,14 +271,14 @@ def capture_high_res_frame(url: str, timestamp: float) -> str:
     import subprocess
     import shutil
     import assets
+    import tempfile
     
     # 1. Setup paths
     # We save this directly to the main images folder since it's the "selected" one
     images_dir = os.path.join(assets.STATIC_DIR, "images", "recipes")
     os.makedirs(images_dir, exist_ok=True)
     
-    temp_video_dir = os.path.join(os.getcwd(), f"temp_hires_{uuid.uuid4()}")
-    os.makedirs(temp_video_dir, exist_ok=True)
+    temp_video_dir = tempfile.mkdtemp(prefix="lmeals_hires_")
     
     unique_id = str(uuid.uuid4())
     video_path_template = os.path.join(temp_video_dir, f"{unique_id}.%(ext)s")
