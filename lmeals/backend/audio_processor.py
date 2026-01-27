@@ -191,9 +191,9 @@ def capture_video_frames(url: str, timestamps: list[float] = [1.0, 5, 10, 15]) -
     video_path_template = os.path.join(temp_video_dir, f"{unique_id}.%(ext)s")
     
     # 2. Download first 20 seconds of video
-    # Increasing height to <=720 to improve resolution while remaining safe
+    # Using lower quality format to save memory and bandwidth in restricted environments
     ydl_opts = {
-        'format': 'best[height<=720]/best',
+        'format': 'best[height<=360]/worst',  # Prefer low res for frames
         'outtmpl': video_path_template,
         'quiet': True,
         'no_warnings': True,
@@ -225,17 +225,15 @@ def capture_video_frames(url: str, timestamps: list[float] = [1.0, 5, 10, 15]) -
             output_path = os.path.join(candidates_dir, output_filename)
             
             # Use -ss BEFORE -i for faster seeking and lower resource usage
-            # -q:v 2 for high quality JPEG (lower is better, range is 1-31)
             cmd = [
                 'ffmpeg',
                 '-ss', str(ts),
                 '-i', downloaded_video_path,
                 '-frames:v', '1',
-                '-q:v', '2',  
+                '-q:v', '4',  # Decent quality but smaller size
                 '-y',
                 output_path
             ]
-
             
             try:
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
