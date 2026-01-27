@@ -62,12 +62,6 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
         setPendingRecipe(response.recipe);
         return; // Stop here, show selection UI
       } else {
-        if (customImageUrl) {
-          await finalizeScrape(response.recipe, customImageUrl, []);
-        }
-        onRecipeAdded();
-        onClose();
-      } else {
         setError(response.message || 'The AI scraper failed to import the recipe.');
       }
     } catch (err) {
