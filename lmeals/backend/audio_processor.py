@@ -191,9 +191,9 @@ def capture_video_frames(url: str, timestamps: list[float] = [1.0, 5, 10, 15]) -
     video_path_template = os.path.join(temp_video_dir, f"{unique_id}.%(ext)s")
     
     # 2. Download first 20 seconds of video
-    # Increasing height to <=1080 to get high quality frames while avoiding crashes
+    # Using 480p to be extremely safe against OOM/resource limits
     ydl_opts = {
-        'format': 'best[height<=1080]/best',
+        'format': 'best[height<=480]/best',
         'outtmpl': video_path_template,
         'quiet': True,
         'no_warnings': True,
