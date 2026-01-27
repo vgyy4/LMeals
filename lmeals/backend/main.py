@@ -22,15 +22,6 @@ import os
 
 # Determine static directory (backend/static in dev, /app/static in container)
 static_dir = assets.STATIC_DIR if os.path.exists(assets.STATIC_DIR) else "/app/static"
-print(f"DEBUG: Using static directory: {static_dir}")
-print(f"DEBUG: Static directory exists: {os.path.exists(static_dir)}")
-if os.path.exists(static_dir):
-    print(f"DEBUG: Static directory contents: {os.listdir(static_dir)}")
-    images_dir = os.path.join(static_dir, "images", "recipes", "candidates")
-    print(f"DEBUG: Candidates directory: {images_dir}")
-    print(f"DEBUG: Candidates exists: {os.path.exists(images_dir)}")
-    if os.path.exists(images_dir):
-        print(f"DEBUG: Candidates listing: {os.listdir(images_dir)[:5] if os.listdir(images_dir) else 'empty'}")
 
 app.include_router(recipes.router, prefix="/api", tags=["recipes"])
 app.include_router(allergens.router, prefix="/api", tags=["allergens"])
@@ -44,12 +35,22 @@ async def serve_candidate_image(filename: str):
     """Serve candidate images directly to bypass StaticFiles mount issues in containers"""
     candidates_dir = os.path.join(static_dir, "images", "recipes", "candidates")
     file_path = os.path.join(candidates_dir, filename)
-    print(f"DEBUG: [IMAGE REQUEST] {filename} -> {file_path} (exists: {os.path.exists(file_path)})")
     if os.path.exists(file_path):
         return FileResponse(file_path)
     else:
         from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail=f"Image not found: {filename}")
+        raise HTTPException(status_code=404, detail=f"Candidate image not found: {filename}")
+
+@app.get("/api/static/images/recipes/{filename}")
+async def serve_recipe_image(filename: str):
+    """Serve recipe images directly to bypass StaticFiles mount issues in containers"""
+    recipe_dir = os.path.join(static_dir, "images", "recipes")
+    file_path = os.path.join(recipe_dir, filename)
+    if os.path.exists(file_path):
+        return FileResponse(file_path)
+    else:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"Recipe image not found: {filename}")
 
 app.mount("/api/static", StaticFiles(directory=static_dir), name="static")
 print(f"DEBUG: Mounted /api/static -> {static_dir}")

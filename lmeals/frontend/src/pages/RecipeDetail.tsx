@@ -149,7 +149,11 @@ const RecipeDetailPage = () => {
       </div>
       <div className="bg-white rounded-3xl shadow-sm border border-p-sky/10 overflow-hidden">
         {recipe.image_url && (
-          <img src={recipe.image_url} alt={recipe.title} className="w-full h-64 object-cover" />
+          <img
+            src={recipe.image_url.startsWith('http') ? recipe.image_url : `api/static/${recipe.image_url}`}
+            alt={recipe.title}
+            className="w-full h-64 object-cover"
+          />
         )}
         <div className="p-6 md:p-8">
           <div className="flex justify-between items-start">

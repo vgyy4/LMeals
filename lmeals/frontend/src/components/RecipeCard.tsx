@@ -60,7 +60,7 @@ const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, ser
       {/* Top Section: Image */}
       <div className="relative h-40 w-full bg-slate-100 overflow-hidden">
         <img
-          src={imageUrl || 'https://placehold.co/600x400/F8E8EE/C9A9A6?text=LMeals'}
+          src={imageUrl ? (imageUrl.startsWith('http') ? imageUrl : `api/static/${imageUrl}`) : 'https://placehold.co/600x400/F8E8EE/C9A9A6?text=LMeals'}
           alt={title}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />

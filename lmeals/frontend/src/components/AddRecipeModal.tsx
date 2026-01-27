@@ -152,7 +152,7 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
                     }`}
                 >
                   <img
-                    src={`/api/static/${img}`}
+                    src={`api/static/${img}`}
                     className="w-full h-full object-cover"
                     loading="lazy"
                   />
@@ -266,7 +266,7 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
                 {customImageUrl ? (
                   <div className="flex items-center gap-3">
                     <img
-                      src={`/api/static/${customImageUrl}`}
+                      src={`api/static/${customImageUrl}`}
                       className="h-16 w-16 object-cover rounded-xl"
                     />
                     <div className="flex flex-col">

@@ -178,9 +178,10 @@ def capture_video_frames(url: str, timestamps: list[int] = [0, 5, 10, 15]) -> li
     """
     import subprocess
     import shutil
+    import assets
     
     # 1. Setup paths
-    candidates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "images", "recipes", "candidates")
+    candidates_dir = os.path.join(assets.STATIC_DIR, "images", "recipes", "candidates")
     os.makedirs(candidates_dir, exist_ok=True)
     
     temp_video_dir = "temp_video_capture"

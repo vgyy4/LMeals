@@ -122,7 +122,7 @@ const Dashboard = () => {
             return (
               <Link to={`/recipe/${recipeOfTheDay.id}`} className="block relative group overflow-hidden rounded-2xl md:rounded-3xl h-[360px] shadow-xl ring-1 ring-black/5 bg-slate-800">
                 <img
-                  src={recipeOfTheDay.image_url || 'https://placehold.co/1200x800/F8E8EE/C9A9A6?text=LMeals'}
+                  src={recipeOfTheDay.image_url ? (recipeOfTheDay.image_url.startsWith('http') ? recipeOfTheDay.image_url : `api/static/${recipeOfTheDay.image_url}`) : 'https://placehold.co/1200x800/F8E8EE/C9A9A6?text=LMeals'}
                   alt={recipeOfTheDay.title}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   onError={(e) => {
