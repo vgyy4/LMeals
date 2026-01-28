@@ -126,7 +126,8 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
             if not transcript:
                 transcript = f"Title: {metadata['title']}\nDescription: {metadata['description']}"
 
-            extracted = llm.extract_recipe_from_text(transcript)
+            # Pass metadata (especially description) to help the AI when transcript is poor
+            extracted = llm.extract_recipe_from_text(transcript, metadata=metadata)
             if not extracted:
                 raise HTTPException(status_code=500, detail="AI failed to extract recipe from transcript.")
             

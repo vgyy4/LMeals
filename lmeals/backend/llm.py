@@ -121,9 +121,10 @@ def extract_with_groq(html: str):
         print(f"An error occurred with the Groq API call: {e}")
         return None
 
-def extract_recipe_from_text(text: str):
+def extract_recipe_from_text(text: str, metadata: dict = None):
     """
     Uses Groq to extract recipe data from ANY raw text (html text or transcript).
+    Optionally accepts metadata (like video description) to improve context.
     """
     client, model = get_groq_client()
     if not client:
@@ -153,11 +154,20 @@ def extract_recipe_from_text(text: str):
     - Escape internal quotes properly.
     """
 
+    user_content = f"Extract recipe from this text:\n\n{text}"
+    
+    # Append metadata context if available (e.g. video descriptions)
+    if metadata:
+        if metadata.get("description"):
+            user_content += f"\n\nAdditional Context (Video Description):\n{metadata['description']}"
+        if metadata.get("title"):
+            user_content += f"\n\nVideo Title: {metadata['title']}"
+
     try:
         chat_completion = client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Extract recipe from this text:\n\n{text}"}
+                {"role": "user", "content": user_content}
             ],
             model=model,
             response_format={"type": "json_object"},
