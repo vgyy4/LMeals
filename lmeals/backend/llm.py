@@ -49,8 +49,9 @@ def extract_with_groq(html: str):
     CRITICAL: 
     1. For every number in the "ingredients" list that represents a quantity, volume, or weight, wrap it in [[qty:VALUE]]. 
     2. Convert fractions to decimals inside the tag (e.g., 1/2 -> [[qty:0.5]], 4 1/4 -> [[qty:4.25]]).
-    3. Include both volume and weight if available in the text.
-    4. Be as granular and step-by-step as possible in the instructions.
+    3. ALLOW RANGES: If a quantity is a range (e.g. "10-15g", "1 to 2 cups"), format it as [[qty:MIN-MAX]] (e.g. [[qty:10-15]], [[qty:1-2]]).
+    4. Include both volume and weight if available in the text.
+    5. Be as granular and step-by-step as possible in the instructions.
     
     IMPORTANT JSON FORMATTING RULES:
     - Use strict JSON format.

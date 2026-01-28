@@ -47,10 +47,16 @@ export const scaleIngredientText = (text: string, multiplier: number): string =>
         return text.replace(/\[\[qty:([\d.]+)\]\]/g, '$1');
     }
 
-    // Priority 1: Handle tagged quantities [[qty:NUMBER]]
+    // Priority 1: Handle tagged quantities [[qty:NUMBER]] or [[qty:MIN-MAX]]
     // If the string contains tags, we ONLY scale the tags to avoid double-scaling
     if (text.includes('[[qty:')) {
-        return text.replace(/\[\[qty:([\d.]+)\]\]/g, (_, qtyStr) => {
+        return text.replace(/\[\[qty:([0-9.\-]+)\]\]/g, (_, qtyStr) => {
+            if (qtyStr.includes('-')) {
+                const [min, max] = qtyStr.split('-').map(parseFloat);
+                if (!isNaN(min) && !isNaN(max)) {
+                    return `${formatNumber(min * multiplier)}-${formatNumber(max * multiplier)}`;
+                }
+            }
             const qty = parseFloat(qtyStr);
             return isNaN(qty) ? qtyStr : formatNumber(qty * multiplier);
         });
@@ -91,6 +97,14 @@ export const scaleIngredientText = (text: string, multiplier: number): string =>
  */
 export const scaleServings = (servings: string, multiplier: number): string => {
     if (!servings || multiplier === 1) return servings;
+
+    // Check for range first: "20-24"
+    const rangeMatch = servings.match(/(\d+)\s*-\s*(\d+)/);
+    if (rangeMatch) {
+        const min = Math.round(parseInt(rangeMatch[1]) * multiplier);
+        const max = Math.round(parseInt(rangeMatch[2]) * multiplier);
+        return servings.replace(rangeMatch[0], `${min}-${max}`);
+    }
 
     const match = servings.match(/(\d+)/);
     if (!match) return servings;
