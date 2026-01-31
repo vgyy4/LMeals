@@ -45,17 +45,17 @@ const GeometricLoader: React.FC<GeometricLoaderProps> = ({
                 angle: angleBase + angleRandom,
                 baseRadius: 0.45 + Math.random() * 0.2,
 
-                // Wave 1: The "Main" slow breathing
+                // Wave 1: The "Main" breathing
                 phase1: Math.random() * Math.PI * 2,
-                speed1: 0.2 + Math.random() * 0.1,
+                speed1: 0.4 + Math.random() * 0.2,
 
-                // Wave 2: A slightly faster, smaller variation
+                // Wave 2: Faster variation
                 phase2: Math.random() * Math.PI * 2,
-                speed2: 0.3 + Math.random() * 0.2,
+                speed2: 0.6 + Math.random() * 0.4,
 
-                // Wave 3: Very slow underlying drift
+                // Wave 3: Slow underlying drift
                 phase3: Math.random() * Math.PI * 2,
-                speed3: 0.1 + Math.random() * 0.05,
+                speed3: 0.2 + Math.random() * 0.1,
             });
         }
         return points;
