@@ -43,7 +43,7 @@ const GeometricLoader: React.FC<GeometricLoaderProps> = ({
                 angle: angleBase + angleRandom,
                 radius: 0.4 + Math.random() * 0.5, // Start with random size
                 targetRadius: 0.4 + Math.random() * 0.6,
-                speed: 0.002 + Math.random() * 0.003 // Random speed
+                speed: 0.0002 + Math.random() * 0.0005 // Random speed (Slow & Calming)
             });
         }
         setVertices(initialVertices);
@@ -67,7 +67,7 @@ const GeometricLoader: React.FC<GeometricLoaderProps> = ({
                 // If we reached the target (or are very close), pick a new target
                 if (Math.abs(radius - targetRadius) < 0.01) {
                     targetRadius = 0.4 + Math.random() * 0.6; // New random target between 0.4 and 1.0
-                    speed = 0.005 + Math.random() * 0.015; // New random speed for variety
+                    speed = 0.0005 + Math.random() * 0.0015; // New random speed for variety (Calming)
                 }
 
                 return { ...v, radius, targetRadius, speed };
