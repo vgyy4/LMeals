@@ -380,6 +380,19 @@ def set_recipe_favorite(recipe_id: int, is_favorite: bool, db: Session = Depends
         raise HTTPException(status_code=404, detail="Recipe not found")
     return db_recipe
 
+@router.post("/recipes/capture-frame", response_model=dict)
+def capture_high_res_frame_endpoint(payload: schemas.CaptureFrameRequest):
+    """
+    Captures a specific frame in high resolution (1440p) from a video URL.
+    """
+    try:
+        image_path = audio_processor.capture_high_res_frame(str(payload.url), payload.timestamp)
+        if not image_path:
+            raise HTTPException(status_code=500, detail="Failed to capture high-resolution frame.")
+        return {"status": "success", "image_url": image_path}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.put("/recipes/{recipe_id}/scrape-ai", response_model=schemas.Recipe)
 def update_recipe_with_ai(recipe_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """

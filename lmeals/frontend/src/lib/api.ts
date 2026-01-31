@@ -37,6 +37,11 @@ export const finalizeScrape = async (recipeData: any, chosenImage: string, candi
     return response.data;
 };
 
+export const captureHighResFrame = async (url: string, timestamp: number): Promise<{ status: string; image_url: string }> => {
+    const response = await api.post('/recipes/capture-frame', { url, timestamp });
+    return response.data;
+};
+
 export const uploadTempImage = async (file: File): Promise<{ status: string; url: string }> => {
     const formData = new FormData();
     formData.append('file', file);

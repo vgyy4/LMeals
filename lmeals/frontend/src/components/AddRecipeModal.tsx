@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { scrapeRecipe, scrapeWithAi, uploadTempImage, finalizeScrape, cleanupImages } from '../lib/api';
+import { scrapeRecipe, scrapeWithAi, uploadTempImage, finalizeScrape, cleanupImages, captureHighResFrame } from '../lib/api';
 import { X, Youtube, Music, Facebook, Instagram, ImagePlus, Check, ArrowRight, Upload } from 'lucide-react';
 import GeometricLoader from './GeometricLoader';
 import { Recipe } from '../lib/types';
@@ -108,14 +108,34 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
 
     setIsLoading(true);
     try {
-      const selectedImage = imageCandidates[selectedCandidateIndex];
+      let selectedImage = imageCandidates[selectedCandidateIndex];
+
+      // Check if the selected image is a video frame with a timestamp we can parse
+      // Format: ..._frame_12.5s.jpg or ..._frame_10s.jpg
+      const frameMatch = selectedImage.match(/_frame_(\d+(\.\d+)?)s\.jpg$/);
+
+      if (frameMatch && pendingRecipe.source_url) {
+        // It's a frame! Let's try to get a High-Res version (1440p)
+        const timestamp = parseFloat(frameMatch[1]);
+        try {
+          // We initiate the High-Res capture
+          // Note: This might take a few seconds, so the spinner is important
+          const captureResponse = await captureHighResFrame(pendingRecipe.source_url, timestamp);
+          if (captureResponse.status === 'success' && captureResponse.image_url) {
+            selectedImage = captureResponse.image_url;
+            // Add the high-res image to candidates so it gets cleaned up if we delete the recipe later?
+            // Actually we will treat it as "the" chosen image.
+          }
+        } catch (hqError) {
+          console.warn("High-res capture failed, falling back to low-res preview:", hqError);
+          // Fallback: stay with the selectedImage variable (the low-res one)
+        }
+      }
 
       // Update the recipe with the selected image if it's different
       await finalizeScrape(pendingRecipe, selectedImage, []);
 
       // Cleanup: Delete all OTHER candidates that are NOT the selected one
-      // We pass the full list of candidates (which are the files created)
-      // and tell backend to keep the 'selectedImage'
       cleanupImages(imageCandidates, selectedImage);
 
       onRecipeAdded();

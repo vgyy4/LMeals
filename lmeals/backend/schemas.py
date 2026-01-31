@@ -73,9 +73,13 @@ class CleanupRequest(BaseModel):
     keep_file: Optional[str] = None
 
 class FinalizeScrapeRequest(BaseModel):
-    recipe_data: Recipe
+    recipe_data: RecipeCreate  # Using Create schema as we might need to re-validate
     chosen_image: str
-    candidates_to_cleanup: List[str]
+    candidates_to_cleanup: List[str] = []
+
+class CaptureFrameRequest(BaseModel):
+    url: str
+    timestamp: float
 
 
 # Groq Settings Schema
