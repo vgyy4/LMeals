@@ -286,18 +286,18 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
             </div>
           </div>
 
-          <button
-            onClick={handleInitialScrape}
-            className="w-full mt-6 bg-p-mint text-emerald-900 font-bold py-3 rounded-2xl hover:bg-emerald-100 transition-all shadow-sm active:scale-95 border border-p-mint/50"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <div className="flex items-center justify-center gap-2">
-                <GeometricLoader size={20} className="text-emerald-900" />
-                <span>{url.includes('youtube') || url.includes('youtu.be') ? 'Transcribing Video...' : 'Importing...'}</span>
-              </div>
-            ) : 'Import Recipe'}
-          </button>
+          {isLoading ? (
+            <div className="flex justify-center mt-6 py-2">
+              <GeometricLoader size={60} className="text-p-coral" />
+            </div>
+          ) : (
+            <button
+              onClick={handleInitialScrape}
+              className="w-full mt-6 bg-p-mint text-emerald-900 font-bold py-3 rounded-2xl hover:bg-emerald-100 transition-all shadow-sm active:scale-95 border border-p-mint/50"
+            >
+              Import Recipe
+            </button>
+          )}
         </div>
       </div>
     </div>
