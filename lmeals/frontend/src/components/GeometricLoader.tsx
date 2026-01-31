@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface GeometricLoaderProps {
     size?: number;
@@ -9,7 +9,9 @@ interface GeometricLoaderProps {
 
 interface Vertex {
     angle: number; // in degrees
-    radius: number; // normalized 0-1 (relative to half-size)
+    radius: number; // current normalized radius (0-1)
+    targetRadius: number; // target normalized radius to animate towards
+    speed: number; // speed of change for this specific movement leg
 }
 
 const GeometricLoader: React.FC<GeometricLoaderProps> = ({
@@ -19,35 +21,69 @@ const GeometricLoader: React.FC<GeometricLoaderProps> = ({
     className = '',
 }) => {
     const center = size / 2;
-    const maxRadius = (size / 2) * 0.9; // keep some padding
+    const maxRadius = (size / 2) * 0.9;
 
-    // Generate static vertices for the "shattered/geometric" look.
-    // We use a fixed seed or just useMemo with no deps to keep it consistent per mount.
-    // In the future, these radii will be animated.
-    const vertices = useMemo<Vertex[]>(() => {
+    // State to hold the current animation frame's vertices
+    const [vertices, setVertices] = useState<Vertex[]>([]);
+    const requestRef = useRef<number>(0);
+    const startTimeRef = useRef<number>(0);
+
+    // Initialize vertices on mount
+    useEffect(() => {
         const numPoints = 12;
-        const points: Vertex[] = [];
+        const initialVertices: Vertex[] = [];
+
         for (let i = 0; i < numPoints; i++) {
-            // Distribute points around the circle
             const angleStep = 360 / numPoints;
             const angleBase = i * angleStep;
-
-            // Add some randomness to the angle to make it less perfect
+            // Randomize initial angle slightly
             const angleRandom = (Math.random() - 0.5) * (angleStep * 0.5);
 
-            // Randomize radius to create the irregular "shard" look
-            // varying between 0.4 and 1.0 of max radius
-            const radius = 0.4 + Math.random() * 0.6;
-
-            points.push({
+            initialVertices.push({
                 angle: angleBase + angleRandom,
-                radius: radius
+                radius: 0.4 + Math.random() * 0.5, // Start with random size
+                targetRadius: 0.4 + Math.random() * 0.6,
+                speed: 0.002 + Math.random() * 0.003 // Random speed
             });
         }
-        return points;
+        setVertices(initialVertices);
     }, []);
 
-    // Convert polar to cartesian for rendering
+    // Animation Loop
+    const animate = (time: number) => {
+        setVertices(prevVertices => {
+            return prevVertices.map(v => {
+                let { radius, targetRadius, speed } = v;
+
+                // Move radius towards target
+                if (radius < targetRadius) {
+                    radius += speed;
+                    if (radius >= targetRadius) radius = targetRadius;
+                } else {
+                    radius -= speed;
+                    if (radius <= targetRadius) radius = targetRadius;
+                }
+
+                // If we reached the target (or are very close), pick a new target
+                if (Math.abs(radius - targetRadius) < 0.01) {
+                    targetRadius = 0.4 + Math.random() * 0.6; // New random target between 0.4 and 1.0
+                    speed = 0.005 + Math.random() * 0.015; // New random speed for variety
+                }
+
+                return { ...v, radius, targetRadius, speed };
+            });
+        });
+
+        requestRef.current = requestAnimationFrame(animate);
+    };
+
+    useEffect(() => {
+        // Start animation
+        requestRef.current = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(requestRef.current);
+    }, []);
+
+    // Convert polar to cartesian
     const getPoint = (v: Vertex) => {
         const rad = (v.angle * Math.PI) / 180;
         const r = v.radius * maxRadius;
@@ -56,10 +92,20 @@ const GeometricLoader: React.FC<GeometricLoaderProps> = ({
         return { x, y };
     };
 
+    if (vertices.length === 0) return null;
+
     const points = vertices.map(getPoint);
 
     return (
         <div className={`inline-flex items-center justify-center ${className}`}>
+            <style>
+                {`
+          @keyframes drawStroke {
+            from { stroke-dashoffset: 100; }
+            to { stroke-dashoffset: 0; }
+          }
+        `}
+            </style>
             <svg
                 width={size}
                 height={size}
@@ -79,6 +125,14 @@ const GeometricLoader: React.FC<GeometricLoaderProps> = ({
                         strokeWidth={strokeWidth}
                         strokeLinecap="round"
                         opacity={0.8}
+                        pathLength={100}
+                        className="animate-draw"
+                        style={{
+                            strokeDasharray: 100,
+                            strokeDashoffset: 100,
+                            animation: `drawStroke 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`,
+                            animationDelay: `${i * 0.05}s` // Stagger drawing slightly
+                        }}
                     />
                 ))}
 
@@ -96,6 +150,13 @@ const GeometricLoader: React.FC<GeometricLoaderProps> = ({
                             strokeWidth={strokeWidth}
                             strokeLinecap="round"
                             strokeLinejoin="round"
+                            pathLength={100}
+                            style={{
+                                strokeDasharray: 100,
+                                strokeDashoffset: 100,
+                                animation: `drawStroke 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`,
+                                animationDelay: `${0.5 + i * 0.05}s` // Draw perimeter after radials start
+                            }}
                         />
                     );
                 })}
