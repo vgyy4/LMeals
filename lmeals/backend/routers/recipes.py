@@ -392,6 +392,9 @@ def capture_high_res_frame_endpoint(payload: schemas.CaptureFrameRequest):
             raise HTTPException(status_code=500, detail="Failed to capture high-resolution frame.")
         return {"status": "success", "image_url": image_path}
     except Exception as e:
+        print(f"ERROR in capture_high_res_frame_endpoint: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/recipes/{recipe_id}/scrape-ai", response_model=schemas.Recipe)

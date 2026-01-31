@@ -180,31 +180,39 @@ def capture_video_frames(url: str, timestamps: list[float] = [1.0, 5, 10, 15]) -
     import shutil
     import assets
     
-    # 1. Setup paths
-    candidates_dir = os.path.join(assets.STATIC_DIR, "images", "recipes", "candidates")
-    os.makedirs(candidates_dir, exist_ok=True)
     
-    temp_video_dir = os.path.join(os.getcwd(), f"temp_video_{uuid.uuid4()}")
-    os.makedirs(temp_video_dir, exist_ok=True)
-    
-    unique_id = str(uuid.uuid4())
-    video_path_template = os.path.join(temp_video_dir, f"{unique_id}.%(ext)s")
-    
-    # 2. Download first 20 seconds of video
-    # Using lower quality format to save memory and bandwidth in restricted environments
-    ydl_opts = {
-        'format': 'best[height<=360]/worst',  # Prefer low res for frames
-        'outtmpl': video_path_template,
-        'quiet': True,
-        'no_warnings': True,
-        'noplaylist': True,
-        'download_ranges': lambda _, __: [{'start_time': 0, 'end_time': 20}],
-        'force_keyframes_at_cuts': True,
-    }
+    # Calculate download range (short 5s clip starting just before target)
+    # We download starts at 'timestamp' to simplify extraction (it will be at t=0 of the clip)
     
     downloaded_video_path = None
+    temp_video_dir = None
+    
     try:
-        print(f"DEBUG: Attempting to download video clip for frames: {url}")
+        # Setup paths (Lazy import assets to avoid circularity issues if any)
+        import assets 
+        candidates_dir = os.path.join(assets.STATIC_DIR, "images", "recipes", "candidates")
+        os.makedirs(candidates_dir, exist_ok=True)
+        
+        temp_video_dir = os.path.join(os.getcwd(), f"temp_video_hires_{uuid.uuid4()}")
+        os.makedirs(temp_video_dir, exist_ok=True)
+        
+        unique_id = str(uuid.uuid4())
+        video_path_template = os.path.join(temp_video_dir, f"{unique_id}.%(ext)s")
+
+        start_time = max(0, timestamp)
+        end_time = start_time + 5
+        
+        ydl_opts = {
+            'format': 'bestvideo[height<=1440]+bestaudio/best[height<=1440]/best', # Prioritize 1440p
+            'outtmpl': video_path_template,
+            'quiet': False, # Enable logs to see what yt-dlp is doing
+            'no_warnings': False,
+            'noplaylist': True,
+            'download_ranges': lambda _, __: [{'start_time': start_time, 'end_time': end_time}],
+            'force_keyframes_at_cuts': True,
+        }
+
+        print(f"DEBUG: Downloading High-Res clip at {timestamp}s for: {url}")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
             
@@ -215,44 +223,42 @@ def capture_video_frames(url: str, timestamps: list[float] = [1.0, 5, 10, 15]) -
                 break
                 
         if not downloaded_video_path:
-            print("ERROR: Could not find downloaded video clip (or download failed).")
-            return []
+            print("ERROR: Could not verify high-res video download. Access might be forbidden (403).")
+            return None
 
-        # 3. Extract frames using ffmpeg
-        extracted_paths = []
-        for ts in timestamps:
-            output_filename = f"{unique_id}_frame_{ts}s.jpg"
-            output_path = os.path.join(candidates_dir, output_filename)
-            
-            # Use -ss BEFORE -i for faster seeking and lower resource usage
-            cmd = [
-                'ffmpeg',
-                '-ss', str(ts),
-                '-i', downloaded_video_path,
-                '-frames:v', '1',
-                '-q:v', '4',  # Decent quality but smaller size
-                '-y',
-                output_path
-            ]
-            
-            try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-                if result.returncode != 0:
-                    print(f"WARNING: ffmpeg failed for timestamp {ts}s: {result.stderr}")
-                
-                if os.path.exists(output_path):
-                    relative_path = f"images/recipes/candidates/{output_filename}"
-                    extracted_paths.append(relative_path)
-            except subprocess.TimeoutExpired:
-                print(f"WARNING: ffmpeg timed out for timestamp {ts}s")
-            except Exception as fe:
-                print(f"WARNING: ffmpeg error: {fe}")
-                
-        return extracted_paths
+        # Extract frame at 00:00:00 relative to the clip (since we cut at timestamp)
+        # Note: yt-dlp cuts are approximate. It's safer to download specific range 
+        # but sometimes the timestamp metadata is preserved. 
+        # Usually with download_ranges, the output file starts at 0s representing the start_time.
         
+        output_filename = f"{unique_id}_hires_{timestamp}s.jpg"
+        output_path = os.path.join(candidates_dir, output_filename)
+        
+        cmd = [
+            'ffmpeg',
+            '-ss', '0', # Extract from start of the clip
+            '-i', downloaded_video_path,
+            '-frames:v', '1',
+            '-q:v', '2',  # High quality jpg (1-31, lower is better)
+            '-y',
+            output_path
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            print(f"WARNING: High-res ffmpeg failed: {result.stderr}")
+            return None
+        
+        if os.path.exists(output_path):
+            relative_path = f"images/recipes/candidates/{output_filename}"
+            print(f"DEBUG: Captured high-res frame: {relative_path}")
+            return relative_path
+            
     except Exception as e:
-        print(f"ERROR capturing video frames: {e}")
-        return []
+        print(f"ERROR capturing high-res frame: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
     finally:
         # 4. Cleanup temp video directory
         if os.path.exists(temp_video_dir):
