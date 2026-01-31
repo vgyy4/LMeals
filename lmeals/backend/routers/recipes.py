@@ -385,6 +385,7 @@ def capture_high_res_frame_endpoint(payload: schemas.CaptureFrameRequest):
     """
     Captures a specific frame in high resolution (1440p) from a video URL.
     """
+    print(f"DEBUG: capture_high_res_frame_endpoint called for {payload.url} at {payload.timestamp}")
     try:
         image_path = audio_processor.capture_high_res_frame(str(payload.url), payload.timestamp)
         if not image_path:

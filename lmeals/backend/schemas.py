@@ -73,7 +73,7 @@ class CleanupRequest(BaseModel):
     keep_file: Optional[str] = None
 
 class FinalizeScrapeRequest(BaseModel):
-    recipe_data: RecipeCreate  # Using Create schema as we might need to re-validate
+    recipe_data: Recipe  # Must be full Recipe with ID
     chosen_image: str
     candidates_to_cleanup: List[str] = []
 
