@@ -3,6 +3,7 @@ import { getShoppingList } from '../lib/api';
 import moment from 'moment';
 import { CheckSquare, Square, ShoppingCart, RefreshCw } from 'lucide-react';
 import DatePicker from '../components/DatePicker';
+import GeometricLoader from '../components/GeometricLoader';
 
 const ShoppingListPage = () => {
     const [startDate, setStartDate] = useState(moment().startOf('week').format('YYYY-MM-DD'));
@@ -56,7 +57,7 @@ const ShoppingListPage = () => {
                         disabled={loading}
                         className="bg-p-coral text-white font-bold py-2.5 px-6 rounded-xl hover:bg-red-500 active:scale-95 transition-all w-full sm:w-auto shadow-lg shadow-p-coral/20 disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                        {loading ? <RefreshCw className="animate-spin" size={18} /> : null}
+                        {loading ? <GeometricLoader size={18} className="text-white" /> : null}
                         {loading ? 'Generating...' : 'Generate'}
                     </button>
                 </div>

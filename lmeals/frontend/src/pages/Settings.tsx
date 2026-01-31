@@ -14,6 +14,7 @@ import {
   Search,
   Palette
 } from 'lucide-react';
+import GeometricLoader from '../components/GeometricLoader';
 
 interface Setting {
   key: string;
@@ -182,7 +183,7 @@ const Settings: React.FC = () => {
   if (loading) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[50vh]">
-        <RefreshCcw className="animate-spin text-p-coral" size={48} />
+        <GeometricLoader size={64} className="text-p-coral" />
       </div>
     );
   }
