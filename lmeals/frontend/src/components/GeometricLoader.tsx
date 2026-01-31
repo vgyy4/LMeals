@@ -9,8 +9,17 @@ interface GeometricLoaderProps {
 
 interface Vertex {
     angle: number;       // in degrees
-    baseRadius: number;  // The "resting" radius (0.4 - 0.7)
-    phase: number;       // Offset for the sine wave (0 - 2PI)
+    baseRadius: number;  // The "resting" radius
+
+    // We use 3 different sine waves for each vertex to create complex interference
+    phase1: number;
+    speed1: number;
+
+    phase2: number;
+    speed2: number;
+
+    phase3: number;
+    speed3: number;
 }
 
 const GeometricLoader: React.FC<GeometricLoaderProps> = ({
@@ -22,8 +31,6 @@ const GeometricLoader: React.FC<GeometricLoaderProps> = ({
     const center = size / 2;
     const maxRadius = (size / 2) * 0.9;
 
-    // Static definition of the shape's topology. 
-    // We only store the invariant properties here.
     const verticesConfig = useMemo<Vertex[]>(() => {
         const numPoints = 12;
         const points: Vertex[] = [];
@@ -32,35 +39,49 @@ const GeometricLoader: React.FC<GeometricLoaderProps> = ({
             const angleBase = i * angleStep;
             const angleRandom = (Math.random() - 0.5) * (angleStep * 0.5);
 
+            // Use Prime numbers components for speeds to avoid common denominators (repetitive loops)
+            // Base speeds are very slow for "calming" effect
             points.push({
                 angle: angleBase + angleRandom,
-                baseRadius: 0.5 + Math.random() * 0.3, // Irregular shape base
-                // Phase creates the "wave" effect. 
-                // Using i * 0.5 makes the wave travel around the circle.
-                // Adding random gives it a slightly loose, organic feel.
-                phase: (i * 0.5) + (Math.random() * 0.2)
+                baseRadius: 0.45 + Math.random() * 0.2,
+
+                // Wave 1: The "Main" slow breathing
+                phase1: Math.random() * Math.PI * 2,
+                speed1: 0.2 + Math.random() * 0.1,
+
+                // Wave 2: A slightly faster, smaller variation
+                phase2: Math.random() * Math.PI * 2,
+                speed2: 0.3 + Math.random() * 0.2,
+
+                // Wave 3: Very slow underlying drift
+                phase3: Math.random() * Math.PI * 2,
+                speed3: 0.1 + Math.random() * 0.05,
             });
         }
         return points;
     }, []);
 
-    // We only track the *current radii* in state to trigger re-renders
     const [currentRadii, setCurrentRadii] = useState<number[]>([]);
     const requestRef = useRef<number>(0);
     const startTimeRef = useRef<number>(document.timeline ? document.timeline.currentTime as number : performance.now());
 
     const animate = (time: number) => {
-        // Calculate elapsed time in seconds
         const t = (time - startTimeRef.current) / 1000;
 
-        // Animation Parameters
-        const speed = 0.8; // Radians per second (slow breathing)
-        const amplitude = 0.15; // How much it expands/contracts
+        // Amplitudes for each wave layer
+        const amp1 = 0.15;
+        const amp2 = 0.08;
+        const amp3 = 0.10;
 
         const newRadii = verticesConfig.map(v => {
-            // Sine wave formula: Base + Amp * sin(Time * Speed + Phase)
-            const r = v.baseRadius + amplitude * Math.sin(t * speed + v.phase);
-            // Clamp to avoid inverted shapes or too large shapes
+            // Sum of Sines
+            const wave1 = Math.sin(t * v.speed1 + v.phase1) * amp1;
+            const wave2 = Math.sin(t * v.speed2 + v.phase2) * amp2;
+            const wave3 = Math.sin(t * v.speed3 + v.phase3) * amp3;
+
+            let r = v.baseRadius + wave1 + wave2 + wave3;
+
+            // Clamp
             return Math.max(0.2, Math.min(1.0, r));
         });
 
@@ -73,10 +94,8 @@ const GeometricLoader: React.FC<GeometricLoaderProps> = ({
         return () => cancelAnimationFrame(requestRef.current);
     }, [verticesConfig]);
 
-    // If no radii calculated yet, render nothing (or static base)
     if (currentRadii.length === 0) return null;
 
-    // Map configuration + current dynamic radii to Cartesian points
     const points = verticesConfig.map((v, i) => {
         const r = currentRadii[i] * maxRadius;
         const rad = (v.angle * Math.PI) / 180;
@@ -118,10 +137,7 @@ const GeometricLoader: React.FC<GeometricLoaderProps> = ({
                         pathLength={100}
                         style={{
                             strokeDasharray: 100,
-                            strokeDashoffset: 100, // Start hidden
-                            // Use a standard CSS animation for the entry. 
-                            // Since this component re-renders every frame for the Shape,
-                            // we rely on the DOM element persistence for the CSS animation to run smoothly.
+                            strokeDashoffset: 100,
                             animation: `drawStroke 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`,
                             animationDelay: `${i * 0.05}s`
                         }}
