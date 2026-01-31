@@ -199,20 +199,22 @@ def capture_video_frames(url: str, timestamps: list[float] = [1.0, 5, 10, 15]) -
         unique_id = str(uuid.uuid4())
         video_path_template = os.path.join(temp_video_dir, f"{unique_id}.%(ext)s")
 
-        start_time = max(0, timestamp)
-        end_time = start_time + 5
+        # Download first 20 seconds of video
+        # Using a fixed range for initial candidate generation
+        start_time = 0
+        end_time = 20
         
         ydl_opts = {
-            'format': 'bestvideo[height<=1440]+bestaudio/best[height<=1440]/best', # Prioritize 1440p
+            'format': 'best[height<=360]/worst',  # Prefer low res for candidates
             'outtmpl': video_path_template,
-            'quiet': False, # Enable logs to see what yt-dlp is doing
+            'quiet': False, 
             'no_warnings': False,
             'noplaylist': True,
             'download_ranges': lambda _, __: [{'start_time': start_time, 'end_time': end_time}],
             'force_keyframes_at_cuts': True,
         }
 
-        print(f"DEBUG: Downloading High-Res clip at {timestamp}s for: {url}")
+        print(f"DEBUG: Downloading initial candidates clip (0-20s) for: {url}")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
             
@@ -239,7 +241,7 @@ def capture_video_frames(url: str, timestamps: list[float] = [1.0, 5, 10, 15]) -
             '-ss', '0', # Extract from start of the clip
             '-i', downloaded_video_path,
             '-frames:v', '1',
-            '-q:v', '2',  # High quality jpg (1-31, lower is better)
+            '-q:v', '4',  # Decent quality but smaller size
             '-y',
             output_path
         ]
