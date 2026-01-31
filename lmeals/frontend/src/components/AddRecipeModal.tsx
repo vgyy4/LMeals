@@ -218,87 +218,88 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
 
 
 
-        <div>
-          <div className="flex items-center gap-3 mb-4 p-3 bg-p-sky/30 rounded-2xl border border-p-sky/20">
-            <div className="flex -space-x-2">
-              <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center border-2 border-white">
-                <Youtube size={16} className="text-red-600" />
-              </div>
-              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center border-2 border-white">
-                <Music size={16} className="text-green-600" />
-              </div>
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white">
-                <Facebook size={16} className="text-blue-600" />
-              </div>
-              <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center border-2 border-white">
-                <Instagram size={16} className="text-pink-600" />
-              </div>
-            </div>
-            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
-              Supports Video, Audio & AI Extraction
-            </p>
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-12 min-h-[300px] animate-in fade-in zoom-in duration-300">
+            <GeometricLoader size={80} className="text-p-coral" />
+            <p className="mt-6 text-slate-400 font-medium animate-pulse">Analyzing Recipe...</p>
           </div>
-
-          <p className="mb-4 text-slate-500">Paste a link to a website, YouTube video, or audio file.</p>
-          <input
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            className="w-full px-4 py-3 border-0 ring-1 ring-p-sky/20 rounded-2xl bg-p-surface text-slate-800 focus:outline-none focus:ring-2 focus:ring-p-mint transition-all"
-            placeholder="https://example.com/recipe"
-            disabled={isLoading}
-          />
-
-          <div className="mt-4">
-            <p className="mb-2 text-xs font-bold text-slate-400 uppercase tracking-widest">Custom Cover Photo (Optional)</p>
-            <div
-              onClick={() => !isLoading && fileInputRef.current?.click()}
-              className={`relative h-24 rounded-2xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-all ${customImageUrl ? 'border-p-mint bg-p-mint/5' : 'border-slate-200 bg-slate-50 hover:border-p-sky/50'
-                }`}
-            >
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                onChange={(e) => handleImageUpload(e)}
-                accept="image/*"
-              />
-              {customImageUrl ? (
-                <div className="flex items-center gap-3">
-                  <img
-                    src={`api/static/${customImageUrl}`}
-                    className="h-16 w-16 object-cover rounded-xl"
-                  />
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-emerald-900">Image Uploaded</span>
-                    <span className="text-xs text-slate-400">Click to change</span>
-                  </div>
-                  <div className="bg-p-mint text-white rounded-full p-1 ml-2">
-                    <Check size={16} />
-                  </div>
+        ) : (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="flex items-center gap-3 mb-4 p-3 bg-p-sky/30 rounded-2xl border border-p-sky/20">
+              <div className="flex -space-x-2">
+                <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center border-2 border-white">
+                  <Youtube size={16} className="text-red-600" />
                 </div>
-              ) : (
-                <div className="flex flex-col items-center gap-1 text-slate-400">
-                  <ImagePlus size={24} />
-                  <span className="text-[10px] font-bold uppercase tracking-wider">Drag or click to upload screenshot</span>
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center border-2 border-white">
+                  <Music size={16} className="text-green-600" />
                 </div>
-              )}
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white">
+                  <Facebook size={16} className="text-blue-600" />
+                </div>
+                <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center border-2 border-white">
+                  <Instagram size={16} className="text-pink-600" />
+                </div>
+              </div>
+              <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Supports Video, Audio & AI Extraction
+              </p>
             </div>
-          </div>
 
-          {isLoading ? (
-            <div className="flex justify-center mt-6 py-2">
-              <GeometricLoader size={60} className="text-p-coral" />
+            <p className="mb-4 text-slate-500">Paste a link to a website, YouTube video, or audio file.</p>
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              className="w-full px-4 py-3 border-0 ring-1 ring-p-sky/20 rounded-2xl bg-p-surface text-slate-800 focus:outline-none focus:ring-2 focus:ring-p-mint transition-all"
+              placeholder="https://example.com/recipe"
+              disabled={isLoading}
+            />
+
+            <div className="mt-4">
+              <p className="mb-2 text-xs font-bold text-slate-400 uppercase tracking-widest">Custom Cover Photo (Optional)</p>
+              <div
+                onClick={() => !isLoading && fileInputRef.current?.click()}
+                className={`relative h-24 rounded-2xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-all ${customImageUrl ? 'border-p-mint bg-p-mint/5' : 'border-slate-200 bg-slate-50 hover:border-p-sky/50'
+                  }`}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={(e) => handleImageUpload(e)}
+                  accept="image/*"
+                />
+                {customImageUrl ? (
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={`api/static/${customImageUrl}`}
+                      className="h-16 w-16 object-cover rounded-xl"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-emerald-900">Image Uploaded</span>
+                      <span className="text-xs text-slate-400">Click to change</span>
+                    </div>
+                    <div className="bg-p-mint text-white rounded-full p-1 ml-2">
+                      <Check size={16} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-slate-400">
+                    <ImagePlus size={24} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Drag or click to upload screenshot</span>
+                  </div>
+                )}
+              </div>
             </div>
-          ) : (
+
             <button
               onClick={handleInitialScrape}
               className="w-full mt-6 bg-p-mint text-emerald-900 font-bold py-3 rounded-2xl hover:bg-emerald-100 transition-all shadow-sm active:scale-95 border border-p-mint/50"
             >
               Import Recipe
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
