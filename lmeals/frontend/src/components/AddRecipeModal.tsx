@@ -220,8 +220,8 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12 min-h-[300px] animate-in fade-in zoom-in duration-300">
-            <GeometricLoader size={80} className="text-p-coral" />
-            <p className="mt-6 text-slate-400 font-medium animate-pulse">Analyzing Recipe...</p>
+            <GeometricLoader size={120} className="text-p-coral" />
+            <p className="mt-8 text-slate-400 font-medium animate-pulse">Analyzing Recipe...</p>
           </div>
         ) : (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
