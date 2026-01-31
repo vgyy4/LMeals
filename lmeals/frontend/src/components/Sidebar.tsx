@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Calendar, ShoppingCart, Settings, Heart } from 'lucide-react';
+import { LayoutDashboard, Calendar, ShoppingCart, Settings, Heart, Shapes } from 'lucide-react';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -82,6 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, isMobile
           { to: "/shopping-list", icon: ShoppingCart, label: "Shopping List" },
           { to: "/favorites", icon: Heart, label: "Favorites" },
           { to: "/settings", icon: Settings, label: "Settings" },
+          { to: "/loader-test", icon: Shapes, label: "Loader Test" },
         ].map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
