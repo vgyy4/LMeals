@@ -33,6 +33,31 @@ def background_generate_template(recipe_id: int):
     finally:
         db.close()
 
+def background_upgrade_frame_quality(source_url: str, timestamp: float, image_path: str):
+    """Background task to upgrade a low-res frame to high-res."""
+    import os
+    import assets
+    
+    try:
+        # Build absolute path to the image
+        abs_path = os.path.join(assets.STATIC_DIR, image_path)
+        
+        if not os.path.exists(abs_path):
+            print(f"Background: Image not found for upgrade: {abs_path}")
+            return
+            
+        print(f"Background: Starting high-res upgrade for {image_path} at {timestamp}s...")
+        success = audio_processor.download_high_res_frame(source_url, timestamp, abs_path)
+        
+        if success:
+            print(f"Background: High-res upgrade successful for {image_path}")
+        else:
+            print(f"Background: High-res upgrade failed for {image_path}, keeping low-res version")
+            
+    except Exception as e:
+        print(f"Background Error: Failed to upgrade frame quality: {e}")
+
+
 @router.post("/scrape", response_model=schemas.ScrapeResponse)
 def scrape_recipe(scrape_request: schemas.ScrapeRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
@@ -314,31 +339,29 @@ def finalize_scrape(payload: schemas.FinalizeScrapeRequest, background_tasks: Ba
                 import re
                 # Candidate filename format: {uuid}_frame_{timestamp}s.jpg
                 match = re.search(r'_frame_(\d+(\.\d+)?)s', filename)
-                if match:
-                    try:
-                        timestamp = float(match.group(1))
-                        print(f"DEBUG: Detected frame candidate at {timestamp}s. Attempting high-res upgrade...")
-                        
-                        # We need the source URL. It should be in recipe_data.
-                        # recipe_data in payload is Pydantic model ScrapeResponse... wait.
-                        # payload is FinalizeScrapeRequest. 
-                        # recipe_data is schemas.Recipe (or similar).
-                        source_url = payload.recipe_data.source_url
-                        
-                        if source_url:
-                            # Attempt to overwrite the source_path with high-res version
-                            # We work on the file inside candidates/ first
-                            success = audio_processor.download_high_res_frame(str(source_url), timestamp, source_path)
-                            if success:
-                                print("DEBUG: High-res upgrade successful.")
-                            else:
-                                print("WARNING: High-res upgrade failed. Using existing low-res preview.")
-                    except Exception as e:
-                         print(f"ERROR during high-res upgrade: {e}")
                 
+                # Move the low-res frame immediately
                 shutil.move(source_path, dest_path)
                 final_image_path = f"images/recipes/{dest_filename}"
                 print(f"DEBUG: Moved candidate image to permanent storage: {final_image_path}")
+                
+                # If it's a video frame, trigger background upgrade to high-res
+                if match:
+                    try:
+                        timestamp = float(match.group(1))
+                        source_url = payload.recipe_data.source_url
+                        
+                        if source_url:
+                            # Schedule background upgrade - this will overwrite the file with high-res
+                            print(f"DEBUG: Scheduling background high-res upgrade for frame at {timestamp}s...")
+                            background_tasks.add_task(
+                                background_upgrade_frame_quality,
+                                str(source_url),
+                                timestamp,
+                                final_image_path
+                            )
+                    except Exception as e:
+                        print(f"ERROR scheduling background upgrade: {e}")
         except Exception as e:
             print(f"ERROR moving candidate image: {e}")
             # Fallback: keep the original path if move fails
