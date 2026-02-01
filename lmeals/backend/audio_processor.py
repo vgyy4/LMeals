@@ -258,3 +258,93 @@ def capture_video_frames(url: str, timestamps: list[float] = [1.0, 5, 10, 15]) -
         if os.path.exists(temp_video_dir):
             shutil.rmtree(temp_video_dir, ignore_errors=True)
 
+
+def download_high_res_frame(url: str, timestamp: float, output_path: str) -> bool:
+    """
+    Downloads a short clip around the timestamp at high resolution (max 1440p)
+    and extracts the specific frame to replace the low-res candidate.
+    """
+    import subprocess
+    import shutil
+    
+    # 1. Setup temp directory
+    temp_dir = os.path.join(os.getcwd(), f"temp_hires_{uuid.uuid4()}")
+    os.makedirs(temp_dir, exist_ok=True)
+    
+    unique_id = str(uuid.uuid4())
+    video_path_template = os.path.join(temp_dir, f"{unique_id}.%(ext)s")
+    
+    # Calculate extraction window (ensure we cover the timestamp)
+    # Download 5 seconds before and 5 seconds after to ensure keyframes
+    start_time = max(0, timestamp - 5)
+    end_time = timestamp + 5
+    
+    # 2. Download clip with resolution constraint: <= 1440p
+    # 'bestvideo[height<=1440]+bestaudio/best[height<=1440]' 
+    # This selects the best quality that is NOT larger than 1440p.
+    # If 1440p exists, it takes it. If not, it takes 1080p, etc.
+    ydl_opts = {
+        'format': 'bestvideo[height<=1440]+bestaudio/best[height<=1440]',
+        'outtmpl': video_path_template,
+        'quiet': True,
+        'no_warnings': True,
+        'noplaylist': True,
+        'download_ranges': lambda _, __: [{'start_time': start_time, 'end_time': end_time}],
+        'force_keyframes_at_cuts': True,   
+    }
+    
+    downloaded_video_path = None
+    try:
+        print(f"DEBUG: Downloading high-res clip for frame at {timestamp}s (max 1440p)...")
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+            
+        # Find the downloaded file
+        for f in os.listdir(temp_dir):
+            if f.startswith(unique_id) and not f.endswith(".part"):
+                downloaded_video_path = os.path.join(temp_dir, f)
+                break
+                
+        if not downloaded_video_path:
+            print("ERROR: High-res video download failed.")
+            return False
+
+        # 3. Extract the SPECIFIC frame
+        # We downloaded a clip starting at `start_time`. 
+        # But ffmpeg -ss with input seeking relative to file start is tricky with cut videos.
+        # Actually, `download_ranges` produces a CUT video that starts at ~0s (relative to the cut).
+        # Wait, yt-dlp `download_ranges` usually results in a file that contains only that segment.
+        # BUT the timestamps in the file might be rewritten or offset.
+        # SAFEST BET: The file *content* starts roughly at `start_time`. 
+        # So we need to seek `timestamp - start_time` into the new file.
+        
+        seek_time = timestamp - start_time
+        
+        # NOTE: yt-dlp sometimes isn't frame perfect with cuts. 
+        # But for extracting a static recipe image, being off by a few frames is usually fine 
+        # as long as it's the right scene.
+        
+        cmd = [
+            'ffmpeg',
+            '-ss', str(seek_time),
+            '-i', downloaded_video_path,
+            '-frames:v', '1',
+            '-q:v', '2',  # High quality jpg
+            '-y',
+            output_path
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            print(f"WARNING: High-res ffmpeg failed: {result.stderr}")
+            return False
+            
+        print(f"DEBUG: Successfully captured high-res frame at {output_path}")
+        return True
+        
+    except Exception as e:
+        print(f"ERROR downloading high-res frame: {e}")
+        return False
+    finally:
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)

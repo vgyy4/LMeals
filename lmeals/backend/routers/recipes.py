@@ -310,6 +310,32 @@ def finalize_scrape(payload: schemas.FinalizeScrapeRequest, background_tasks: Ba
             dest_path = os.path.join(assets.IMAGES_DIR, dest_filename)
             
             if os.path.exists(source_path):
+                # CHECK FOR FRAME CANDIDATE
+                import re
+                # Candidate filename format: {uuid}_frame_{timestamp}s.jpg
+                match = re.search(r'_frame_(\d+(\.\d+)?)s', filename)
+                if match:
+                    try:
+                        timestamp = float(match.group(1))
+                        print(f"DEBUG: Detected frame candidate at {timestamp}s. Attempting high-res upgrade...")
+                        
+                        # We need the source URL. It should be in recipe_data.
+                        # recipe_data in payload is Pydantic model ScrapeResponse... wait.
+                        # payload is FinalizeScrapeRequest. 
+                        # recipe_data is schemas.Recipe (or similar).
+                        source_url = payload.recipe_data.source_url
+                        
+                        if source_url:
+                            # Attempt to overwrite the source_path with high-res version
+                            # We work on the file inside candidates/ first
+                            success = audio_processor.download_high_res_frame(str(source_url), timestamp, source_path)
+                            if success:
+                                print("DEBUG: High-res upgrade successful.")
+                            else:
+                                print("WARNING: High-res upgrade failed. Using existing low-res preview.")
+                    except Exception as e:
+                         print(f"ERROR during high-res upgrade: {e}")
+                
                 shutil.move(source_path, dest_path)
                 final_image_path = f"images/recipes/{dest_filename}"
                 print(f"DEBUG: Moved candidate image to permanent storage: {final_image_path}")
