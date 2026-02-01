@@ -7,7 +7,6 @@ import ShoppingList from './pages/ShoppingList';
 import Settings from './pages/Settings';
 import RecipeDetail from './pages/RecipeDetail';
 import FavoritesPage from './pages/Favorites';
-import LoaderTestPage from './pages/LoaderTestPage';
 
 function App() {
   useEffect(() => {
@@ -25,7 +24,6 @@ function App() {
           <Route path="/shopping-list" element={<ShoppingList />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/favorites" element={<FavoritesPage />} />
-          <Route path="/loader-test" element={<LoaderTestPage />} />
         </Route>
       </Routes>
     </Router>
