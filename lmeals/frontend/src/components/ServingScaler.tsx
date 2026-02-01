@@ -12,8 +12,19 @@ const ServingScaler: React.FC<ServingScalerProps> = ({ originalServings, yieldUn
     const [markerStyle, setMarkerStyle] = useState({ left: 0, width: 0 });
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Extract number of people from original servings (e.g., "4 people" -> 4)
-    const basePeople = parseInt(originalServings.match(/(\d+)/)?.[0] || '4');
+    // Extract number from original servings, handling ranges (e.g., "20-24" -> use 20)
+    const extractBaseNumber = (servings: string): number => {
+        // Check for range first (e.g., "20-24")
+        const rangeMatch = servings.match(/(\d+)\s*-\s*(\d+)/);
+        if (rangeMatch) {
+            return parseInt(rangeMatch[1]); // Use minimum value from range
+        }
+        // Single number
+        const match = servings.match(/(\d+)/);
+        return parseInt(match?.[0] || '4');
+    };
+
+    const basePeople = extractBaseNumber(originalServings);
 
     const options = [
         { id: '0.5x', label: `${Math.round(basePeople * 0.5)}`, sub: 'Half' },
