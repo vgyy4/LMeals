@@ -17,10 +17,10 @@ def get_common_ydl_opts():
              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
              'Referer': 'https://www.youtube.com/',
         },
-        # Use Android client as it is less likely to be blocked/throttled than web
+        # Use iOS client as it is less likely to be blocked but supports high-res better than Android
         'extractor_args': {
             'youtube': {
-                'player_client': ['android', 'web']
+                'player_client': ['ios', 'web']
             }
         }
     }
