@@ -38,7 +38,7 @@ def extract_with_groq(html: str):
     system_prompt = """
     You are an expert recipe data extractor. Your task is to extract recipe data from the provided text and return ONLY a strict JSON object with the following keys: 
     - "title": (string)
-    - "ingredients": (list of strings - TAG ALL QUANTITIES. For each ingredient, wrap the numerical quantity in [[qty:VALUE]]. Example: "[[qty:4.25]] cups (281g) all-purpose flour" or "[[qty:2]] tsp baking soda".)
+    - "ingredients": (list of strings - TAG **ALL** QUANTITIES. Wrap **EVERY SINGLE** numerical quantity in [[qty:VALUE]]. Example: "[[qty:4.25]] cups ([[qty:281]]g) all-purpose flour" or "[[qty:2]] large eggs".)
     - "instructions": (list of strings - BE HIGHLY DETAILED. Tag numerical quantities for ingredients only. Do NOT tag times/temps.)
     - "prep_time": (string)
     - "cook_time": (string)
@@ -46,12 +46,13 @@ def extract_with_groq(html: str):
     - "yield_unit": (string - the unit of measurement, e.g. "servings", "cookies", "people", "bowls", "muffins"). Default to "servings" if unclear.
     - "image_url": (string)
 
-    CRITICAL: 
-    1. For every number in the "ingredients" list that represents a quantity, volume, or weight, wrap it in [[qty:VALUE]]. 
-    2. Convert fractions to decimals inside the tag (e.g., 1/2 -> [[qty:0.5]], 4 1/4 -> [[qty:4.25]]).
-    3. ALLOW RANGES: If a quantity is a range (e.g. "10-15g", "1 to 2 cups"), format it as [[qty:MIN-MAX]] (e.g. [[qty:10-15]], [[qty:1-2]]).
-    4. Include both volume and weight if available in the text.
-    5. Be as granular and step-by-step as possible in the instructions.
+    CRITICAL INGREDIENT TAGGING RULES:
+    1. Wrap **EVERY** number that represents a quantity, volume, or weight in [[qty:VALUE]]. 
+    2. If an ingredient has BOTH volume and weight (e.g., "1 cup (100g)"), tag BOTH: "[[qty:1]] cup ([[qty:100]]g)".
+    3. Convert fractions to decimals inside tags (e.g., 1/2 -> [[qty:0.5]], 4 1/4 -> [[qty:4.25]]).
+    4. ALLOW RANGES: Format as [[qty:MIN-MAX]] (e.g., "[[qty:10-15]]g" or "[[qty:1-2]] cups").
+    5. Tag standalone numbers: "[[qty:2]] eggs", "[[qty:3.5]] oz chocolate", "[[qty:165]]g sugar".
+    6. Be as granular and step-by-step as possible in the instructions.
     
     IMPORTANT JSON FORMATTING RULES:
     - Use strict JSON format.
@@ -134,7 +135,7 @@ def extract_recipe_from_text(text: str, metadata: dict = None):
     system_prompt = """
     You are an expert recipe data extractor. Your task is to extract recipe data from the provided text and return ONLY a strict JSON object with the following keys: 
     - "title": (string)
-    - "ingredients": (list of strings - TAG ALL QUANTITIES. For each ingredient, wrap the numerical quantity in [[qty:VALUE]]. Example: "[[qty:4.25]] cups (281g) all-purpose flour" or "[[qty:2]] tsp baking soda".)
+    - "ingredients": (list of strings - TAG **ALL** QUANTITIES. Wrap **EVERY SINGLE** numerical quantity in [[qty:VALUE]]. Example: "[[qty:4.25]] cups ([[qty:281]]g) all-purpose flour" or "[[qty:2]] large eggs".)
     - "instructions": (list of strings - BE HIGHLY DETAILED. Tag numerical quantities for ingredients only. Do NOT tag times/temps.)
     - "prep_time": (string)
     - "cook_time": (string)
@@ -142,11 +143,13 @@ def extract_recipe_from_text(text: str, metadata: dict = None):
     - "yield_unit": (string - the unit of measurement, e.g. "servings", "cookies", "people", "bowls", "muffins"). Default to "servings" if unclear.
     - "image_url": (string)
 
-    CRITICAL: 
-    1. For every number in the "ingredients" list that represents a quantity, volume, or weight, wrap it in [[qty:VALUE]]. 
-    2. Convert fractions to decimals inside the tag (e.g., 1/2 -> [[qty:0.5]], 4 1/4 -> [[qty:4.25]]).
-    3. Include both volume and weight if available in the text.
-    4. Be as granular and step-by-step as possible in the instructions.
+    CRITICAL INGREDIENT TAGGING RULES:
+    1. Wrap **EVERY** number that represents a quantity, volume, or weight in [[qty:VALUE]]. 
+    2. If an ingredient has BOTH volume and weight (e.g., "1 cup (100g)"), tag BOTH: "[[qty:1]] cup ([[qty:100]]g)".
+    3. Convert fractions to decimals inside tags (e.g., 1/2 -> [[qty:0.5]], 4 1/4 -> [[qty:4.25]]).
+    4. ALLOW RANGES: Format as [[qty:MIN-MAX]] (e.g., "[[qty:10-15]]g" or "[[qty:1-2]] cups").
+    5. Tag standalone numbers: "[[qty:2]] eggs", "[[qty:3.5]] oz chocolate", "[[qty:165]]g sugar".
+    6. Be as granular and step-by-step as possible in the instructions.
     
     IMPORTANT JSON FORMATTING RULES:
     - Use strict JSON format.
