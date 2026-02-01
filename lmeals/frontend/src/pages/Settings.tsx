@@ -208,7 +208,7 @@ const Settings: React.FC = () => {
             <h2 className="text-xl font-bold text-slate-800 uppercase tracking-tighter">AI Engine</h2>
           </div>
 
-          <form autoComplete="off" onSubmit={(e) => e.preventDefault()}>
+          <form autoComplete="off" onSubmit={(e) => e.preventDefault()} data-form-type="other">
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1.5 ml-1" htmlFor="apiKey">
@@ -218,11 +218,14 @@ const Settings: React.FC = () => {
                   <input
                     className="w-full bg-p-surface border-0 ring-1 ring-p-sky/20 focus:ring-2 focus:ring-p-coral rounded-2xl py-3 px-11 text-slate-800 transition-all duration-300 outline-none"
                     id="apiKey"
+                    name="api-key-field"
                     type="password"
                     placeholder="Paste your key here..."
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
                     autoComplete="off"
+                    data-lpignore="true"
+                    data-form-type="other"
                   />
                   <Key className="absolute left-4 top-3.5 text-slate-400 group-focus-within:text-p-coral transition-colors" size={18} />
                 </div>
