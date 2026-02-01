@@ -4,19 +4,44 @@ import math
 from pydub import AudioSegment
 import uuid
 
-def get_video_metadata(url: str):
-    """Extracts title, thumbnail, and checks for existing subtitles."""
-    ydl_opts = {
+def get_common_ydl_opts():
+    """BASE yt-dlp options to avoid 403 Forbidden errors."""
+    return {
         'quiet': True,
         'no_warnings': True,
+        'nocheckcertificate': True,
+        'ignoreerrors': True,
+        'extract_flat': False,
+        # Anti-blocking measures
+        'http_headers': {
+             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+             'Referer': 'https://www.youtube.com/',
+        },
+        # Use Android client as it is less likely to be blocked/throttled than web
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'web']
+            }
+        }
+    }
+
+def get_video_metadata(url: str):
+    """Extracts title, thumbnail, and checks for existing subtitles."""
+    ydl_opts = get_common_ydl_opts()
+    ydl_opts.update({
         'skip_download': True,
         'writesubtitles': True,
         'allsubtitles': True,
         'noplaylist': True,
-    }
+    })
+    
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # extract_info might raise if 403 occurs even with opts, catch it.
             info = ydl.extract_info(url, download=False)
+            if not info:
+                raise Exception("No info returned")
+                
             return {
                 "title": info.get("title", "Video Recipe"),
                 "thumbnail": info.get("thumbnail"),
@@ -41,14 +66,14 @@ def get_subtitle_text(url: str) -> str:
         os.makedirs(output_dir)
         
     file_id = str(uuid.uuid4())
-    ydl_opts = {
+    ydl_opts = get_common_ydl_opts()
+    ydl_opts.update({
         'skip_download': True,
         'writesubtitles': True,
         'writeautomaticsub': True,
         'subtitleslangs': ['en.*', 'en'],
         'outtmpl': os.path.join(output_dir, f"{file_id}.%(ext)s"),
-        'quiet': True,
-    }
+    })
     
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -95,7 +120,8 @@ def download_audio(url: str, output_dir: str = "temp_audio") -> str:
     file_id = str(uuid.uuid4())
     output_template = os.path.join(output_dir, f"{file_id}.%(ext)s")
     
-    ydl_opts = {
+    ydl_opts = get_common_ydl_opts()
+    ydl_opts.update({
         'format': 'bestaudio/best',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
@@ -103,9 +129,8 @@ def download_audio(url: str, output_dir: str = "temp_audio") -> str:
             'preferredquality': '192',
         }],
         'outtmpl': output_template,
-        'quiet': True,
         'noplaylist': True,
-    }
+    })
     
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -191,16 +216,14 @@ def capture_video_frames(url: str, timestamps: list[float] = [1.0, 5, 10, 15]) -
     video_path_template = os.path.join(temp_video_dir, f"{unique_id}.%(ext)s")
     
     # 2. Download first 20 seconds of video
-    # Using lower quality format to save memory and bandwidth in restricted environments
-    ydl_opts = {
+    ydl_opts = get_common_ydl_opts()
+    ydl_opts.update({
         'format': 'best[height<=360]/worst',  # Prefer low res for frames
         'outtmpl': video_path_template,
-        'quiet': True,
-        'no_warnings': True,
         'noplaylist': True,
         'download_ranges': lambda _, __: [{'start_time': 0, 'end_time': 20}],
         'force_keyframes_at_cuts': True,
-    }
+    })
     
     downloaded_video_path = None
     try:
@@ -224,13 +247,13 @@ def capture_video_frames(url: str, timestamps: list[float] = [1.0, 5, 10, 15]) -
             output_filename = f"{unique_id}_frame_{ts}s.jpg"
             output_path = os.path.join(candidates_dir, output_filename)
             
-            # Use -ss BEFORE -i for faster seeking and lower resource usage
+            # Use -ss BEFORE -i for faster seeking
             cmd = [
                 'ffmpeg',
                 '-ss', str(ts),
                 '-i', downloaded_video_path,
                 '-frames:v', '1',
-                '-q:v', '4',  # Decent quality but smaller size
+                '-q:v', '4',
                 '-y',
                 output_path
             ]
@@ -275,23 +298,18 @@ def download_high_res_frame(url: str, timestamp: float, output_path: str) -> boo
     video_path_template = os.path.join(temp_dir, f"{unique_id}.%(ext)s")
     
     # Calculate extraction window (ensure we cover the timestamp)
-    # Download 5 seconds before and 5 seconds after to ensure keyframes
     start_time = max(0, timestamp - 5)
     end_time = timestamp + 5
     
     # 2. Download clip with resolution constraint: <= 1440p
-    # 'bestvideo[height<=1440]+bestaudio/best[height<=1440]' 
-    # This selects the best quality that is NOT larger than 1440p.
-    # If 1440p exists, it takes it. If not, it takes 1080p, etc.
-    ydl_opts = {
+    ydl_opts = get_common_ydl_opts()
+    ydl_opts.update({
         'format': 'bestvideo[height<=1440]+bestaudio/best[height<=1440]',
         'outtmpl': video_path_template,
-        'quiet': True,
-        'no_warnings': True,
         'noplaylist': True,
         'download_ranges': lambda _, __: [{'start_time': start_time, 'end_time': end_time}],
         'force_keyframes_at_cuts': True,   
-    }
+    })
     
     downloaded_video_path = None
     try:
@@ -310,19 +328,7 @@ def download_high_res_frame(url: str, timestamp: float, output_path: str) -> boo
             return False
 
         # 3. Extract the SPECIFIC frame
-        # We downloaded a clip starting at `start_time`. 
-        # But ffmpeg -ss with input seeking relative to file start is tricky with cut videos.
-        # Actually, `download_ranges` produces a CUT video that starts at ~0s (relative to the cut).
-        # Wait, yt-dlp `download_ranges` usually results in a file that contains only that segment.
-        # BUT the timestamps in the file might be rewritten or offset.
-        # SAFEST BET: The file *content* starts roughly at `start_time`. 
-        # So we need to seek `timestamp - start_time` into the new file.
-        
         seek_time = timestamp - start_time
-        
-        # NOTE: yt-dlp sometimes isn't frame perfect with cuts. 
-        # But for extracting a static recipe image, being off by a few frames is usually fine 
-        # as long as it's the right scene.
         
         cmd = [
             'ffmpeg',
