@@ -17,12 +17,26 @@ def get_common_ydl_opts():
              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
              'Referer': 'https://www.youtube.com/',
         },
-        # Use iOS client as it is less likely to be blocked but supports high-res better than Android
+        # Use Android client for metadata/audio/previews (bypasses 403)
         'extractor_args': {
             'youtube': {
-                'player_client': ['ios', 'web']
+                'player_client': ['android', 'web']
             }
         }
+    }
+
+def get_highres_ydl_opts():
+    """yt-dlp options for high-resolution downloads - uses web client for better quality."""
+    return {
+        'quiet': True,
+        'no_warnings': True,
+        'nocheckcertificate': True,
+        'ignoreerrors': True,
+        'http_headers': {
+             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+             'Referer': 'https://www.youtube.com/',
+        },
+        # Don't override client for high-res - use default web extraction for full quality
     }
 
 def get_video_metadata(url: str):
@@ -302,7 +316,8 @@ def download_high_res_frame(url: str, timestamp: float, output_path: str) -> boo
     end_time = timestamp + 5
     
     # 2. Download clip with resolution constraint: <= 1440p
-    ydl_opts = get_common_ydl_opts()
+    # Use high-res opts (web client) for better quality access
+    ydl_opts = get_highres_ydl_opts()
     ydl_opts.update({
         'format': 'bestvideo[height<=1440]+bestaudio/best[height<=1440]',
         'outtmpl': video_path_template,
