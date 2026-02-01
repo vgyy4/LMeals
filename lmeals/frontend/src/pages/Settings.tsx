@@ -223,9 +223,11 @@ const Settings: React.FC = () => {
                     placeholder="Paste your key here..."
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
+                    onFocus={(e) => e.target.removeAttribute('readonly')}
                     autoComplete="off"
                     data-lpignore="true"
                     data-form-type="other"
+                    readOnly
                   />
                   <Key className="absolute left-4 top-3.5 text-slate-400 group-focus-within:text-p-coral transition-colors" size={18} />
                 </div>
