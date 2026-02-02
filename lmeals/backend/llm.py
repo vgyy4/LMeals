@@ -53,7 +53,13 @@ def extract_with_groq(html: str):
     4. ALLOW RANGES: Format as [[qty:MIN-MAX]] (e.g., "[[qty:10-15]]g" or "[[qty:1-2]] cups").
     5. Tag standalone numbers: "[[qty:2]] eggs", "[[qty:3.5]] oz chocolate", "[[qty:165]]g sugar".
     6. Be as granular and step-by-step as possible in the instructions.
-    
+
+    SERVINGS & YIELD LOGIC:
+    1. If multiple units are available (e.g. "Serves 4 people" and "Makes 20 cookies"), **PRIORITIZE THE SPECIFIC UNIT** (choose "20" and "cookies").
+    2. If multiple sizes/yields are provided for the SAME unit:
+       - If > 2 options (e.g. 24 small, 20 med, 15 large): Choose the **MEDIAN** (middle value, e.g. 20).
+       - If exactly 2 options (e.g. 24 small, 20 large): Choose the **AVERAGE** rounded to the nearest whole number (e.g. 22).
+
     IMPORTANT JSON FORMATTING RULES:
     - Use strict JSON format.
     - All property names and string values MUST be enclosed in standard double quotes (").
@@ -150,7 +156,13 @@ def extract_recipe_from_text(text: str, metadata: dict = None):
     4. ALLOW RANGES: Format as [[qty:MIN-MAX]] (e.g., "[[qty:10-15]]g" or "[[qty:1-2]] cups").
     5. Tag standalone numbers: "[[qty:2]] eggs", "[[qty:3.5]] oz chocolate", "[[qty:165]]g sugar".
     6. Be as granular and step-by-step as possible in the instructions.
-    
+
+    SERVINGS & YIELD LOGIC:
+    1. If multiple units are available (e.g. "Serves 4 people" and "Makes 20 cookies"), **PRIORITIZE THE SPECIFIC UNIT** (choose "20" and "cookies").
+    2. If multiple sizes/yields are provided for the SAME unit:
+       - If > 2 options (e.g. 24 small, 20 med, 15 large): Choose the **MEDIAN** (middle value, e.g. 20).
+       - If exactly 2 options (e.g. 24 small, 20 large): Choose the **AVERAGE** rounded to the nearest whole number (e.g. 22).
+
     IMPORTANT JSON FORMATTING RULES:
     - Use strict JSON format.
     - All property names and string values MUST be enclosed in standard double quotes (").
