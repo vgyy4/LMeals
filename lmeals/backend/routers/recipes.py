@@ -192,13 +192,16 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
             print(f"Generating preview frames for {url}...")
             candidates = audio_processor.capture_video_frames(url)
             
-            # 6. Add scraped image as 5th option if available
+            # 6. If scraped image available, REPLACE the last option (15s frame) with it
             if scraped_image:
                 print(f"Downloading scraped image from {scraped_image}...")
                 scraped_img_local = assets.download_image(scraped_image)
                 if scraped_img_local:
+                    if candidates:
+                        removed = candidates.pop() # Remove the last one (15s)
+                        print(f"Removed 15s frame candidate: {removed}")
                     candidates.append(scraped_img_local)
-                    print(f"Added scraped image as 5th candidate: {scraped_img_local}")
+                    print(f"Added scraped image as candidate: {scraped_img_local}")
             
             recipe_data["image_candidates"] = candidates              # Add the original thumbnail to candidates if specific
             
