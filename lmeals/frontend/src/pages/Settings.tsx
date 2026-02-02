@@ -217,7 +217,7 @@ const Settings: React.FC = () => {
                 <div className="relative group">
                   <input
                     className="w-full bg-p-surface border-0 ring-1 ring-p-sky/20 focus:ring-2 focus:ring-p-coral rounded-2xl py-3 px-11 text-slate-800 transition-all duration-300 outline-none"
-                    style={{ WebkitTextSecurity: 'disc' }}
+                    style={{ WebkitTextSecurity: 'disc' } as any}
                     id="apiKey"
                     name="not-a-password"
                     type="text"
