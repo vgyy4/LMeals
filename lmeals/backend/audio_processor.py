@@ -460,6 +460,18 @@ def scrape_recipe_from_link(url: str) -> dict | None:
         
         soup = BeautifulSoup(response.content, 'html.parser')
         
+        # Clean up the HTML to reduce token usage (fix for 413 Rate Limit)
+        for tag in soup(["script", "style", "svg", "noscript", "iframe", "header", "footer", "nav", "aside", "form"]):
+            tag.decompose()
+            
+        # Remove comments
+        from bs4 import Comment
+        for comment in soup.find_all(text=lambda text: isinstance(text, Comment)):
+            comment.extract()
+            
+        # Get only body if possible
+        content_soup = soup.body if soup.body else soup
+        
         # Try to find a recipe image
         image_url = None
         
@@ -485,7 +497,7 @@ def scrape_recipe_from_link(url: str) -> dict | None:
         
         return {
             "image_url": image_url,
-            "html": str(soup)
+            "html": str(content_soup)
         }
         
     except Exception as e:
