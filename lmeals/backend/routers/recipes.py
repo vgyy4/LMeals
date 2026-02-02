@@ -127,25 +127,51 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
             recipe_data["title"] = metadata["title"]
             recipe_data["image_url"] = metadata["thumbnail"] 
             
-            # 1. Try subtitles first
             transcript = ""
-            subtitles = metadata.get("subtitles", {})
-            if subtitles:
-                print("Fetching existing subtitles/captions...")
-                transcript = audio_processor.get_subtitle_text(url)
+            scraped_image = None
+            
+            # 1. OPTIMIZATION: Check description for recipe link FIRST
+            # If found, use it and SKIP slow audio transcription
+            description = metadata.get("description", "")
+            if description:
+                print("Checking description for recipe links...")
+                # Pass the video title to help the AI find the RELEVANT link
+                recipe_link = llm.extract_recipe_link(description, video_title=metadata.get("title", ""))
                 
-            # 2. Fallback to audio transcription if subtitles were empty or missing
+                if recipe_link:
+                    print(f"Found recipe link: {recipe_link}")
+                    scraped_data = audio_processor.scrape_recipe_from_link(recipe_link)
+                    
+                    if scraped_data:
+                        if scraped_data.get("html"):
+                            # Treat the scraped content as the "transcript" for the AI
+                            print("Using scraped content instead of audio transcription.")
+                            transcript = f"Title: {metadata['title']}\n\n[RECIPE CONTENT FROM {recipe_link}]:\n{scraped_data['html']}"
+                            
+                        if scraped_data.get("image_url"):
+                            print(f"Found image in scraped content: {scraped_data['image_url']}")
+                            scraped_image = scraped_data["image_url"]
+                            
+            # 2. If no recipe link content, fallback to Subtitles/Audio
             if not transcript:
-                print("No active subtitles found. Proceeding with transcription...")
-                audio_file = audio_processor.download_audio(url)
-                chunks = audio_processor.chunk_audio(audio_file)
-                
-                texts = []
-                for chunk in chunks:
-                    texts.append(llm.transcribe_audio(chunk))
-                
-                transcript = "\n".join(texts)
-                audio_processor.cleanup_files([audio_file] + chunks)
+                # Try subtitles first
+                subtitles = metadata.get("subtitles", {})
+                if subtitles:
+                    print("Fetching existing subtitles/captions...")
+                    transcript = audio_processor.get_subtitle_text(url)
+                    
+                # Fallback to audio transcription
+                if not transcript:
+                    print("No active subtitles found. Proceeding with transcription...")
+                    audio_file = audio_processor.download_audio(url)
+                    chunks = audio_processor.chunk_audio(audio_file)
+                    
+                    texts = []
+                    for chunk in chunks:
+                        texts.append(llm.transcribe_audio(chunk))
+                    
+                    transcript = "\n".join(texts)
+                    audio_processor.cleanup_files([audio_file] + chunks)
 
             # 3. Final fallback to description if everything else fails
             if not transcript:
@@ -162,33 +188,17 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
             if metadata.get("thumbnail"):
                 recipe_data["image_url"] = metadata["thumbnail"]
 
-            # 3. Generate preview frames (0s, 5s, 10s, 15s)
+            # 5. Generate preview frames (0s, 5s, 10s, 15s)
             print(f"Generating preview frames for {url}...")
             candidates = audio_processor.capture_video_frames(url)
             
-            # 4. Check description for recipe link (Website/PDF) and get 5th option
-            description = metadata.get("description", "")
-            if description:
-                print("Checking description for recipe links...")
-                recipe_link = llm.extract_recipe_link(description)
-                
-                if recipe_link:
-                    print(f"Found recipe link: {recipe_link}")
-                    scraped_data = audio_processor.scrape_recipe_from_link(recipe_link)
-                    
-                    if scraped_data:
-                        # If we got HTML/Text from PDF/Web, update the context for the AI
-                        # so it can extract better ingredients/instructions
-                        if scraped_data.get("html"):
-                            transcript += f"\n\n[RECIPE CONTENT FROM {recipe_link}]:\n{scraped_data['html']}"
-                            
-                        # If we found an image, download it and add as 5th candidate
-                        if scraped_data.get("image_url"):
-                            print(f"Downloading scraped image from {recipe_link}...")
-                            scraped_img_local = assets.download_image(scraped_data["image_url"])
-                            if scraped_img_local:
-                                candidates.append(scraped_img_local)
-                                print(f"Added scraped image as 5th candidate: {scraped_img_local}")
+            # 6. Add scraped image as 5th option if available
+            if scraped_image:
+                print(f"Downloading scraped image from {scraped_image}...")
+                scraped_img_local = assets.download_image(scraped_image)
+                if scraped_img_local:
+                    candidates.append(scraped_img_local)
+                    print(f"Added scraped image as 5th candidate: {scraped_img_local}")
             
             recipe_data["image_candidates"] = candidates              # Add the original thumbnail to candidates if specific
             

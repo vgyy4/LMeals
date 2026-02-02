@@ -491,7 +491,7 @@ def identify_dish_timestamps(transcript: str, duration: int) -> list[int]:
         return [start + (i * (duration - start) // 4) for i in range(4)]
 
 
-def extract_recipe_link(description: str) -> str | None:
+def extract_recipe_link(description: str, video_title: str = "") -> str | None:
     """
     Uses AI to identify recipe URLs (web pages or PDFs) in a video description.
     Returns the most relevant recipe URL or None if not found.
@@ -502,23 +502,26 @@ def extract_recipe_link(description: str) -> str | None:
 
     system_prompt = """
     You are an expert at analyzing video descriptions to find recipe links.
-    Your task is to identify if there is a recipe link (web page or PDF) in the video description.
+    Your task is to identify if there is a recipe link (web page or PDF) in the video description that matches the video's subject.
     
     RULES:
     1. Look for URLs that point to recipe websites, blog posts, or PDF files.
     2. Prioritize links that contain keywords like "recipe", "ingredients", "instructions".
-    3. Return ONLY the most relevant recipe URL.
-    4. Return null if no recipe link is found.
+    3. **CRITICAL: Ensure the link is for the SAME recipe as the video title provided.**
+    4. Ignore links to social media profiles, Patreon, merchandise, or unrelated videos.
+    5. Return ONLY the most relevant recipe URL.
+    6. Return null if no matching recipe link is found.
     
     Response format: Return a valid JSON object with the key "recipe_url".
     Example: {"recipe_url": "https://example.com/recipe.pdf"} or {"recipe_url": null}
     """
 
     try:
+        user_content = f"Video Title: {video_title}\n\nVideo Description:\n\n{description}"
         completion = client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Video Description:\n\n{description}"}
+                {"role": "user", "content": user_content}
             ],
             model=model,
             response_format={"type": "json_object"}
