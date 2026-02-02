@@ -55,7 +55,7 @@ def extract_with_groq(html: str):
     6. Be as granular and step-by-step as possible in the instructions.
 
     SERVINGS & YIELD LOGIC:
-    1. If multiple units are available (e.g. "Serves 4 people" and "Makes 20 cookies"), **PRIORITIZE THE SPECIFIC UNIT** (choose "20" and "cookies").
+    1. If multiple units are available (e.g. "Serves 4 people" and "Makes 20 cookies"), prioritize the unit that is **MOST RELEVANT TO THE RESIPE TITLE/CONTENT**. (e.g. If the recipe is "Chocolate Chip Cookies", choose "Cookies" and "20". If the recipe is "Spicy Noodles", choose "People" or "Servings" even if "cookies" is mentioned elsewhere).
     2. If multiple sizes/yields are provided for the SAME unit:
        - If > 2 options (e.g. 24 small, 20 med, 15 large): Choose the **MEDIAN** (middle value, e.g. 20).
        - If exactly 2 options (e.g. 24 small, 20 large): Choose the **AVERAGE** rounded to the nearest whole number (e.g. 22).
@@ -158,7 +158,7 @@ def extract_recipe_from_text(text: str, metadata: dict = None):
     6. Be as granular and step-by-step as possible in the instructions.
 
     SERVINGS & YIELD LOGIC:
-    1. If multiple units are available (e.g. "Serves 4 people" and "Makes 20 cookies"), **PRIORITIZE THE SPECIFIC UNIT** (choose "20" and "cookies").
+    1. If multiple units are available (e.g. "Serves 4 people" and "Makes 20 cookies"), prioritize the unit that is **MOST RELEVANT TO THE RESIPE TITLE/CONTENT**. (e.g. If the recipe is "Chocolate Chip Cookies", choose "Cookies" and "20". If the recipe is "Spicy Noodles", choose "People" or "Servings" even if "cookies" is mentioned elsewhere).
     2. If multiple sizes/yields are provided for the SAME unit:
        - If > 2 options (e.g. 24 small, 20 med, 15 large): Choose the **MEDIAN** (middle value, e.g. 20).
        - If exactly 2 options (e.g. 24 small, 20 large): Choose the **AVERAGE** rounded to the nearest whole number (e.g. 22).
