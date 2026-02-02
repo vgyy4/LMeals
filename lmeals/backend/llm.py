@@ -511,7 +511,8 @@ def identify_dish_timestamps(transcript: str, duration: int) -> list[int]:
     """
 
     try:
-        completion = client.chat.completions.create(
+        completion = _call_groq_with_retry(
+            client=client,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Transcript:\n\n{transcript}"}
@@ -568,7 +569,8 @@ def extract_recipe_link(description: str, video_title: str = "") -> str | None:
 
     try:
         user_content = f"Video Title: {video_title}\n\nVideo Description:\n\n{description}"
-        completion = client.chat.completions.create(
+        completion = _call_groq_with_retry(
+            client=client,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content}
