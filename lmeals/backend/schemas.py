@@ -22,6 +22,8 @@ class RecipeBase(BaseModel):
     instructions: Optional[List[str]] = None
     prep_time: Optional[str] = None
     cook_time: Optional[str] = None
+    active_time: Optional[str] = None
+    total_time: Optional[str] = None
     servings: Optional[str] = None
     yield_unit: Optional[str] = "servings"
     instruction_template: Optional[List[str]] = None

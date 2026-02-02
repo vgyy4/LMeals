@@ -11,6 +11,8 @@ class Recipe(Base):
     instructions = Column(JSON)  # List of strings
     prep_time = Column(String, nullable=True)
     cook_time = Column(String, nullable=True)
+    active_time = Column(String, nullable=True) # Hands-on time (e.g. "1 hour")
+    total_time = Column(String, nullable=True)  # Wall-clock time (e.g. "15 hours")
     servings = Column(String, nullable=True)
     yield_unit = Column(String, nullable=True, server_default='servings')
     instruction_template = Column(JSON, nullable=True) # List of strings with [[qty:NUMBER]]

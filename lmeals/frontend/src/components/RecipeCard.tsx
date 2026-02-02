@@ -10,16 +10,22 @@ interface RecipeCardProps {
   title: string;
   imageUrl?: string;
   hasAllergens: boolean;
-  cookTime?: string;
   prepTime?: string;
+  cookTime?: string;
+  activeTime?: string;
+  totalTime?: string;
   servings?: string;
   yieldUnit?: string;
   isFavorite: boolean;
   onFavoriteChange?: (id: number, isFavorite: boolean) => void;
 }
 
-const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, servings, yieldUnit, isFavorite, onFavoriteChange }: RecipeCardProps) => {
-  const totalMinutes = parseTimeToMinutes(prepTime) + parseTimeToMinutes(cookTime);
+const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, activeTime, totalTime, servings, yieldUnit, isFavorite, onFavoriteChange }: RecipeCardProps) => {
+  // Use active + cook + prep for total minutes calculation if basic, or just parse totalTime if available
+  const basicTotalMinutes = parseTimeToMinutes(prepTime) + parseTimeToMinutes(cookTime);
+  const displayTotalTime = totalTime || (basicTotalMinutes > 0 ? formatMinutes(basicTotalMinutes) : null);
+  const displayActiveTime = activeTime; // Use active time if explicit
+
   const [isFav, setIsFav] = useState(isFavorite);
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
@@ -69,15 +75,21 @@ const RecipeCard = ({ id, title, imageUrl, hasAllergens, cookTime, prepTime, ser
       {/* Bottom Section: Info */}
       <div className="p-4 bg-white">
         <h3 className="text-lg font-bold text-slate-800 truncate group-hover:text-p-coral transition-colors">{title}</h3>
-        {(totalMinutes > 0 || servings) && (
+        {((displayTotalTime) || servings) && (
           <div className="flex items-center gap-3 mt-2 text-sm text-slate-400">
-            {totalMinutes > 0 && (
+            {/* Logic: If active time exists, show it. If not, show total time. */}
+            {(displayActiveTime || displayTotalTime) && (
               <div className="flex items-center gap-1">
                 <Clock size={14} />
-                <span>{formatMinutes(totalMinutes)}</span>
+                <div className="flex flex-col leading-tight">
+                  {displayActiveTime && <span className="text-slate-600 font-medium">{displayActiveTime} <span className="text-[10px] text-slate-400 font-normal">Active</span></span>}
+                  {displayTotalTime && (!displayActiveTime || displayTotalTime !== displayActiveTime) && (
+                    <span className={`${displayActiveTime ? 'text-[10px]' : ''}`}>{displayTotalTime} {displayActiveTime ? 'Total' : ''}</span>
+                  )}
+                </div>
               </div>
             )}
-            {totalMinutes > 0 && servings && <span className="w-1 h-1 rounded-full bg-slate-300" />}
+            {(displayActiveTime || displayTotalTime) && servings && <span className="w-1 h-1 rounded-full bg-slate-300" />}
             {servings && (
               <div className="flex items-center gap-1">
                 <Users size={14} />

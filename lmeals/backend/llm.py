@@ -73,9 +73,15 @@ def extract_with_groq(html: str):
     - "instructions": (list of strings - BE HIGHLY DETAILED. Tag numerical quantities for ingredients only. Do NOT tag times/temps.)
     - "prep_time": (string)
     - "cook_time": (string)
+    - "active_time": (string - SUM of prep time + non-passive cook time. e.g. "Prep 15m + Cook 10m" -> "25 mins")
+    - "total_time": (string - SUM of active time + passive wait/chill/bake time. e.g. "Active 25m + Bake 45m" -> "1 hr 10 mins")
     - "servings": (string - just the numeric part OR range, e.g. "4" or "20-24")
     - "yield_unit": (string - the unit of measurement, e.g. "servings", "cookies", "people", "bowls", "muffins"). Default to "servings" if unclear.
     - "image_url": (string)
+
+    TIME LOGIC:
+    - **active_time**: This is the "User Effort". Include prep, chopping, sautéing, active stirring. EXCLUDE baking, simmering, chilling, marinating.
+    - **total_time**: This is "Ready In". Include EVERYTHING. Start to finish.
 
     CRITICAL INGREDIENT TAGGING RULES:
     1. Wrap **EVERY** number that represents a quantity, volume, or weight in [[qty:VALUE]]. 
@@ -181,9 +187,15 @@ def extract_recipe_from_text(text: str, metadata: dict = None):
     - "instructions": (list of strings - BE HIGHLY DETAILED. Tag numerical quantities for ingredients only. Do NOT tag times/temps.)
     - "prep_time": (string)
     - "cook_time": (string)
+    - "active_time": (string - SUM of prep time + non-passive cook time. e.g. "Prep 15m + Cook 10m" -> "25 mins")
+    - "total_time": (string - SUM of active time + passive wait/chill/bake time. e.g. "Active 25m + Bake 45m" -> "1 hr 10 mins")
     - "servings": (string - just the numeric part OR range, e.g. "4" or "20-24")
     - "yield_unit": (string - the unit of measurement, e.g. "servings", "cookies", "people", "bowls", "muffins"). Default to "servings" if unclear.
     - "image_url": (string)
+
+    TIME LOGIC:
+    - **active_time**: This is the "User Effort". Include prep, chopping, sautéing, active stirring. EXCLUDE baking, simmering, chilling, marinating.
+    - **total_time**: This is "Ready In". Include EVERYTHING. Start to finish.
 
     CRITICAL INGREDIENT TAGGING RULES:
     1. Wrap **EVERY** number that represents a quantity, volume, or weight in [[qty:VALUE]]. 
