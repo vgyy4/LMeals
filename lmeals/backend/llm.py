@@ -80,8 +80,10 @@ def extract_with_groq(html: str):
     - "image_url": (string)
 
     TIME LOGIC:
-    - **active_time**: This is the "User Effort". Include prep, chopping, sautéing, active stirring. EXCLUDE baking, simmering, chilling, marinating.
-    - **total_time**: This is "Ready In". Include EVERYTHING. Start to finish.
+    - **active_time**: This is the "Hands-on User Effort". EXCLUDE baking, roasting, simmering, boiling, chilling, marinating, or "letting sit".
+      * NOTE: If "Cook Time" is just baking/roasting, do NOT add it to active_time. Active time should mostly be Prep + Mixing/Sautéing.
+    - **total_time**: This is "Ready In". You MUST scan for "Chill", "Marinate", "Rest", "Refrigerate", "Freeze" or "Overnight".
+      * NOTE: If text says "Refrigerate 3-4 hours" or "Overnight", the total time MUST include this (e.g. "4 hours 25 mins"). Do NOT ignore long wait times.
 
     CRITICAL INGREDIENT TAGGING RULES:
     1. Wrap **EVERY** number that represents a quantity, volume, or weight in [[qty:VALUE]]. 
