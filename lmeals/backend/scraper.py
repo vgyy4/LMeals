@@ -64,7 +64,27 @@ def scrape_with_library(url: str):
 def get_html(url: str):
     """
     Fetches the raw HTML content of a URL using a browser-like User-Agent.
+    Handles Google Docs by exporting to text format.
     """
+    # Special handling for Google Docs
+    if "docs.google.com/document/d/" in url:
+        try:
+            import re
+            # Extract Doc ID
+            match = re.search(r'document/d/([a-zA-Z0-9-_]+)', url)
+            if match:
+                doc_id = match.group(1)
+                export_url = f"https://docs.google.com/document/d/{doc_id}/export?format=txt"
+                print(f"DEBUG: Detected Google Doc. Fetching text export from: {export_url}")
+                
+                response = requests.get(export_url, timeout=15)
+                response.raise_for_status()
+                return response.text
+        except Exception as e:
+            print(f"Error fetching Google Doc export: {e}")
+            # Fall through to normal fetch if export fails
+            pass
+
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
