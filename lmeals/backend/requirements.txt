@@ -49,3 +49,4 @@ w3lib==2.3.1
 webencodings==0.5.1
 yt-dlp
 pydub==0.25.1
+PyPDF2==3.0.1

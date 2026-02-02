@@ -490,3 +490,48 @@ def identify_dish_timestamps(transcript: str, duration: int) -> list[int]:
         start = int(duration * 0.8)
         return [start + (i * (duration - start) // 4) for i in range(4)]
 
+
+def extract_recipe_link(description: str) -> str | None:
+    """
+    Uses AI to identify recipe URLs (web pages or PDFs) in a video description.
+    Returns the most relevant recipe URL or None if not found.
+    """
+    client, model = get_groq_client()
+    if not client or not description:
+        return None
+
+    system_prompt = """
+    You are an expert at analyzing video descriptions to find recipe links.
+    Your task is to identify if there is a recipe link (web page or PDF) in the video description.
+    
+    RULES:
+    1. Look for URLs that point to recipe websites, blog posts, or PDF files.
+    2. Prioritize links that contain keywords like "recipe", "ingredients", "instructions".
+    3. Return ONLY the most relevant recipe URL.
+    4. Return null if no recipe link is found.
+    
+    Response format: {"recipe_url": "https://example.com/recipe.pdf" or null}
+    """
+
+    try:
+        completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Video Description:\n\n{description}"}
+            ],
+            model=model,
+            response_format={"type": "json_object"}
+        )
+        
+        data = json.loads(completion.choices[0].message.content)
+        url = data.get("recipe_url")
+        
+        if url and isinstance(url, str) and url.startswith("http"):
+            print(f"DEBUG: Found recipe link in description: {url}")
+            return url
+            
+        print("DEBUG: No recipe link found in description")
+        return None
+    except Exception as e:
+        print(f"Error extracting recipe link: {e}")
+        return None

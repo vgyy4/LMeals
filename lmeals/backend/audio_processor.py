@@ -3,6 +3,12 @@ import os
 import math
 from pydub import AudioSegment
 import uuid
+import requests
+import threading
+import time
+import shutil
+from bs4 import BeautifulSoup
+import PyPDF2  # Ensure this is in requirements.txt or handle ImportError
 
 def get_common_ydl_opts():
     """BASE yt-dlp options to avoid 403 Forbidden errors."""
@@ -369,3 +375,119 @@ def download_high_res_frame(url: str, timestamp: float, output_path: str) -> boo
     finally:
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def scrape_recipe_from_link(url: str) -> dict | None:
+    """
+    Scrapes recipe content from a web page or PDF URL.
+    Returns {"image_url": str, "html": str} or None if fails.
+    For PDFs: Downloads, extracts text, schedules cleanup after 10 seconds.
+    """
+    try:
+        print(f"DEBUG: Scraping recipe from {url}")
+        
+        # Check if it's a PDF
+        if url.lower().endswith('.pdf'):
+            print("DEBUG: Detected PDF link, downloading...")
+            temp_pdf = f"temp_{uuid.uuid4().hex}.pdf"
+            
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            
+            with open(temp_pdf, 'wb') as f:
+                f.write(response.content)
+            
+            print(f"DEBUG: PDF downloaded to {temp_pdf}")
+            
+            # Extract text from PDF
+            try:
+                pdf_text = ""
+                with open(temp_pdf, 'rb') as f:
+                    pdf_reader = PyPDF2.PdfReader(f)
+                    for page in pdf_reader.pages:
+                        extracted = page.extract_text()
+                        if extracted:
+                            pdf_text += extracted + "\n"
+                
+                print(f"DEBUG: Extracted {len(pdf_text)} characters from PDF")
+                
+                # Extract images from PDF using pdf2image (if available) or PyMuPDF/fitz is better but let's stick to what we might have or keep it simple.
+                # Actually, extracting images from PDF is tricky without heavy libraries like fitz or pdf2image + poppler.
+                # The prompt asked to "offer the image the AI founded as the 5th option".
+                # If it's a PDF, finding an image is hard.
+                # Let's try to pass the text to AI and maybe just not provide an image from PDF for now unless we add more deps.
+                # OR, we can try to find an image in the PDF if possible.
+                # PyPDF2 creates access to images but it's complex.
+                # Let's start with text extraction so the AI has context, and set image_url to None for PDFs for now,
+                # unless we want to try to grab one.
+                
+                # Schedule PDF cleanup after 10 seconds
+                def cleanup_pdf():
+                    time.sleep(10)
+                    try:
+                        if os.path.exists(temp_pdf):
+                            os.unlink(temp_pdf)
+                            print(f"DEBUG: Cleaned up PDF: {temp_pdf}")
+                    except Exception as e:
+                        print(f"ERROR cleaning up PDF: {e}")
+                
+                cleanup_thread = threading.Thread(target=cleanup_pdf, daemon=True)
+                cleanup_thread.start()
+                
+                # Return text as HTML for AI processing
+                return {
+                    "image_url": None, 
+                    "html": f"<html><body><h1>PDF Content</h1><pre>{pdf_text}</pre></body></html>"
+                }
+                
+            except ImportError:
+                print("ERROR: PyPDF2 not installed. Cannot extract PDF text.")
+                if os.path.exists(temp_pdf):
+                    os.unlink(temp_pdf)
+                return None
+            except Exception as e:
+                print(f"ERROR extracting PDF text: {e}")
+                if os.path.exists(temp_pdf):
+                    os.unlink(temp_pdf)
+                return None
+        
+        # It's a web page
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Try to find a recipe image
+        image_url = None
+        
+        # Look for Open Graph image
+        og_image = soup.find('meta', property='og:image')
+        if og_image and og_image.get('content'):
+            image_url = og_image['content']
+        
+        # Fallback: look for first img in main/article
+        if not image_url:
+            main = soup.find(['main', 'article'])
+            if main:
+                img = main.find('img')
+                if img and img.get('src'):
+                    image_url = img['src']
+        
+        # Absolute URL handling
+        if image_url and not image_url.startswith('http'):
+            from urllib.parse import urljoin
+            image_url = urljoin(url, image_url)
+            
+        print(f"DEBUG: Found image URL: {image_url}")
+        
+        return {
+            "image_url": image_url,
+            "html": str(soup)
+        }
+        
+    except Exception as e:
+        print(f"ERROR scraping recipe link: {e}")
+        return None

@@ -162,12 +162,35 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
             if metadata.get("thumbnail"):
                 recipe_data["image_url"] = metadata["thumbnail"]
 
-            # 5. Capture additional frames for selection
-            print("Capturing video frames for selection...")
+            # 3. Generate preview frames (0s, 5s, 10s, 15s)
+            print(f"Generating preview frames for {url}...")
             candidates = audio_processor.capture_video_frames(url)
-            if candidates:
-                # Add the original thumbnail to candidates if specific
-                recipe_data["image_candidates"] = candidates
+            
+            # 4. Check description for recipe link (Website/PDF) and get 5th option
+            description = metadata.get("description", "")
+            if description:
+                print("Checking description for recipe links...")
+                recipe_link = llm.extract_recipe_link(description)
+                
+                if recipe_link:
+                    print(f"Found recipe link: {recipe_link}")
+                    scraped_data = audio_processor.scrape_recipe_from_link(recipe_link)
+                    
+                    if scraped_data:
+                        # If we got HTML/Text from PDF/Web, update the context for the AI
+                        # so it can extract better ingredients/instructions
+                        if scraped_data.get("html"):
+                            transcript += f"\n\n[RECIPE CONTENT FROM {recipe_link}]:\n{scraped_data['html']}"
+                            
+                        # If we found an image, download it and add as 5th candidate
+                        if scraped_data.get("image_url"):
+                            print(f"Downloading scraped image from {recipe_link}...")
+                            scraped_img_local = assets.download_image(scraped_data["image_url"])
+                            if scraped_img_local:
+                                candidates.append(scraped_img_local)
+                                print(f"Added scraped image as 5th candidate: {scraped_img_local}")
+            
+            recipe_data["image_candidates"] = candidates              # Add the original thumbnail to candidates if specific
             
         except Exception as e:
             print(f"ERROR: Video/Audio processing failed for {url}")
