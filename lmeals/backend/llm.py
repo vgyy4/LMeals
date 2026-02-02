@@ -84,6 +84,7 @@ def extract_with_groq(html: str):
       * NOTE: If "Cook Time" is just baking/roasting, do NOT add it to active_time. Active time should mostly be Prep + Mixing/Sautéing.
     - **total_time**: This is "Ready In". You MUST scan for "Chill", "Marinate", "Rest", "Refrigerate", "Freeze" or "Overnight".
       * NOTE: If text says "Refrigerate 3-4 hours" or "Overnight", the total time MUST include this (e.g. "4 hours 25 mins"). Do NOT ignore long wait times.
+    - **CONSISTENCY CHECK**: If you picked a specific option for "servings" (e.g. "Medium Cookies"), **YOU MUST USE THE COOK TIME FOR THAT SPECIFIC OPTION**. Do not blindly grab the first bake time you see (which might be for "Small Cookies"). Match the time to the size.
 
     CRITICAL INGREDIENT TAGGING RULES:
     1. Wrap **EVERY** number that represents a quantity, volume, or weight in [[qty:VALUE]]. 
@@ -200,6 +201,7 @@ def extract_recipe_from_text(text: str, metadata: dict = None):
       * NOTE: If "Cook Time" is just baking/roasting, do NOT add it to active_time. Active time should mostly be Prep + Mixing/Sautéing.
     - **total_time**: This is "Ready In". You MUST scan for "Chill", "Marinate", "Rest", "Refrigerate", "Freeze" or "Overnight".
       * NOTE: If text says "Refrigerate 3-4 hours" or "Overnight", the total time MUST include this (e.g. "4 hours 25 mins"). Do NOT ignore long wait times.
+    - **CONSISTENCY CHECK**: If you picked a specific option for "servings" (e.g. "Medium Cookies"), **YOU MUST USE THE COOK TIME FOR THAT SPECIFIC OPTION**. Do not blindly grab the first bake time you see (which might be for "Small Cookies"). Match the time to the size.
 
     CRITICAL INGREDIENT TAGGING RULES:
     1. Wrap **EVERY** number that represents a quantity, volume, or weight in [[qty:VALUE]]. 
