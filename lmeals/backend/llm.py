@@ -56,7 +56,9 @@ def extract_with_groq(html: str):
 
     SERVINGS & YIELD LOGIC:
     1. If multiple units are available (e.g. "Serves 4 people" and "Makes 20 cookies"), prioritize the unit that is **MOST RELEVANT TO THE RESIPE TITLE/CONTENT**. (e.g. If the recipe is "Chocolate Chip Cookies", choose "Cookies" and "20". If the recipe is "Spicy Noodles", choose "People" or "Servings" even if "cookies" is mentioned elsewhere).
-    2. **SEARCH THE ENTIRE TEXT**: Do not just take the first "Serves: X" you see at the top. If the top says "Serves 12 people" but the notes say "Makes 20-24 cookies", and "Cookies" is the relevant unit, **YOU MUST CHOOSE THE COOKIES COUNT** (applying the median/average logic below).
+    2. **SEARCH THE ENTIRE TEXT**: Do not just take the first "Serves: X" you see at the top. If the top says "Serves 12 people" but the notes say "Makes 20-24 cookies", **CHECK RELEVANCE**:
+       - If "Cookies" is **MORE RELEVANT** to the recipe content than "people" (e.g. recipe is for cookies), **CHOOSE THE COOKIES COUNT**.
+       - If "People" is **MORE RELEVANT** (e.g. recipe is for stew), **KEEP THE PEOPLE COUNT**.
     3. If multiple sizes/yields are provided for the SAME unit:
        - If > 2 options (e.g. 24 small, 20 med, 15 large): Choose the **MEDIAN** (middle value, e.g. 20).
        - If exactly 2 options (e.g. 24 small, 20 large): Choose the **AVERAGE** rounded to the nearest whole number (e.g. 22).
@@ -160,7 +162,9 @@ def extract_recipe_from_text(text: str, metadata: dict = None):
 
     SERVINGS & YIELD LOGIC:
     1. If multiple units are available (e.g. "Serves 4 people" and "Makes 20 cookies"), prioritize the unit that is **MOST RELEVANT TO THE RESIPE TITLE/CONTENT**. (e.g. If the recipe is "Chocolate Chip Cookies", choose "Cookies" and "20". If the recipe is "Spicy Noodles", choose "People" or "Servings" even if "cookies" is mentioned elsewhere).
-    2. **SEARCH THE ENTIRE TEXT**: Do not just take the first "Serves: X" you see at the top. If the top says "Serves 12 people" but the notes say "Makes 20-24 cookies", and "Cookies" is the relevant unit, **YOU MUST CHOOSE THE COOKIES COUNT** (applying the median/average logic below).
+    2. **SEARCH THE ENTIRE TEXT**: Do not just take the first "Serves: X" you see at the top. If the top says "Serves 12 people" but the notes say "Makes 20-24 cookies", **CHECK RELEVANCE**:
+       - If "Cookies" is **MORE RELEVANT** to the recipe content than "people" (e.g. recipe is for cookies), **CHOOSE THE COOKIES COUNT**.
+       - If "People" is **MORE RELEVANT** (e.g. recipe is for stew), **KEEP THE PEOPLE COUNT**.
     3. If multiple sizes/yields are provided for the SAME unit:
        - If > 2 options (e.g. 24 small, 20 med, 15 large): Choose the **MEDIAN** (middle value, e.g. 20).
        - If exactly 2 options (e.g. 24 small, 20 large): Choose the **AVERAGE** rounded to the nearest whole number (e.g. 22).
