@@ -181,7 +181,7 @@ def extract_recipe_from_text(text: str, metadata: dict = None):
     - "instructions": (list of strings - BE HIGHLY DETAILED. Tag numerical quantities for ingredients only. Do NOT tag times/temps.)
     - "prep_time": (string)
     - "cook_time": (string)
-    - "servings": (string - just the numeric part if possible, e.g. "4")
+    - "servings": (string - just the numeric part OR range, e.g. "4" or "20-24")
     - "yield_unit": (string - the unit of measurement, e.g. "servings", "cookies", "people", "bowls", "muffins"). Default to "servings" if unclear.
     - "image_url": (string)
 
@@ -199,8 +199,9 @@ def extract_recipe_from_text(text: str, metadata: dict = None):
        - If "Cookies" is **MORE RELEVANT** to the recipe content than "people" (e.g. recipe is for cookies), **CHOOSE THE COOKIES COUNT**.
        - If "People" is **MORE RELEVANT** (e.g. recipe is for stew), **KEEP THE PEOPLE COUNT**.
     3. If multiple sizes/yields are provided for the SAME unit:
-       - If > 2 options (e.g. 24 small, 20 med, 15 large): Choose the **MEDIAN** (middle value, e.g. 20).
+       - If > 2 options (e.g. 24 small, 20 med, 15 large): Choose the **MEDIAN** option.
        - If exactly 2 options (e.g. 24 small, 20 large): Choose the **AVERAGE** rounded to the nearest whole number (e.g. 22).
+    4. **PRESERVE RANGES**: If the chosen yield/option is a range (e.g. "15-18 cookies"), **RETURN THE FULL RANGE STRING "15-18"**. Do NOT simplify it to a single number like "15" or "16.5". Start with the range string if possible.
 
     IMPORTANT JSON FORMATTING RULES:
     - Use strict JSON format.
