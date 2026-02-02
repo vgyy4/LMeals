@@ -4,35 +4,11 @@
  */
 
 // Format a number to a clean string (avoiding 0.33333333333)
+// Format a number to a clean string (avoiding 0.33333333333)
 const formatNumber = (num: number): string => {
     if (Number.isInteger(num)) return num.toString();
 
-    // Common fractions in cooking
-    const fractions: [number, string][] = [
-        [0.125, '1/8'],
-        [0.25, '1/4'],
-        [0.333, '1/3'],
-        [0.375, '3/8'],
-        [0.5, '1/2'],
-        [0.625, '5/8'],
-        [0.666, '2/3'],
-        [0.75, '3/4'],
-        [0.875, '7/8']
-    ];
-
-    const decimal = num % 1;
-    const integer = Math.floor(num);
-
-    // If it's very close to zero or one after rounding
-    if (decimal < 0.01) return integer.toString();
-    if (decimal > 0.99) return (integer + 1).toString();
-
-    for (const [val, label] of fractions) {
-        if (Math.abs(decimal - val) < 0.015) {
-            return integer > 0 ? `${integer} ${label}` : label;
-        }
-    }
-
+    // User preference: ALWAYS use decimals (e.g. 1.5), never fractions (e.g. 1 1/2)
     // Fallback to max 2 decimal places, but remove trailing zeros
     return parseFloat(num.toFixed(2)).toString();
 };
@@ -42,11 +18,6 @@ const formatNumber = (num: number): string => {
  * Handles multiple quantities in a single line (e.g. volume and weight).
  */
 export const scaleIngredientText = (text: string, multiplier: number): string => {
-    if (multiplier === 1) {
-        // Strip tags if any
-        return text.replace(/\[\[qty:([\d.]+)\]\]/g, '$1');
-    }
-
     // Priority 1: Handle tagged quantities [[qty:NUMBER]] or [[qty:MIN-MAX]]
     // If the string contains tags, we ONLY scale the tags to avoid double-scaling
     if (text.includes('[[qty:')) {
@@ -94,6 +65,7 @@ export const scaleIngredientText = (text: string, multiplier: number): string =>
 /**
  * Extracts the primary number from a servings string and scales it.
  * Example: "4 servings" -> "8 servings"
+ * Note: Servings are usually integers, but we handle rounding.
  */
 export const scaleServings = (servings: string, multiplier: number): string => {
     if (!servings || multiplier === 1) return servings;
@@ -139,11 +111,6 @@ export const formatServings = (servings: string, multiplier: number, yieldUnit?:
  * Example: "Add [[qty:100]]ml" -> "Add 200ml" (if multiplier is 2)
  */
 export const scaleTemplate = (template: string, multiplier: number): string => {
-    if (multiplier === 1) {
-        // Just strip the tags but keep the original numbers
-        return template.replace(/\[\[qty:([\d.]+)\]\]/g, '$1');
-    }
-
     return template.replace(/\[\[qty:([\d.]+)\]\]/g, (_, qtyStr) => {
         const qty = parseFloat(qtyStr);
         if (isNaN(qty)) return qtyStr;
