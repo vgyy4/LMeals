@@ -510,7 +510,8 @@ def extract_recipe_link(description: str) -> str | None:
     3. Return ONLY the most relevant recipe URL.
     4. Return null if no recipe link is found.
     
-    Response format: {"recipe_url": "https://example.com/recipe.pdf" or null}
+    Response format: Return a valid JSON object with the key "recipe_url".
+    Example: {"recipe_url": "https://example.com/recipe.pdf"} or {"recipe_url": null}
     """
 
     try:
