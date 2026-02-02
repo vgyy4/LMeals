@@ -2,8 +2,39 @@ from groq import Groq
 import json
 import os
 
+import time
+
 from database import SessionLocal
 import crud
+
+def _call_groq_with_retry(client, messages, model, max_retries=3, response_format=None):
+    """
+    Helper function to call Groq API with exponential backoff for 503/Rate Limit errors.
+    """
+    last_exception = None
+    for attempt in range(max_retries):
+        try:
+            kwargs = {
+                "messages": messages,
+                "model": model,
+            }
+            if response_format:
+                kwargs["response_format"] = response_format
+                
+            return client.chat.completions.create(**kwargs)
+        except Exception as e:
+            last_exception = e
+            error_str = str(e)
+            # Check for 503 (Over Capacity) or Rate Limit errors
+            if "503" in error_str or "rate limit" in error_str.lower() or "over capacity" in error_str.lower():
+                wait_time = 2 ** attempt  # 1, 2, 4 seconds...
+                print(f"Groq API Error: {error_str}. Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                raise e # Don't retry other errors
+    
+    print(f"Max retries ({max_retries}) exceeded for Groq API call.")
+    raise last_exception
 
 def extract_with_groq(html: str):
     """
@@ -96,7 +127,8 @@ def extract_with_groq(html: str):
     text = '\n'.join(chunk for chunk in chunks if chunk)
 
     try:
-        chat_completion = client.chat.completions.create(
+        chat_completion = _call_groq_with_retry(
+            client=client,
             messages=[
                 {
                     "role": "system",
@@ -108,7 +140,7 @@ def extract_with_groq(html: str):
                 },
             ],
             model=model,
-            response_format={"type": "json_object"},
+            response_format={"type": "json_object"}
         )
         response_text = chat_completion.choices[0].message.content
         recipe_data = json.loads(response_text)
