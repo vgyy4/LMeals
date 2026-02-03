@@ -69,8 +69,13 @@ def extract_with_groq(html: str):
     system_prompt = """
     You are an expert recipe data extractor. Your task is to extract recipe data from the provided text.
     
-    CRITICAL: If the content contains MULTIPLE distinct recipes (e.g., "5 Easy Pasta Dishes"), return a JSON ARRAY of recipe objects.
-    If the content contains only ONE recipe, still return a JSON ARRAY with a single object.
+    CRITICAL: If the content contains MULTIPLE distinct recipes (e.g., "5 Easy Pasta Dishes" or a list of items), you MUST return a JSON ARRAY of recipe objects.
+    
+    RULES FOR MULTIPLE RECIPES:
+    1. Do NOT merge them into one usage recipe.
+    2. Do NOT pick just one. Extract ALL of them.
+    3. If the content represents a "Compilation" or "Listicle", treat every item as a distinct recipe.
+    4. Even if there is only one recipe, return a JSON ARRAY with a single object.
     
     Each recipe object must have the following keys: 
     - "title": (string)
@@ -198,8 +203,13 @@ def extract_recipe_from_text(text: str, metadata: dict = None):
     system_prompt = """
     You are an expert recipe data extractor. Your task is to extract recipe data from the provided text.
     
-    CRITICAL: If the content contains MULTIPLE distinct recipes (e.g., "5 Easy Pasta Dishes"), return a JSON ARRAY of recipe objects.
-    If the content contains only ONE recipe, still return a JSON ARRAY with a single object.
+    CRITICAL: If the content contains MULTIPLE distinct recipes (e.g., "5 Easy Pasta Dishes" or a list of items), you MUST return a JSON ARRAY of recipe objects.
+    
+    RULES FOR MULTIPLE RECIPES:
+    1. Do NOT merge them into one usage recipe.
+    2. Do NOT pick just one. Extract ALL of them.
+    3. If the content represents a "Compilation" or "Listicle", treat every item as a distinct recipe.
+    4. Even if there is only one recipe, return a JSON ARRAY with a single object.
     
     Each recipe object must have the following keys: 
     - "title": (string)
