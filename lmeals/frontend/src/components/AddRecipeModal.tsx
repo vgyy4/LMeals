@@ -340,12 +340,15 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
             ) : (
               <div className="text-center py-12">
                 <p className="text-slate-500 mb-4">No images found</p>
-                <button
-                  onClick={uploadImageUrl}
-                  className="px-6 py-3 bg-p-mint text-white rounded-xl font-semibold hover:bg-p-mint-dark"
-                >
+                <label className="inline-block px-6 py-3 bg-p-mint text-white rounded-xl font-semibold hover:bg-p-mint-dark cursor-pointer">
                   Upload Custom
-                </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, true)}
+                    className="hidden"
+                  />
+                </label>
               </div>
             )}
           </div>
