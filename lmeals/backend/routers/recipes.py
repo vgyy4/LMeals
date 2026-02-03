@@ -483,8 +483,10 @@ def finalize_multi_scrape(
                 new_filename = f"{prefix}_selected.{ext}"
                 
                 # Full paths
-                candidates_dir = os.path.join(STATIC_DIR, "images", "recipes", "candidates")
-                images_dir = os.path.join(STATIC_DIR, "images", "recipes")
+                # Full paths
+                import assets
+                candidates_dir = os.path.join(assets.STATIC_DIR, "images", "recipes", "candidates")
+                images_dir = os.path.join(assets.STATIC_DIR, "images", "recipes")
                 old_path = os.path.join(candidates_dir, candidate_filename)
                 new_path = os.path.join(images_dir, new_filename)
                 
