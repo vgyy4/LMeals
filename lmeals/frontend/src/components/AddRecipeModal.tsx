@@ -362,7 +362,7 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
             {imageMode === 'individual' && !isLast && (
               <button
                 onClick={handleNextRecipe}
-                className="flex-1 py-3 bg-p-mint text-white rounded-xl font-semibold hover:bg-p-mint-dark"
+                className="flex-1 py-3 bg-p-mint text-emerald-900 rounded-xl font-bold hover:bg-p-mint-dark hover:text-white transition-all shadow-sm"
               >
                 Next
               </button>
@@ -371,7 +371,7 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
               <button
                 onClick={handleFinishMultiRecipe}
                 disabled={isLoading}
-                className="flex-1 py-3 bg-p-mint text-white rounded-xl font-semibold hover:bg-p-mint-dark disabled:opacity-50"
+                className="flex-1 py-3 bg-p-mint text-emerald-900 rounded-xl font-bold hover:bg-p-mint-dark hover:text-white transition-all disabled:opacity-50 shadow-sm"
               >
                 {isLoading ? 'Importing...' : `Finish`}
               </button>
