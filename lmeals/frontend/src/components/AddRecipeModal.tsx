@@ -226,7 +226,7 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
             <X size={24} />
           </button>
 
-          <h2 className="text-2xl font-bold text-slate-800 mb-2 mr-12">Found {detectedRecipes.length} Recipes</h2>
+          <h2 className="text-2xl font-bold text-slate-800 mb-2 pr-8">Found {detectedRecipes.length} Recipes</h2>
           <p className="text-slate-500 mb-6">Select which recipes to import</p>
 
           <div className="flex-1 overflow-y-auto mb-6">
