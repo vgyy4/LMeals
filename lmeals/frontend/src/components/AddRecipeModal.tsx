@@ -222,11 +222,12 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
     return (
       <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-50">
         <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] flex flex-col relative">
-          <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-10">
-            <X size={24} />
-          </button>
-
-          <h2 className="text-2xl font-bold text-slate-800 mb-2 pr-8">Found {detectedRecipes.length} Recipes</h2>
+          <div className="flex justify-between items-start mb-2">
+            <h2 className="text-2xl font-bold text-slate-800 mr-2">Found {detectedRecipes.length} Recipes</h2>
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
+              <X size={24} />
+            </button>
+          </div>
           <p className="text-slate-500 mb-6">Select which recipes to import</p>
 
           <div className="flex-1 overflow-y-auto mb-6">
