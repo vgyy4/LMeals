@@ -336,7 +336,6 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
                     )}
                   </div>
                 ))}
-                ))}
               </div>
             ) : (
               <div className="text-center py-12">
