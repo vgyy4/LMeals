@@ -215,6 +215,7 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
             raise HTTPException(status_code=500, detail=str(e))
 
     # Now handle the array: single recipe = create immediately, multiple = return for selection
+    print(f"DEBUG: AI returned {len(recipes_array)} recipe(s)")
     if len(recipes_array) == 1:
         # SINGLE RECIPE PATH (Backward Compatible)
         recipe_data = recipes_array[0]
