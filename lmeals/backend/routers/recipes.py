@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 import crud, schemas, scraper, llm, allergen_checker, audio_processor, assets
+import os
 from database import SessionLocal
 
 router = APIRouter()

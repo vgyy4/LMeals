@@ -336,21 +336,27 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
                     )}
                   </div>
                 ))}
+                ))}
               </div>
             ) : (
               <div className="text-center py-12">
                 <p className="text-slate-500 mb-4">No images found</p>
-                <label className="inline-block px-6 py-3 bg-p-mint text-white rounded-xl font-semibold hover:bg-p-mint-dark cursor-pointer">
-                  Upload Custom
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, true)}
-                    className="hidden"
-                  />
-                </label>
               </div>
             )}
+
+            <div className="mt-4 flex justify-center border-t border-slate-100 pt-4">
+              <label className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-p-mint hover:bg-p-mint/5 rounded-lg transition-colors cursor-pointer font-medium">
+                <Upload size={18} />
+                <span>Upload Custom Image</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, true)}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
           </div>
 
           <div className="flex gap-3">
