@@ -221,12 +221,12 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
 
     return (
       <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-50">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] flex flex-col">
-          <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] flex flex-col relative">
+          <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-10">
             <X size={24} />
           </button>
 
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">Found {detectedRecipes.length} Recipes</h2>
+          <h2 className="text-2xl font-bold text-slate-800 mb-2 mr-12">Found {detectedRecipes.length} Recipes</h2>
           <p className="text-slate-500 mb-6">Select which recipes to import</p>
 
           <div className="flex-1 overflow-y-auto mb-6">
@@ -236,8 +236,8 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
                   key={idx}
                   onClick={() => toggleRecipeSelection(idx)}
                   className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedRecipes.has(idx)
-                      ? 'border-p-mint bg-p-mint/5'
-                      : 'border-slate-200 hover:border-slate-300'
+                    ? 'border-p-mint bg-p-mint/5'
+                    : 'border-slate-200 hover:border-slate-300'
                     }`}
                 >
                   <div className="flex items-center gap-3">
@@ -256,8 +256,8 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
             onClick={handleProceedToImageMode}
             disabled={noneSelected}
             className={`w-full py-3 rounded-xl font-semibold transition-all ${noneSelected
-                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                : 'bg-p-mint text-white hover:bg-p-mint-dark'
+              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              : 'bg-p-mint text-p-mint-dark hover:bg-p-mint-dark hover:text-white'
               }`}
           >
             {allSelected ? 'Import All' : `Import Selected (${selectedRecipes.size})`}
@@ -324,8 +324,8 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
                     key={idx}
                     onClick={() => setSelectedCandidateIndex(idx)}
                     className={`relative group cursor-pointer rounded-2xl overflow-hidden aspect-video border-4 transition-all ${selectedCandidateIndex === idx
-                        ? 'border-p-mint ring-4 ring-p-mint/20'
-                        : 'border-transparent hover:border-slate-200'
+                      ? 'border-p-mint ring-4 ring-p-mint/20'
+                      : 'border-transparent hover:border-slate-200'
                       }`}
                   >
                     <img src={`api/static/${img}`} className="w-full h-full object-cover" loading="lazy" />
@@ -340,7 +340,12 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
             ) : (
               <div className="text-center py-12">
                 <p className="text-slate-500 mb-4">No images found</p>
-                <button className="px-4 py-2 bg-p-mint text-white rounded-lg">Upload Custom</button>
+                <button
+                  onClick={uploadImageUrl}
+                  className="px-6 py-3 bg-p-mint text-white rounded-xl font-semibold hover:bg-p-mint-dark"
+                >
+                  Upload Custom
+                </button>
               </div>
             )}
           </div>

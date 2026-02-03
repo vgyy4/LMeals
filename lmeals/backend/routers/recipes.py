@@ -470,8 +470,33 @@ def finalize_multi_scrape(
         # Handle image assignment
         if assigned_image and "candidates/" in assigned_image:
             # Image is in temp candidates folder, move to permanent storage
-            final_image_path = assets.move_from_candidates(assigned_image)
-            recipe_dict["image_url"] = final_image_path
+            try:
+                # Extract just the filename from the candidates path
+                candidate_filename = os.path.basename(assigned_image)
+                
+                # Create new filename for permanent storage
+                name_parts = candidate_filename.rsplit('_frame_', 1)
+                prefix = name_parts[0] if len(name_parts) > 1 else candidate_filename.split('.')[0]
+                ext = candidate_filename.split('.')[-1]
+                new_filename = f"{prefix}_selected.{ext}"
+                
+                # Full paths
+                candidates_dir = os.path.join(STATIC_DIR, "images", "recipes", "candidates")
+                images_dir = os.path.join(STATIC_DIR, "images", "recipes")
+                old_path = os.path.join(candidates_dir, candidate_filename)
+                new_path = os.path.join(images_dir, new_filename)
+                
+                # Move file
+                import shutil
+                shutil.copy2(old_path, new_path)
+                
+                # Return relative path
+                final_image_path = f"images/recipes/{new_filename}"
+                recipe_dict["image_url"] = final_image_path
+                print(f"DEBUG: Moved candidate to: {final_image_path}")
+            except Exception as e:
+                print(f"ERROR: Failed to move candidate image: {e}")
+                recipe_dict["image_url"] = None
         elif assigned_image:
             # Image is already in permanent storage
             recipe_dict["image_url"] = assigned_image
