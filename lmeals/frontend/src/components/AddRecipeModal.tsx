@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { scrapeRecipe, scrapeWithAi, uploadTempImage, finalizeScrape, cleanupImages } from '../lib/api';
+import { scrapeRecipe, scrapeWithAi, uploadTempImage, finalizeScrape, finalizeMultiScrape, cleanupImages } from '../lib/api';
 import { X, Youtube, Music, Facebook, Instagram, ImagePlus, Check, ArrowRight, Upload } from 'lucide-react';
 import GeometricLoader from './GeometricLoader';
 import { Recipe } from '../lib/types';
@@ -17,10 +17,19 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const customUploadRef = useRef<HTMLInputElement>(null);
 
-  // New state for selection flow
+  // Single recipe image selection state
   const [imageCandidates, setImageCandidates] = useState<string[]>([]);
   const [pendingRecipe, setPendingRecipe] = useState<Recipe | null>(null);
   const [selectedCandidateIndex, setSelectedCandidateIndex] = useState<number>(0);
+
+  // Multi-recipe state
+  const [multiRecipeMode, setMultiRecipeMode] = useState(false);
+  const [detectedRecipes, setDetectedRecipes] = useState<any[]>([]);
+  const [selectedRecipes, setSelectedRecipes] = useState<Set<number>>(new Set());
+  const [currentScreen, setCurrentScreen] = useState<'recipe_selection' | 'image_mode' | 'image_assignment'>('recipe_selection');
+  const [imageMode, setImageMode] = useState<'shared' | 'individual'>('shared');
+  const [currentRecipeIndex, setCurrentRecipeIndex] = useState(0);
+  const [imageAssignments, setImageAssignments] = useState<Record<number, number>>({});
 
   const handleInitialScrape = async () => {
     setIsLoading(true);
@@ -49,8 +58,21 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
     setError(null);
     try {
       const response = await scrapeWithAi(url);
-      if (response.status === 'success' && response.recipe) {
 
+      // Check for multi-recipe response
+      if (response.status === 'multi_recipe' && 'recipes' in response) {
+        setMultiRecipeMode(true);
+        setDetectedRecipes(response.recipes);
+        setImageCandidates(response.image_candidates || []);
+        // Select all recipes by default
+        setSelectedRecipes(new Set(response.recipes.map((_, idx) => idx)));
+        setCurrentScreen('recipe_selection');
+        setIsLoading(false);
+        return; // Stay on modal, show recipe selection
+      }
+
+      // Single recipe path
+      if (response.status === 'success' && response.recipe) {
         // If we have multiple image candidates, show selection screen
         if (response.image_candidates && response.image_candidates.length > 0) {
           setImageCandidates(response.image_candidates);
@@ -127,6 +149,225 @@ const AddRecipeModal = ({ onClose, onRecipeAdded }: AddRecipeModalProps) => {
       setIsLoading(false);
     }
   };
+
+  // Multi-recipe handlers
+  const toggleRecipeSelection = (index: number) => {
+    setSelectedRecipes(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) { newSet.delete(index); } else { newSet.add(index); }
+      return newSet;
+    });
+  };
+
+  const handleProceedToImageMode = () => {
+    if (selectedRecipes.size === 0) return;
+    setCurrentScreen('image_mode');
+  };
+
+  const handleImageModeSelection = (mode: 'shared' | 'individual') => {
+    setImageMode(mode);
+    setCurrentScreen('image_assignment');
+    const firstSelected = Array.from(selectedRecipes).sort((a, b) => a - b)[0];
+    setCurrentRecipeIndex(firstSelected);
+    setSelectedCandidateIndex(0);
+  };
+
+  const handleNextRecipe = () => {
+    const selectedArray = Array.from(selectedRecipes).sort((a, b) => a - b);
+    const currentIdx = selectedArray.indexOf(currentRecipeIndex);
+    if (currentIdx < selectedArray.length - 1) {
+      setImageAssignments(prev => ({ ...prev, [currentRecipeIndex]: selectedCandidateIndex }));
+      setCurrentRecipeIndex(selectedArray[currentIdx + 1]);
+      setSelectedCandidateIndex(imageAssignments[selectedArray[currentIdx + 1]] || 0);
+    }
+  };
+
+  const handleFinishMultiRecipe = async () => {
+    setIsLoading(true);
+    try {
+      const finalAssignments = { ...imageAssignments, [currentRecipeIndex]: selectedCandidateIndex };
+      const imageMap: Record<number, string | null> = {};
+      if (imageMode === 'shared') {
+        const sharedImage = imageCandidates[selectedCandidateIndex] || null;
+        selectedRecipes.forEach(idx => { imageMap[idx] = sharedImage; });
+      } else {
+        selectedRecipes.forEach(idx => {
+          const candidateIdx = finalAssignments[idx] ?? 0;
+          imageMap[idx] = imageCandidates[candidateIdx] || null;
+        });
+      }
+      const recipesToImport = detectedRecipes.filter((_, idx) => selectedRecipes.has(idx));
+      await finalizeMultiScrape(recipesToImport, imageMap);
+      onRecipeAdded(); onClose();
+    } catch (err) {
+      setError('Failed to import recipes.');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isLastRecipe = () => {
+    const selectedArray = Array.from(selectedRecipes).sort((a, b) => a - b);
+    return currentRecipeIndex === selectedArray[selectedArray.length - 1];
+  };
+
+  // ---------------------------------------------------------------------------
+  // RENDER: Multi-Recipe Screens
+  // ---------------------------------------------------------------------------
+  if (multiRecipeMode && currentScreen === 'recipe_selection') {
+    const allSelected = selectedRecipes.size === detectedRecipes.length;
+    const noneSelected = selectedRecipes.size === 0;
+
+    return (
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-50">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] flex flex-col">
+          <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+            <X size={24} />
+          </button>
+
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">Found {detectedRecipes.length} Recipes</h2>
+          <p className="text-slate-500 mb-6">Select which recipes to import</p>
+
+          <div className="flex-1 overflow-y-auto mb-6">
+            <div className="space-y-3">
+              {detectedRecipes.map((recipe, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => toggleRecipeSelection(idx)}
+                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedRecipes.has(idx)
+                      ? 'border-p-mint bg-p-mint/5'
+                      : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center ${selectedRecipes.has(idx) ? 'bg-p-mint border-p-mint' : 'border-slate-300'
+                      }`}>
+                      {selectedRecipes.has(idx) && <Check size={16} className="text-white" />}
+                    </div>
+                    <span className="font-medium text-slate-800">{recipe.title}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={handleProceedToImageMode}
+            disabled={noneSelected}
+            className={`w-full py-3 rounded-xl font-semibold transition-all ${noneSelected
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-p-mint text-white hover:bg-p-mint-dark'
+              }`}
+          >
+            {allSelected ? 'Import All' : `Import Selected (${selectedRecipes.size})`}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (multiRecipeMode && currentScreen === 'image_mode') {
+    return (
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-50">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full">
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">Choose Images</h2>
+          <p className="text-slate-500 mb-8">Do you want to choose an image for each recipe or for all at once?</p>
+
+          <div className="space-y-4">
+            <button
+              onClick={() => handleImageModeSelection('shared')}
+              className="w-full p-4 rounded-xl border-2 border-slate-200 hover:border-p-mint hover:bg-p-mint/5 transition-all text-left"
+            >
+              <div className="font-semibold text-slate-800">For All at Once</div>
+              <div className="text-sm text-slate-500">Use the same image for all {selectedRecipes.size} recipes</div>
+            </button>
+
+            <button
+              onClick={() => handleImageModeSelection('individual')}
+              className="w-full p-4 rounded-xl border-2 border-slate-200 hover:border-p-mint hover:bg-p-mint/5 transition-all text-left"
+            >
+              <div className="font-semibold text-slate-800">For Each Recipe</div>
+              <div className="text-sm text-slate-500">Choose a different image for each recipe</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (multiRecipeMode && currentScreen === 'image_assignment') {
+    const selectedArray = Array.from(selectedRecipes).sort((a, b) => a - b);
+    const currentPos = selectedArray.indexOf(currentRecipeIndex) + 1;
+    const currentRecipe = detectedRecipes[currentRecipeIndex];
+    const isLast = isLastRecipe();
+
+    return (
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex justify-center items-center z-50">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-4xl w-full flex flex-col max-h-[90vh]">
+          <div className="mb-6 text-center">
+            <h2 className="text-2xl font-bold text-slate-800">
+              {imageMode === 'individual'
+                ? `Choose image for: ${currentRecipe.title}`
+                : `Choose image for all ${selectedRecipes.size} recipes`}
+            </h2>
+            {imageMode === 'individual' && (
+              <p className="text-slate-500">Recipe {currentPos} of {selectedRecipes.size}</p>
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto min-h-0 mb-6">
+            {imageCandidates.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {imageCandidates.map((img, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => setSelectedCandidateIndex(idx)}
+                    className={`relative group cursor-pointer rounded-2xl overflow-hidden aspect-video border-4 transition-all ${selectedCandidateIndex === idx
+                        ? 'border-p-mint ring-4 ring-p-mint/20'
+                        : 'border-transparent hover:border-slate-200'
+                      }`}
+                  >
+                    <img src={`api/static/${img}`} className="w-full h-full object-cover" loading="lazy" />
+                    {selectedCandidateIndex === idx && (
+                      <div className="absolute top-2 right-2 bg-p-mint rounded-full p-1">
+                        <Check size={16} className="text-white" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-slate-500 mb-4">No images found</p>
+                <button className="px-4 py-2 bg-p-mint text-white rounded-lg">Upload Custom</button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            {imageMode === 'individual' && !isLast && (
+              <button
+                onClick={handleNextRecipe}
+                className="flex-1 py-3 bg-p-mint text-white rounded-xl font-semibold hover:bg-p-mint-dark"
+              >
+                Next
+              </button>
+            )}
+            {(imageMode === 'shared' || isLast) && (
+              <button
+                onClick={handleFinishMultiRecipe}
+                disabled={isLoading}
+                className="flex-1 py-3 bg-p-mint text-white rounded-xl font-semibold hover:bg-p-mint-dark disabled:opacity-50"
+              >
+                {isLoading ? 'Importing...' : `Finish`}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ---------------------------------------------------------------------------
   // RENDER: Image Selection Step

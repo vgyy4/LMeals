@@ -62,17 +62,10 @@ def background_upgrade_frame_quality(source_url: str, timestamp: float, image_pa
 def scrape_recipe(scrape_request: schemas.ScrapeRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
     Scrapes a recipe from a URL.
-    1. Checks if the recipe already exists.
-    2. Tries to scrape using the recipe-scrapers library.
-    3. If that fails, returns a status indicating AI is required.
+    1. Tries to scrape using the recipe-scrapers library.
+    2. If that fails, returns a status indicating AI is required.
+    Note: Duplicate URL check removed to allow multiple recipes from same source.
     """
-    existing_recipe = crud.get_recipe_by_source_url(db, source_url=str(scrape_request.url))
-    if existing_recipe:
-        # Trigger template generation if it's missing (legacy recipes)
-        if not existing_recipe.instruction_template:
-            background_tasks.add_task(background_generate_template, existing_recipe.id)
-        return {"status": "exists", "recipe": existing_recipe}
-
     try:
         # Ensure url is a string before passing to scraper
         recipe_data = scraper.scrape_with_library(str(scrape_request.url))
@@ -102,20 +95,14 @@ def scrape_recipe(scrape_request: schemas.ScrapeRequest, background_tasks: Backg
     return schemas.ScrapeResponse(status="ai_required", message="Standard scraping failed. Would you like to try with AI?")
 
 
-@router.post("/scrape-ai", response_model=schemas.ScrapeResponse)
+@router.post("/scrape-ai")
 def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
     Scrapes a recipe from a URL using AI. 
     Supports standard HTML pages and Video/Audio sources.
+    Can detect and return multiple recipes from the same source.
+    Note: Duplicate URL check removed to allow multiple recipes from same source.
     """
-    # Check if URL already exists to avoid IntegrityError
-    existing_recipe = crud.get_recipe_by_source_url(db, source_url=str(scrape_request.url))
-    if existing_recipe:
-        # Trigger template generation if missing
-        if not existing_recipe.instruction_template:
-            background_tasks.add_task(background_generate_template, existing_recipe.id)
-        return schemas.ScrapeResponse(status="exists", recipe=existing_recipe, message="Recipe already exists.")
-
     url = str(scrape_request.url)
     recipe_data = {}
     is_video_audio = any(domain in url for domain in ["youtube.com", "youtu.be", "vimeo.com", "spotify.com", "facebook.com", "instagram.com"])
@@ -182,11 +169,12 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
             if not extracted:
                 raise HTTPException(status_code=500, detail="AI failed to extract recipe from transcript.")
             
-            recipe_data.update(extracted)
+            # extracted is now an ARRAY of recipe dicts
+            recipes_array = extracted
             
+            # Store video frame candidates for later use
             # 4. Use Default Thumbnail if available
-            if metadata.get("thumbnail"):
-                recipe_data["image_url"] = metadata["thumbnail"]
+            default_thumbnail = metadata.get("thumbnail")
 
             # 5. Generate preview frames (0s, 5s, 10s, 15s)
             print(f"Generating preview frames for {url}...")
@@ -203,8 +191,6 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
                     candidates.append(scraped_img_local)
                     print(f"Added scraped image as candidate: {scraped_img_local}")
             
-            recipe_data["image_candidates"] = candidates              # Add the original thumbnail to candidates if specific
-            
         except Exception as e:
             print(f"ERROR: Video/Audio processing failed for {url}")
             import traceback
@@ -220,72 +206,118 @@ def scrape_ai(scrape_request: schemas.ScrapeRequest, background_tasks: Backgroun
             extracted = llm.extract_with_groq(html)
             if not extracted:
                 raise HTTPException(status_code=500, detail="AI failed to extract recipe data.")
-            recipe_data.update(extracted)
+            
+            # extracted is now an ARRAY of recipe dicts
+            recipes_array = extracted
+            candidates = []  # No video frames for HTML
+            default_thumbnail = None
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-    # The data from the LLM needs to be shaped into our RecipeCreate schema
-    recipe_data['source_url'] = scrape_request.url
+    # Now handle the array: single recipe = create immediately, multiple = return for selection
+    if len(recipes_array) == 1:
+        # SINGLE RECIPE PATH (Backward Compatible)
+        recipe_data = recipes_array[0]
+        recipe_data['source_url'] = scrape_request.url
 
-    # Ingredients from LLM are a list of strings, but our schema expects a list of objects
-    ingredients_list = recipe_data.get("ingredients", [])
-    sanitized_ingredients = []
-    for i in ingredients_list:
-        if isinstance(i, list):
-            # If AI returns a list (e.g. [['qty:1']]), join it or take the first element
-            sanitized_ingredients.append(" ".join(str(x) for x in i))
-        elif isinstance(i, dict):
-            # If AI returns a dict, try to get a 'text' or 'name' field, or stringify
-            sanitized_ingredients.append(i.get("text", i.get("name", str(i))))
-        else:
-            sanitized_ingredients.append(str(i))
+        # Sanitize ingredients
+        ingredients_list = recipe_data.get("ingredients", [])
+        sanitized_ingredients = []
+        for i in ingredients_list:
+            if isinstance(i, list):
+                sanitized_ingredients.append(" ".join(str(x) for x in i))
+            elif isinstance(i, dict):
+                sanitized_ingredients.append(i.get("text", i.get("name", str(i))))
+            else:
+                sanitized_ingredients.append(str(i))
+        recipe_data["ingredients"] = [{"text": i} for i in sanitized_ingredients]
+        
+        # Sanitize instructions
+        instructions_list = recipe_data.get("instructions", [])
+        sanitized_instructions = []
+        for inst in instructions_list:
+            if isinstance(inst, list):
+                 sanitized_instructions.append(" ".join(str(x) for x in inst))
+            elif isinstance(inst, dict):
+                 sanitized_instructions.append(inst.get("text", str(inst)))
+            else:
+                 sanitized_instructions.append(str(inst))
+        recipe_data["instructions"] = sanitized_instructions
+        
+        # Handle image - use default_thumbnail if available
+        if not recipe_data.get("image_url") and default_thumbnail:
+            recipe_data["image_url"] = default_thumbnail
+        elif not recipe_data.get("image_url"):
+            recipe_data["image_url"] = None
             
-    recipe_data["ingredients"] = [{"text": i} for i in sanitized_ingredients]
-    
-    # Sanitize instructions to ensure they are all strings
-    instructions_list = recipe_data.get("instructions", [])
-    sanitized_instructions = []
-    for inst in instructions_list:
-        if isinstance(inst, list):
-             sanitized_instructions.append(" ".join(str(x) for x in inst))
-        elif isinstance(inst, dict):
-             sanitized_instructions.append(inst.get("text", str(inst)))
-        else:
-             sanitized_instructions.append(str(inst))
-    recipe_data["instructions"] = sanitized_instructions
-    
-    # Handle empty image_url
-    if not recipe_data.get("image_url"):
-        recipe_data["image_url"] = None
+        # Download image if present
+        if recipe_data.get("image_url"):
+            local_image = assets.download_image(str(recipe_data["image_url"]))
+            if local_image:
+                recipe_data["image_url"] = local_image
+                if candidates and local_image not in candidates:
+                    candidates.insert(0, local_image)
 
-    # Standard download and create path
-    # NOTE: If we have candidates, we might want to defer this download until the user chooses?
-    # BUT for now, let's keep the default behavior: download the one the AI picked (thumbnail)
-    # The frontend will allow overriding this.
-    if recipe_data.get("image_url"):
-        local_image = assets.download_image(str(recipe_data["image_url"]))
-        if local_image:
-            recipe_data["image_url"] = local_image
+        # Create recipe in DB
+        recipe_create = schemas.RecipeCreate(**recipe_data)
+        new_recipe = crud.create_recipe(db, recipe=recipe_create)
+        
+        # Start background templating
+        background_tasks.add_task(background_generate_template, new_recipe.id)
+        
+        return schemas.ScrapeResponse(
+            status="success", 
+            recipe=new_recipe, 
+            image_candidates=candidates if candidates else None
+        )
+    
+    else:
+        # MULTIPLE RECIPES PATH - Return as temporary objects for frontend selection
+        # Don't create DB entries yet, let user select which ones to import
+        temp_recipes = []
+        
+        for recipe_dict in recipes_array:
+            recipe_dict['source_url'] = scrape_request.url
             
-            # If we have candidates, add the downloaded thumbnail to the list if it's not already there
-            # (Though candidates are usually distinct from the thumbnail URL, so we can just append)
-            if recipe_data.get("image_candidates"):
-                 # Make sure we don't duplicate
-                 if local_image not in recipe_data["image_candidates"]:
-                     recipe_data["image_candidates"].insert(0, local_image)
-
-    recipe_create = schemas.RecipeCreate(**recipe_data)
-    new_recipe = crud.create_recipe(db, recipe=recipe_create)
-    
-    # Start background templating
-    background_tasks.add_task(background_generate_template, new_recipe.id)
-    
-    response_obj = schemas.ScrapeResponse(
-        status="success", 
-        recipe=new_recipe, 
-        image_candidates=recipe_data.get("image_candidates")
-    )
-    return response_obj
+            # Sanitize ingredients
+            ingredients_list = recipe_dict.get("ingredients", [])
+            sanitized_ingredients = []
+            for i in ingredients_list:
+                if isinstance(i, list):
+                    sanitized_ingredients.append(" ".join(str(x) for x in i))
+                elif isinstance(i, dict):
+                    sanitized_ingredients.append(i.get("text", i.get("name", str(i))))
+                else:
+                    sanitized_ingredients.append(str(i))
+            recipe_dict["ingredients"] = [{"text": i} for i in sanitized_ingredients]
+            
+            # Sanitize instructions
+            instructions_list = recipe_dict.get("instructions", [])
+            sanitized_instructions = []
+            for inst in instructions_list:
+                if isinstance(inst, list):
+                     sanitized_instructions.append(" ".join(str(x) for x in inst))
+                elif isinstance(inst, dict):
+                     sanitized_instructions.append(inst.get("text", str(inst)))
+                else:
+                     sanitized_instructions.append(str(inst))
+            recipe_dict["instructions"] = sanitized_instructions
+            
+            # Set default thumbnail if no image
+            if not recipe_dict.get("image_url") and default_thumbnail:
+                recipe_dict["image_url"] = default_thumbnail
+            elif not recipe_dict.get("image_url"):
+                recipe_dict["image_url"] = None
+            
+            # Create temp recipe object (not saved to DB yet)
+            temp_recipes.append(recipe_dict)
+        
+        # Return multi-recipe response for frontend selection
+        return schemas.MultiRecipeResponse(
+            status="multi_recipe",
+            recipes=temp_recipes,
+            image_candidates=candidates if candidates else None
+        )
 
 
 @router.post("/upload-temp-image")
@@ -417,6 +449,56 @@ def finalize_scrape(payload: schemas.FinalizeScrapeRequest, background_tasks: Ba
         background_tasks.add_task(delayed_cleanup_files, payload.candidates_to_cleanup, chosen_image)
         
     return schemas.ScrapeResponse(status="success", recipe=db_recipe)
+
+
+@router.post("/finalize-multi-scrape")
+def finalize_multi_scrape(
+    payload: schemas.FinalizeMultiScrapeRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """
+    Finalizes a multi-recipe scrape by batch-creating recipes with assigned images.
+    Payload contains:
+    - recipes_data: List of RecipeCreate objects
+    - image_assignments: Dict mapping recipe index to image path (or None)
+    """
+    created_recipes = []
+    
+    for idx, recipe_data in enumerate(payload.recipes_data):
+        # Get assigned image for this recipe
+        assigned_image = payload.image_assignments.get(str(idx))  # JSON keys are strings
+        
+        # Handle image assignment
+        if assigned_image and "candidates/" in assigned_image:
+            # Image is in temp candidates folder, move to permanent storage
+            final_image_path = assets.move_from_candidates(assigned_image)
+            recipe_data.image_url = final_image_path
+        elif assigned_image:
+            # Image is already in permanent storage (e.g., uploaded custom image)
+            recipe_data.image_url = assigned_image
+        else:
+            # No image assigned
+            recipe_data.image_url = None
+        
+        # Create recipe in DB
+        try:
+            new_recipe = crud.create_recipe(db, recipe=recipe_data)
+            created_recipes.append(new_recipe)
+            
+            # Start background templating for this recipe
+            background_tasks.add_task(background_generate_template, new_recipe.id)
+        except Exception as e:
+            print(f"Error creating recipe {idx}: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Failed to create recipe: {str(e)}")
+    
+    return {
+        "status": "success",
+        "created_count": len(created_recipes),
+        "recipes": created_recipes
+    }
 
 
 

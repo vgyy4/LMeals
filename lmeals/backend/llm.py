@@ -67,7 +67,12 @@ def extract_with_groq(html: str):
     client = Groq(api_key=api_key)
 
     system_prompt = """
-    You are an expert recipe data extractor. Your task is to extract recipe data from the provided text and return ONLY a strict JSON object with the following keys: 
+    You are an expert recipe data extractor. Your task is to extract recipe data from the provided text.
+    
+    CRITICAL: If the content contains MULTIPLE distinct recipes (e.g., "5 Easy Pasta Dishes"), return a JSON ARRAY of recipe objects.
+    If the content contains only ONE recipe, still return a JSON ARRAY with a single object.
+    
+    Each recipe object must have the following keys: 
     - "title": (string)
     - "ingredients": (list of strings - TAG **ALL** QUANTITIES. Wrap **EVERY SINGLE** numerical quantity in [[qty:VALUE]]. Example: "[[qty:4.25]] cups ([[qty:281]]g) all-purpose flour" or "[[qty:2]] large eggs".)
     - "instructions": (list of strings - BE HIGHLY DETAILED. Tag numerical quantities for ingredients only. Do NOT tag times/temps.)
@@ -155,16 +160,23 @@ def extract_with_groq(html: str):
         response_text = chat_completion.choices[0].message.content
         recipe_data = json.loads(response_text)
 
-        # Basic validation of the returned data structure
-        required_keys = ["title", "ingredients", "instructions"]
-        if not all(key in recipe_data for key in required_keys):
-            print("Groq response was missing one or more required keys.")
+        # Ensure we always return an array
+        if isinstance(recipe_data, dict):
+            # Old format: single recipe object, wrap in array
+            recipe_data = [recipe_data]
+        elif not isinstance(recipe_data, list):
+            print(f"ERROR: AI returned unexpected format: {type(recipe_data)}")
             return None
-
-        # Ensure ingredients and instructions are lists
-        if not isinstance(recipe_data.get("ingredients"), list) or not isinstance(recipe_data.get("instructions"), list):
-            print("Groq response 'ingredients' or 'instructions' is not a list.")
-            return None
+            
+        # Validate each recipe in the array
+        for recipe in recipe_data:
+            required_keys = ["title", "ingredients", "instructions"]
+            if not all(key in recipe for key in required_keys):
+                print("Groq response was missing one or more required keys.")
+                return None
+            if not isinstance(recipe.get("ingredients"), list) or not isinstance(recipe.get("instructions"), list):
+                print("Groq response 'ingredients' or 'instructions' is not a list.")
+                return None
 
         return recipe_data
     except json.JSONDecodeError as e:
@@ -184,7 +196,12 @@ def extract_recipe_from_text(text: str, metadata: dict = None):
         return None
 
     system_prompt = """
-    You are an expert recipe data extractor. Your task is to extract recipe data from the provided text and return ONLY a strict JSON object with the following keys: 
+    You are an expert recipe data extractor. Your task is to extract recipe data from the provided text.
+    
+    CRITICAL: If the content contains MULTIPLE distinct recipes (e.g., "5 Easy Pasta Dishes"), return a JSON ARRAY of recipe objects.
+    If the content contains only ONE recipe, still return a JSON ARRAY with a single object.
+    
+    Each recipe object must have the following keys: 
     - "title": (string)
     - "ingredients": (list of strings - TAG **ALL** QUANTITIES. Wrap **EVERY SINGLE** numerical quantity in [[qty:VALUE]]. Example: "[[qty:4.25]] cups ([[qty:281]]g) all-purpose flour" or "[[qty:2]] large eggs".)
     - "instructions": (list of strings - BE HIGHLY DETAILED. Tag numerical quantities for ingredients only. Do NOT tag times/temps.)
@@ -246,7 +263,16 @@ def extract_recipe_from_text(text: str, metadata: dict = None):
             model=model,
             response_format={"type": "json_object"},
         )
-        return json.loads(chat_completion.choices[0].message.content)
+        recipe_data = json.loads(chat_completion.choices[0].message.content)
+        
+        # Ensure we always return an array
+        if isinstance(recipe_data, dict):
+            recipe_data = [recipe_data]
+        elif not isinstance(recipe_data, list):
+            print(f"ERROR: AI returned unexpected format: {type(recipe_data)}")
+            return None
+            
+        return recipe_data
     except Exception as e:
         print(f"Error extracting recipe from text: {e}")
         return None

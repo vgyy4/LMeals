@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Recipe, ScrapeRequest, ScrapeResponse, Allergen, GroqSettings, MealPlanEntry } from './types';
+import { Recipe, ScrapeRequest, ScrapeResponse, MultiRecipeResponse, Allergen, GroqSettings, MealPlanEntry } from './types';
 
 const API_BASE_URL = 'api';
 
@@ -23,7 +23,7 @@ export const scrapeRecipe = async (url: string): Promise<ScrapeResponse> => {
     return response.data;
 };
 
-export const scrapeWithAi = async (url: string): Promise<ScrapeResponse> => {
+export const scrapeWithAi = async (url: string): Promise<ScrapeResponse | MultiRecipeResponse> => {
     const response = await api.post('/scrape-ai', { url });
     return response.data;
 };
@@ -44,6 +44,14 @@ export const uploadTempImage = async (file: File): Promise<{ status: string; url
         headers: {
             'Content-Type': 'multipart/form-data',
         },
+    });
+    return response.data;
+};
+
+export const finalizeMultiScrape = async (recipesData: any[], imageAssignments: Record<number, string | null>): Promise<{ status: string; created_count: number; recipes: Recipe[] }> => {
+    const response = await api.post('/finalize-multi-scrape', {
+        recipes_data: recipesData,
+        image_assignments: imageAssignments
     });
     return response.data;
 };

@@ -79,6 +79,17 @@ class FinalizeScrapeRequest(BaseModel):
     chosen_image: str
     candidates_to_cleanup: List[str]
 
+# Multi-Recipe Schemas
+class MultiRecipeResponse(BaseModel):
+    status: str
+    recipes: List[Recipe]
+    image_candidates: Optional[List[str]] = None
+    message: Optional[str] = None
+
+class FinalizeMultiScrapeRequest(BaseModel):
+    recipes_data: List[Recipe]
+    image_assignments: dict  # {recipe_index: image_path or None}
+
 
 # Groq Settings Schema
 class GroqSettings(BaseModel):

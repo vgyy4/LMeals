@@ -17,7 +17,7 @@ class Recipe(Base):
     yield_unit = Column(String, nullable=True, server_default='servings')
     instruction_template = Column(JSON, nullable=True) # List of strings with [[qty:NUMBER]]
     image_url = Column(String, nullable=True)
-    source_url = Column(String, unique=True, index=True)
+    source_url = Column(String, index=True)
     notes = Column(Text, nullable=True)
     is_favorite = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -41,6 +41,13 @@ export interface ScrapeResponse {
   image_candidates?: string[];
 }
 
+export interface MultiRecipeResponse {
+  status: 'multi_recipe';
+  recipes: any[];  // Array of recipe data (not yet saved to DB)
+  image_candidates?: string[];
+  message?: string;
+}
+
 export interface GroqSettings {
   api_key: string;
   model: string;
