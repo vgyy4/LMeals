@@ -82,13 +82,14 @@ class FinalizeScrapeRequest(BaseModel):
 # Multi-Recipe Schemas
 class MultiRecipeResponse(BaseModel):
     status: str
-    recipes: List[Recipe]
+    recipes: List[dict]  # Temporary recipe data (not yet in DB)
     image_candidates: Optional[List[str]] = None
     message: Optional[str] = None
 
 class FinalizeMultiScrapeRequest(BaseModel):
-    recipes_data: List[Recipe]
+    recipes_data: List[dict]  # Accept raw dicts for flexibility
     image_assignments: dict  # {recipe_index: image_path or None}
+
 
 
 # Groq Settings Schema

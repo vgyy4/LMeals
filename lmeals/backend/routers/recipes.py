@@ -459,13 +459,10 @@ def finalize_multi_scrape(
 ):
     """
     Finalizes a multi-recipe scrape by batch-creating recipes with assigned images.
-    Payload contains:
-    - recipes_data: List of RecipeCreate objects
-    - image_assignments: Dict mapping recipe index to image path (or None)
     """
     created_recipes = []
     
-    for idx, recipe_data in enumerate(payload.recipes_data):
+    for idx, recipe_dict in enumerate(payload.recipes_data):
         # Get assigned image for this recipe
         assigned_image = payload.image_assignments.get(str(idx))  # JSON keys are strings
         
@@ -473,17 +470,18 @@ def finalize_multi_scrape(
         if assigned_image and "candidates/" in assigned_image:
             # Image is in temp candidates folder, move to permanent storage
             final_image_path = assets.move_from_candidates(assigned_image)
-            recipe_data.image_url = final_image_path
+            recipe_dict["image_url"] = final_image_path
         elif assigned_image:
-            # Image is already in permanent storage (e.g., uploaded custom image)
-            recipe_data.image_url = assigned_image
+            # Image is already in permanent storage
+            recipe_dict["image_url"] = assigned_image
         else:
             # No image assigned
-            recipe_data.image_url = None
+            recipe_dict["image_url"] = None
         
-        # Create recipe in DB
+        # Create recipe in DB - convert dict to RecipeCreate
         try:
-            new_recipe = crud.create_recipe(db, recipe=recipe_data)
+            recipe_create = schemas.RecipeCreate(**recipe_dict)
+            new_recipe = crud.create_recipe(db, recipe=recipe_create)
             created_recipes.append(new_recipe)
             
             # Start background templating for this recipe
